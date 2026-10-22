@@ -177,3 +177,14 @@ def test_pdf_email_gate_then_download():
 def test_draft_toggle_shows_not_in_force_banner():
     at = to_results(boot(draft="1"))
     assert any("NOT IN FORCE" in (w.value or "") for w in at.warning)
+
+
+def test_b16_empty_scorecard_chart_does_not_crash():
+    """EME full-scorecard with no points: Results must not AttributeError on empty chart df."""
+    at = boot()
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 5_000_000.0
+    at.session_state["store"]["profile"]["opt_scored"] = True
+    at.session_state["step"] = 99
+    at.run()
+    assert not at.exception, at.exception
