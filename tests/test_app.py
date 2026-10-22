@@ -30,6 +30,7 @@ def test_profile_renders_with_privacy_and_generic_default():
     at = boot()
     assert not at.exception
     assert any("Privacy notice" in m.value for m in at.markdown)
+    assert any("s26" in (m.value or "") for m in at.markdown)
     assert at.selectbox[0].value == "generic"
 
 
@@ -37,6 +38,26 @@ def test_continue_blocked_without_consent():
     at = boot()
     at.button[-1].click().run()
     assert any("consent" in e.value for e in at.error)
+    assert at.session_state["step"] == 0
+
+
+def test_step_query_without_consent_stays_on_profile():
+    """H1: ?step= must not skip the POPIA consent gate."""
+    at = boot(step="2")
+    assert not at.exception
+    assert at.session_state["step"] == 0
+    assert any("Privacy notice" in m.value for m in at.markdown)
+    assert any("consent" in (c.label or "").lower() for c in at.checkbox)
+    at = boot(step="99")
+    assert at.session_state["step"] == 0
+    assert any("Privacy notice" in m.value for m in at.markdown)
+
+
+def test_demo_does_not_auto_consent():
+    """M3: ?demo=1 seeds figures but must not tick consent for the user."""
+    at = boot(demo="1")
+    assert not at.exception
+    assert at.session_state["store"]["consent"] is False
     assert at.session_state["step"] == 0
 
 

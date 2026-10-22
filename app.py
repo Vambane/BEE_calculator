@@ -41,7 +41,6 @@ st.markdown("<style>.block-container{max-width:960px}</style>", unsafe_allow_htm
 
 Q = st.query_params
 S = st.session_state
-S.setdefault("step", int(Q.get("step", 0)) if str(Q.get("step", "0")).isdigit() else 0)
 S.setdefault("sector", Q.get("sector", "generic"))
 S.setdefault("draft", Q.get("draft", "0") == "1")
 S.setdefault("default_mode", "pct" if Q.get("mode") == "pct" else "rand")
@@ -70,7 +69,7 @@ S.setdefault(
 store = S.store
 if Q.get("demo") == "1" and not S.get("demo_seeded"):  # illustrative inputs for demos only
     S.demo_seeded = True
-    store["consent"] = True
+    # Do not auto-consent (M3): seed figures but require an explicit tick.
     store["profile"].update(
         company="Example Co (Pty) Ltd", revenue=120_000_000.0, black_ownership=40.0
     )
@@ -79,6 +78,14 @@ if Q.get("demo") == "1" and not S.get("demo_seeded"):  # illustrative inputs for
     )
 if S.get("demo_seeded"):
     st.info("EXAMPLE DATA: illustrative inputs (points entry), not a real company.")
+# H1: ignore ?step= and force profile until POPIA consent is given.
+if not store.get("consent"):
+    S.step = 0
+else:
+    S.setdefault(
+        "step",
+        int(Q.get("step", 0)) if str(Q.get("step", "0")).isdigit() else 0,
+    )
 valid_sectors = dict(sector_choices())
 if S.sector not in valid_sectors:
     S.sector = "generic"
@@ -147,7 +154,17 @@ def badge_line():
         )
 
 
+def require_consent():
+    """H1: refuse any non-profile / calculate path without an explicit consent tick."""
+    if not store.get("consent"):
+        S.step = 0
+        st.rerun()
+
+
 def go_to(n: int):
+    if not store.get("consent"):
+        S.step = 0
+        return
     S.step = n
 
 
@@ -204,17 +221,24 @@ def profile_step():
     with st.container(border=True):
         st.markdown(
             "**Privacy notice.** We use the figures you enter only to calculate your "
-            "scorecard in this session. Nothing is stored after you close the page, and "
-            "nothing you enter is logged. Do not enter ID numbers or individuals' names "
-            "(POPIA)."
+            "scorecard in this session. Aggregate black ownership and management-control "
+            "figures are race- and gender-related special personal information "
+            "(POPIA s26), used only for this session's calculation and not retained after "
+            "you close the page. Nothing you enter is logged. Do not enter ID numbers or "
+            "individuals' names."
         )
         store["consent"] = st.checkbox(
             "I understand and consent to my company figures being processed for this calculation.",
             value=store["consent"],
         )
+    consented = bool(store["consent"])
     p = store["profile"]
     with st.container(border=True):
-        p["company"] = st.text_input("Company name (optional)", p["company"], max_chars=120)
+        if not consented:
+            st.caption("Tick the privacy consent box above to unlock company and financial fields.")
+        p["company"] = st.text_input(
+            "Company name (optional)", p["company"], max_chars=120, disabled=not consented
+        )
         keys = list(valid_sectors)
         S.sector = st.selectbox(
             "Sector code",
@@ -222,6 +246,7 @@ def profile_step():
             index=keys.index(S.sector),
             format_func=lambda k: valid_sectors[k],
             help="Pick the sector code your business is measured under. If unsure, keep Generic.",
+            disabled=not consented,
         )
         c = get_sector(S.sector)
         if c.variants:
@@ -231,6 +256,7 @@ def profile_step():
                 list(c.variants),
                 index=list(c.variants).index(v),
                 format_func=lambda s: s.replace("_", " ").title(),
+                disabled=not consented,
             )
         p["revenue"] = st.number_input(
             "Total revenue, last financial year (R)",
@@ -238,6 +264,7 @@ def profile_step():
             value=float(p["revenue"]),
             step=500_000.0,
             format="%.0f",
+            disabled=not consented,
         )
         p["black_ownership"] = st.number_input(
             "Black ownership (%)",
@@ -245,6 +272,7 @@ def profile_step():
             max_value=100.0,
             value=float(p["black_ownership"]),
             step=1.0,
+            disabled=not consented,
         )
         cfg2, _, size2, _ = context()
         st.caption(f":green-badge[Size: {cfg2.size_labels.get(size2, size2.value)}]")
@@ -259,9 +287,14 @@ def profile_step():
             value=float(f["leviable_amount"]),
             step=100_000.0,
             format="%.0f",
+            disabled=not consented,
         )
         f["npat"] = b.number_input(
-            "Net profit after tax (R)", value=float(f["npat"]), step=100_000.0, format="%.0f"
+            "Net profit after tax (R)",
+            value=float(f["npat"]),
+            step=100_000.0,
+            format="%.0f",
+            disabled=not consented,
         )
         a, b = st.columns(2)
         f["tmps"] = a.number_input(
@@ -270,22 +303,32 @@ def profile_step():
             value=float(f["tmps"]),
             step=100_000.0,
             format="%.0f",
+            disabled=not consented,
         )
         f["employees"] = b.number_input(
-            "Headcount (employees)", 0.0, value=float(f["employees"]), step=1.0, format="%.0f"
+            "Headcount (employees)",
+            0.0,
+            value=float(f["employees"]),
+            step=1.0,
+            format="%.0f",
+            disabled=not consented,
         )
         st.caption("These bases are captured once and used when you enter rand amounts later.")
         p["opt_scored"] = st.checkbox(
             "Score on the full scorecard even if a deemed (affidavit) level applies",
             value=p["opt_scored"],
+            disabled=not consented,
         )
     with st.expander("YES Initiative (optional)"):
         tiers = ["none", "target", "1.5x", "2x"]
-        p["yes_tier"] = st.selectbox("YES tier achieved", tiers, index=tiers.index(p["yes_tier"]))
+        p["yes_tier"] = st.selectbox(
+            "YES tier achieved", tiers, index=tiers.index(p["yes_tier"]), disabled=not consented
+        )
         prev = st.selectbox(
             "Previous B-BBEE level (needed for YES)",
             [None, *range(1, 9)],
             index=[None, *range(1, 9)].index(p["yes_prev_level"]),
+            disabled=not consented,
         )
         p["yes_prev_level"] = prev
     if S.sector == "financial":
@@ -299,10 +342,12 @@ def profile_step():
                     f"{x:g} points"
                     + (" (40% of 20, default)" if x == 8 else " (40% of 15, as printed)")
                 ),
+                disabled=not consented,
             )
             o["fs_rescale_109"] = st.checkbox(
                 "Normalise Large scorecards to 109 before the level table",
                 value=o.get("fs_rescale_109", True),
+                disabled=not consented,
             )
 
     def problems():
@@ -317,6 +362,7 @@ def profile_step():
 
 # ------------------------------------------------------------------ element steps
 def element_step(el):
+    require_consent()
     st.title(el.name)
     draft = S.draft
     opts = entry_options(el)
@@ -477,6 +523,7 @@ def element_step(el):
 
 # ------------------------------------------------------------------ results
 def current_input(esd_override: dict | None = None):
+    require_consent()
     values = {
         k: store["values"][store["modes"].get(k, "pct")].get(k, {})
         for k in {e.key for e in elements}
@@ -503,6 +550,7 @@ def current_input(esd_override: dict | None = None):
 
 
 def results_step():
+    require_consent()
     st.title("Your scorecard")
     badge_line()
     all_probs = []
