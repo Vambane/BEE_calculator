@@ -1,7 +1,16 @@
-"""Enterprise classification by Total Revenue (rules-baseline §1). Stub."""
+"""Enterprise classification by Total Revenue (S5 cl. 4.1, 5.1, 6.1; rules-baseline §1)."""
 
 from bee.models import EnterpriseSize
 
+EME_MAX = 10_000_000  # "R10 million or less" -> EME
+GENERIC_MIN = 50_000_000  # "R50 million and more" -> Generic
+
 
 def classify(total_revenue: float) -> EnterpriseSize:
-    raise NotImplementedError("Implemented in the scoring-engine milestone")
+    if total_revenue < 0:
+        raise ValueError("total_revenue must be >= 0")
+    if total_revenue <= EME_MAX:
+        return EnterpriseSize.EME
+    if total_revenue < GENERIC_MIN:
+        return EnterpriseSize.QSE
+    return EnterpriseSize.GENERIC
