@@ -140,9 +140,9 @@ def test_draft_tf_route():
 
 def test_registry_sector():
     with pytest.raises(KeyError):
-        get_scorecard(EnterpriseSize.GENERIC, "ict")
+        get_scorecard(EnterpriseSize.GENERIC, "no-such-sector")
     card = get_scorecard(EnterpriseSize.GENERIC)
     registry.register("test-sector", EnterpriseSize.GENERIC, card)
     assert get_scorecard(EnterpriseSize.GENERIC, "TEST-SECTOR") is card
     res = calculate(ScoreInput(CompanyProfile(60_000_000, sector="test-sector")))
-    assert any("Sector" in n for n in res.notes)
+    assert res.sector == "test_sector"

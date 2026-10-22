@@ -12,7 +12,9 @@ def evaluate(
     group_points: dict[str, dict[str, float]],
     draft: bool = False,
     tf_route: bool = False,
+    options: dict | None = None,
 ) -> list[SubMinimumCheck]:
+    options = options or {}
     checks = []
     for sm in card.submins:
         if sm.draft_only and not (draft and tf_route):
@@ -23,7 +25,16 @@ def evaluate(
             achieved = element_points.get(sm.element, 0.0)
         else:
             achieved = group_points.get(sm.element, {}).get(sm.group, 0.0)
-        checks.append(SubMinimumCheck(sm.element, sm.group, achieved, sm.required, sm.clause))
+        required, used = sm.required, None
+        if sm.option_key and sm.option_key in options:
+            required = float(options[sm.option_key])
+            used = f"Sub-minimum {sm.element} overridden by option {sm.option_key}={required:g}."
+        elif sm.option_key:
+            used = (f"Interpretation: {sm.element} sub-minimum {required:g} ({sm.clause}); "
+                    f"configurable via options['{sm.option_key}'].")
+        checks.append(
+            SubMinimumCheck(sm.element, sm.group, achieved, required, sm.clause, used)
+        )
     return checks
 
 

@@ -25,7 +25,7 @@ def precondition(
     if size == EnterpriseSize.GENERIC:
         if all(c.passed for c in checks):
             return True, None
-        avg = sum(ratios[k] for k in ("ownership", "skills", "esd")) / 3
+        avg = sum(ratios.values()) / max(len(ratios), 1)
         if avg >= 0.5 - 1e-9:
             return True, None
         return False, f"S6 cl. 2.1: sub-minimums not met and priority average {avg:.0%} < 50%"
@@ -33,7 +33,7 @@ def precondition(
     own = element_passed(checks, "ownership")
     if own and (element_passed(checks, "skills") or element_passed(checks, "esd")):
         return True, None
-    avg = (ratios["ownership"] + max(ratios["skills"], ratios["esd"])) / 2
+    avg = (ratios.get("ownership", 0) + max(ratios.get("skills", 0), ratios.get("esd", 0))) / 2
     if avg >= 0.4 - 1e-9:
         return True, None
     return False, f"S6 cl. 2.2: QSE precondition not met (best average {avg:.0%} < 40%)"
