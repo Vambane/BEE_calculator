@@ -77,8 +77,29 @@ class Scorecard:
     level_base_option: str | None = None  # options key (bool) that switches rescaling off
     notes: tuple[str, ...] = ()  # interpretation / gazette-inconsistency notes for results
 
-    def max_total(self) -> float:
-        return sum(e.max_points() for e in self.elements)
+    def max_total(self, draft: bool = False) -> float:
+        return sum(e.max_points(draft=draft) for e in self.elements)
+
+    def display_max(self, draft: bool = False, tf_route: bool = False) -> float:
+        """Gazetted 'out of' total for results / PDF (design v1.2).
+
+        Construction QSE includes available bonus points (110 = 103 + 7). With draft QSE
+        TF rules, ESD uses the indicator sum (45 Fund / 40 ED+SD) instead of the base 30.
+        """
+        core = self.max_total(draft=draft)
+        if self.key.startswith("construction-qse"):
+            core += sum(e.bonus_max or 0 for e in self.elements)
+        if draft and self.has("esd"):
+            esd = self.element("esd")
+            if any(i.group == "tf" for i in esd.indicators):
+                base_esd = esd.max_points(draft=False)
+                draft_esd = esd.max_points("pp", draft=True) + (
+                    esd.max_points("tf", draft=True)
+                    if tf_route
+                    else esd.max_points("sd", draft=True) + esd.max_points("ed", draft=True)
+                )
+                core = core - base_esd + draft_esd
+        return core
 
     def has(self, key: str) -> bool:
         return any(e.key == key for e in self.elements)

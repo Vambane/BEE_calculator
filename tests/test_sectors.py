@@ -222,11 +222,10 @@ def test_tourism_totals():
 
 
 # --------------------------------------------------------------------------------- ICT
-def test_ict1_eme_deemed_l4_unverified_warning():
+def test_ict1_eme_deemed_l4_verified():
     r = run("ict", 9_000_000, 30)
     assert (r.size, r.level) == (E, 4)
-    assert get_sector("ict").status == "unverified"
-    assert any(w.startswith("UNVERIFIED") for w in r.warnings)
+    assert get_sector("ict").status == "verified"
 
 
 def test_ict2_skills_below_40pct_discounted():
@@ -385,3 +384,24 @@ def test_qse_draft_tf_route():
     assert any("Draft QSE" in n for n in on.notes)
     tf = next(c for c in on.submin_checks if c.group == "tf")
     assert tf.required == 6 and tf.passed
+
+
+def test_ict_qse_107_core_from_csv():
+    card = get_sector("ict").card(Q, None)
+    assert card.key == "ict-qse"
+    assert card.max_total() == 107
+    assert check_reconciles(card) == []
+
+
+def test_tourism_qse_max_101():
+    assert get_sector("tourism").card(Q, None).max_total() == 101
+
+
+def test_construction_qse_display_max_110():
+    assert get_sector("construction").card(Q, "contractor").display_max() == 110
+
+
+def test_ict_is_verified_aiict600():
+    cfg = get_sector("ict")
+    assert cfg.status == "verified"
+    assert cfg.card(Q, None).max_total() == 107

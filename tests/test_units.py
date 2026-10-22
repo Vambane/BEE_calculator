@@ -15,8 +15,10 @@ from bee import (
     registry,
 )
 from bee.engine import max_points
-from bee.indicators import indicator_points
+from bee.indicators import indicator_points, to_percent
 from bee.registry import get_scorecard
+from bee.rules import Indicator
+from bee.sectors.base import GENERIC_THRESHOLDS
 from bee.sizing import classify
 
 
@@ -211,3 +213,32 @@ def test_yes_1_5x_points_removed_when_previous_level_not_maintained():
     assert res.level == 4
     assert not res.yes_applied
     assert "2.4" in res.yes_blocked_reason
+
+
+def test_to_percent_rejects_nan_inf_negative():
+    ind = Indicator("t", "t", 1, 100)
+    fin = Financials()
+    with pytest.raises(ValueError, match="finite"):
+        to_percent(ind, float("nan"), fin)
+    with pytest.raises(ValueError, match="finite"):
+        to_percent(ind, float("inf"), fin)
+    with pytest.raises(ValueError, match="negative"):
+        to_percent(ind, -1.0, fin)
+    with pytest.raises(ValueError, match="finite"):
+        to_percent(Indicator("t", "t", 1, 1, "npat"), Rand(float("nan")), Financials(npat=1))
+    with pytest.raises(ValueError, match="negative"):
+        to_percent(Indicator("t", "t", 1, 1, "npat"), Rand(-5), Financials(npat=1))
+
+
+def test_classify_rejects_nan_inf_negative():
+    with pytest.raises(ValueError, match="finite"):
+        GENERIC_THRESHOLDS.classify(float("nan"))
+    with pytest.raises(ValueError, match="finite"):
+        GENERIC_THRESHOLDS.classify(float("inf"))
+    with pytest.raises(ValueError, match=">= 0"):
+        GENERIC_THRESHOLDS.classify(-1)
+
+
+def test_calculate_rejects_nan_revenue():
+    with pytest.raises(ValueError, match="finite"):
+        calculate(ScoreInput(CompanyProfile(float("nan"))))
