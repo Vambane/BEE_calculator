@@ -55,9 +55,27 @@ def test_badges():
     at = to_results(boot(sector="construction"))
     assert any("Verified sector code" in m.value for m in at.markdown)
     at = to_results(boot(sector="ict"))
-    assert any("Pending expert verification" in m.value for m in at.markdown)
+    assert any("Verified sector code" in m.value for m in at.markdown)
+    assert not any("Pending expert" in m.value for m in at.markdown)
     at = to_results(boot(sector="mac"))
     assert any("fallback" in w.value for w in at.warning)
+
+
+def test_results_show_out_of_max():
+    at = boot(sector="tourism")
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 20_000_000.0  # QSE → out of 101
+    at.session_state["step"] = 99
+    at.run()
+    assert any(m.value and "out of 101" in m.value for m in at.metric)
+    at = boot(sector="construction")
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 20_000_000.0
+    at.session_state["store"]["profile"]["variant"] = "contractor"
+    at.session_state["step"] = 99
+    at.run()
+    text = " ".join(filter(None, (m.value for m in list(at.metric) + list(at.caption))))
+    assert "out of 110" in text
 
 
 def test_construction_has_no_ed_and_fs_bank_has_afs_step():
@@ -120,3 +138,21 @@ def test_ict_qse_uses_sector_card():
         or "Pending expert" in m.value
         for m in list(at.markdown) + list(at.warning)
     )
+
+
+def test_pdf_email_gate_then_download():
+    at = to_results(boot())
+    assert not at.exception
+    assert any("Continue with email" in (b.label or "") for b in at.button)
+    at.session_state["store"]["pdf_gate"] = {
+        "email": "qa@example.com",
+        "marketing": False,
+        "unlocked": True,
+    }
+    at.run()
+    assert any("PDF" in (b.label or "") for b in at.download_button)
+
+
+def test_draft_toggle_shows_not_in_force_banner():
+    at = to_results(boot(draft="1"))
+    assert any("NOT IN FORCE" in (w.value or "") for w in at.warning)

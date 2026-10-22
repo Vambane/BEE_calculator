@@ -3,7 +3,7 @@ name = "bee-calculator"
 version = "0.1.0"
 description = "South African B-BBEE scorecard calculator"
 requires-python = ">=3.11"
-dependencies = ["streamlit==1.66.1", "pandas==2.3.3", "altair==5.5.0", "plotly==7.1.0"]
+dependencies = ["streamlit==1.66.1", "pandas==2.3.3", "altair==5.5.0", "plotly==7.1.0", "weasyprint==70.0", "jinja2==3.1.6"]
 
 [project.optional-dependencies]
 dev = ["pytest==9.1.1", "ruff==0.17.2"]

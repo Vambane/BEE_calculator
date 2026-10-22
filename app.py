@@ -22,6 +22,7 @@ from bee_ui.core import (
     next_level_gap,
     rand_capable,
     scorecard_label,
+    scorecard_max,
     sector_choices,
     size_for,
     to_pct,
@@ -84,7 +85,7 @@ if S.sector not in valid_sectors:
 
 
 def bind(key: str, current):
-    """Seed a widget key from the store before rendering it."""
+    """Seed session_state for a keyed widget. Do not also pass default=/value= (B12)."""
     if key not in S:
         S[key] = current
     return key
@@ -130,11 +131,15 @@ def badge_line():
     st.markdown(f"**Scorecard: {label}**")
     if cfg.status == "verified" and cfg.key != "generic":
         st.markdown(":green-badge[Verified sector code]")
+        if cfg.key in ("construction", "tourism", "ict") and card:
+            st.caption(
+                f"Scorecard total: out of {scorecard_max(card, S.draft):g}"
+                + (" (draft ESD indicator sum)" if S.draft else "")
+                + "."
+            )
     elif cfg.status == "unverified":
         st.markdown(":orange-badge[Pending expert verification]")
-        st.warning(
-            "ICT targets are decoded but not yet verified by an expert; treat results as indicative."
-        )
+        st.warning("This sector scorecard is not yet verified; treat results as indicative.")
     elif cfg.status in ("not_loaded", "legacy"):
         st.warning(
             f"No verified {cfg.name} scorecard in this version: Generic targets are applied "
@@ -147,6 +152,9 @@ def go_to(n: int):
 
 
 def footer(problems_fn=None):
+    err_key = f"_step_errs_{S.step}"
+    if S.get(err_key):
+        st.error("Please fix:\n\n" + "\n".join(f"- {p}" for p in S[err_key]))
     a, b = st.columns(2)
     if S.step > 0:
         a.button("Back", width="stretch", on_click=go_to, args=(S.step - 1,))
@@ -155,8 +163,10 @@ def footer(problems_fn=None):
         if b.button(f"Continue to {nxt}", type="primary", width="stretch"):
             probs = problems_fn() if problems_fn else []
             if probs:
-                st.error("Please fix:\n\n" + "\n".join(f"- {p}" for p in probs))
+                S[err_key] = probs
+                st.rerun()
             else:
+                S.pop(err_key, None)
                 go_to(S.step + 1)
                 st.rerun()
 
@@ -180,6 +190,12 @@ with st.sidebar:
     )
 
 st.progress((S.step + 1) / len(steps), text=f"Step {S.step + 1} of {len(steps)} · {steps[S.step]}")
+if S.draft:
+    st.warning(
+        "DRAFT, NOT IN FORCE. Draft Statement 400 / Draft QSE Code Series 600 of 2026 "
+        "(GG 54032, 29 Jan 2026). Transformation Fund uses indicator sums only "
+        "(ESD max 45 Fund / 40 ED+SD); not scaled to 55."
+    )
 
 
 # ------------------------------------------------------------------ step 0: profile
@@ -306,12 +322,8 @@ def element_step(el):
     opts = entry_options(el)
     ent = store["entry"].get(el.key, opts[0])
     if len(opts) > 1:
-        ent = (
-            st.segmented_control(
-                "Enter", opts, default=ent, format_func=ENTRY.get, key=bind(f"entry_{el.key}", ent)
-            )
-            or ent
-        )
+        ek = bind(f"entry_{el.key}", ent)
+        ent = st.segmented_control("Enter", opts, format_func=ENTRY.get, key=ek) or S[ek]
     store["entry"][el.key] = ent
     fin = fin_obj()
     if ent == "pts":
@@ -328,12 +340,14 @@ def element_step(el):
             ]
             for g in groups:
                 mx = el.max_points(g, draft)
+                pk = f"pt_{el.key}_{g}"
+                bind(pk, float(pts.get(g, 0.0)))
                 pts[g] = st.number_input(
                     f"{'Points' if g == 'main' else g.replace('_', ' ').title() + ' points'} (max {mx:g})",
                     min_value=0.0,
-                    value=float(pts.get(g, 0.0)),
+                    max_value=float(mx),
                     step=0.5,
-                    key=f"pt_{el.key}_{g}",
+                    key=pk,
                 )
             bmax = (
                 el.bonus_max
@@ -341,12 +355,14 @@ def element_step(el):
                 else sum(i.points for i in el.indicators if i.bonus)
             )
             if bmax:
+                bk = f"pt_{el.key}_bonus"
+                bind(bk, float(pts.get("bonus", 0.0)))
                 pts["bonus"] = st.number_input(
                     f"Bonus points (max {bmax:g})",
                     min_value=0.0,
-                    value=float(pts.get("bonus", 0.0)),
+                    max_value=float(bmax),
                     step=0.5,
-                    key=f"pt_{el.key}_bonus",
+                    key=bk,
                 )
     else:
         can_rand = el.key not in PCT_ONLY_ELEMENTS and any(
@@ -354,15 +370,10 @@ def element_step(el):
         )
         mode = store["modes"].get(el.key, S.default_mode if can_rand else "pct")
         if can_rand:
+            mk = bind(f"mode_{el.key}", mode)
             new = (
-                st.segmented_control(
-                    "Enter as",
-                    list(MODES),
-                    default=mode,
-                    format_func=MODES.get,
-                    key=bind(f"mode_{el.key}", mode),
-                )
-                or mode
+                st.segmented_control("Enter as", list(MODES), format_func=MODES.get, key=mk)
+                or S[mk]
             )
             if new != mode:  # convert entered values through the profile base
                 src = store["values"][mode].get(el.key, {})
@@ -386,13 +397,14 @@ def element_step(el):
             with st.container(border=True):
                 st.markdown("**Net Value**")
                 cur = float(vals.get(nv.clause, 0.0) or 0.0) * nv.points / 100
+                nvk = f"nv_{mode}_{el.key}"
+                bind(nvk, cur)
                 got = st.number_input(
                     f"Net Value points (0 to {nv.points:g}), from your verification agency",
-                    0.0,
-                    float(nv.points),
-                    cur,
-                    0.1,
-                    key=f"nv_{mode}_{el.key}",
+                    min_value=0.0,
+                    max_value=float(nv.points),
+                    step=0.1,
+                    key=nvk,
                     help="Net Value uses the Annexe 100(E) formula on share values and debt. "
                     "This version does not calculate it; use your verification agency's figure.",
                 )
@@ -421,12 +433,14 @@ def element_step(el):
                     lab = f"{i.name}{tag} (% of {BASE_LABEL[i.base]})"
                 else:
                     lab = f"{i.name}{tag} (%)"
+                bind(key, float(vals.get(i.clause, 0.0) or 0.0))
                 vals[i.clause] = st.number_input(
                     lab,
                     min_value=0.0,
+                    max_value=None if rand else 100.0,
                     step=1000.0 if rand else 0.5,
                     format="%.0f" if rand else "%.2f",
-                    key=bind(key, float(vals.get(i.clause, 0.0) or 0.0)),
+                    key=key,
                     help=f"Target {i.target:g}{'%' if i.base != 'bool' else ''} · "
                     f"{i.points:g} pts · cl. {i.clause}",
                 )
@@ -514,7 +528,13 @@ def results_step():
     c1.metric(
         "Recognition level", r.level_label, f"{r.recognition_pct}% recognition", delta_color="off"
     )
-    c2.metric("Total points", "Deemed" if r.deemed else f"{r.total_points:.1f}")
+    out_of = scorecard_max(card, S.draft) if card else None
+    c2.metric(
+        "Total points",
+        "Deemed"
+        if r.deemed
+        else (f"{r.total_points:.1f} out of {out_of:g}" if out_of else f"{r.total_points:.1f}"),
+    )
     gap = None if r.deemed or r.level_points is None else next_level_gap(r.level_points)
     c3.metric(f"To Level {gap[1]}" if gap else "Next level", f"{gap[0]:.1f} pts" if gap else "-")
     if r.discounted:
@@ -640,6 +660,57 @@ def results_step():
     if S.draft and tf_card:
         with tabs[3]:
             tf_planner(r)
+    st.divider()
+    with st.container(border=True):
+        st.subheader("Get your PDF gap report")
+        st.caption("A printable report with your scorecard, gaps and interpretation notes.")
+        gate = store.setdefault("pdf_gate", {"email": "", "marketing": False, "unlocked": False})
+        if not gate.get("unlocked"):
+            st.markdown(
+                "Enter your email to unlock the download. We use it only to send the report "
+                "if you ask us to (POPIA)."
+            )
+            gate["email"] = st.text_input("Work email", gate.get("email", ""), key="pdf_email")
+            gate["marketing"] = st.checkbox(
+                "Send me occasional B-BBEE updates (optional)",
+                value=gate.get("marketing", False),
+                key="pdf_mkt",
+            )
+            if st.button("Continue with email", type="primary", width="stretch", key="pdf_unlock"):
+                em = (gate.get("email") or "").strip()
+                if "@" in em and "." in em.split("@")[-1]:
+                    gate["unlocked"] = True
+                    st.rerun()
+                else:
+                    st.error("Please fix:\n\n- Enter a valid email address to continue.")
+        else:
+            st.caption(
+                f"Signed in as {gate['email']}. Marketing opt-in: "
+                f"{'yes' if gate.get('marketing') else 'no'}."
+            )
+            try:
+                from bee.report import render_pdf
+
+                with st.spinner("Building PDF…"):
+                    pdf = render_pdf(
+                        r,
+                        card,
+                        store["profile"],
+                        label,
+                        cfg,
+                        draft=S.draft,
+                        company_name=store["profile"].get("company") or "Your company",
+                    )
+                st.download_button(
+                    "Download PDF gap report",
+                    pdf,
+                    file_name="bee-gap-report.pdf",
+                    mime="application/pdf",
+                    type="primary",
+                    width="stretch",
+                )
+            except Exception:  # noqa: BLE001 — no details (showErrorDetails=false)
+                st.error("Could not build the PDF. Please try again.")
 
 
 def tf_planner(base):

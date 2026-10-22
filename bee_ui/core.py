@@ -240,6 +240,10 @@ def build_input(
     )
 
 
+def scorecard_max(card: Scorecard, draft: bool = False, tf_route: bool = False) -> float:
+    return card.display_max(draft=draft, tf_route=tf_route)
+
+
 def next_level_gap(points: float) -> tuple[float, int] | None:
     """Points needed to reach the next level (by the level table), or None at Level 1."""
     for minimum, level, _ in reversed(LEVELS):

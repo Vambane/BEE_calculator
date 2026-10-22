@@ -1,0 +1,27 @@
+<!doctype html><html lang="en-ZA"><head><meta charset="utf-8"><link rel="stylesheet" href="report.css"></head><body>
+{# Jinja2 template rendered by bee/report.py with a ScoreResult. EXAMPLE values shown in comments. #}
+<section>
+ {% if example %}<p class="example">EXAMPLE DATA. Targets from compliance/element-targets.md and sector-element-targets.csv; items marked DRAFT or INTERPRETATION are not confirmed law.</p>{% endif %}
+ <p class="meta">B-BBEE gap report · Prepared {{ prepared_date }}</p>
+ <h1>{{ company.name }}</h1>
+ <p class="meta">{{ company.size }} · {{ company.province }} · {{ company.sector_code }}</p>
+ <p class="scorecard">{{ scorecard_label }}</p>{% if sector_note %}<p class="draft">{{ sector_note }}</p>{% endif %}
+ <p class="ruleset">{{ ruleset.id }} v{{ ruleset.version }}</p>
+ <div class="level"><b>{{ result.level_label }}</b><span class="num">{{ "%.1f"|format(result.total) }} out of {{ result.max_total }}</span></div>
+ {% if result.discount_applied %}<p class="draft">Level discounted by one: {{ result.discount_reason }} ({{ result.discount_clause }})</p>{% endif %}
+ <h2>Scorecard</h2>
+ <table><tr><th>Element</th><th style="width:35%"></th><th class="r">Points</th><th class="r">Max</th><th class="r">Gap</th></tr>
+ {% for e in result.elements %}<tr><td>{{ e.name }}{% if e.submin_failed %} *{% endif %}</td><td><div class="bar"><i style="width:{{ (e.points/e.max*100)|round }}%"></i></div></td>
+ <td class="r">{{ "%.1f"|format(e.points) }}</td><td class="r">{{ e.max }}</td><td class="r">{{ "%.1f"|format(e.gap) }}</td></tr>{% endfor %}</table>
+ <h2>Top 3 actions</h2><ol>{% for g in result.gaps[:3] %}<li><b>{{ g.name }}</b>: {{ g.tip }} (+{{ "%.1f"|format(g.points) }})</li>{% endfor %}</ol>
+</section>
+<section><h2>Element detail</h2>{% for e in result.elements %}<h3>{{ e.name }}</h3><p>{{ e.explainer }}</p><p class="num">Target: {{ e.target_text }} · Your value: {{ e.value_text }} · To close gap: {{ e.rand_to_target }}</p><p class="fn">{{ e.clause }}</p>{% endfor %}</section>
+{% if scenario %}<section><h2>Scenario: Transformation Fund vs ESD</h2><p class="draft">DRAFT, NOT IN FORCE ({{ scenario.ruleset_id }}). Illustrative only.</p>
+<table><tr><th></th><th class="r">Transformation Fund</th><th class="r">Direct ESD</th></tr>
+<tr><td>Budget</td><td class="r" colspan="2">{{ scenario.budget_rand }}</td></tr>
+<tr><td>New total</td><td class="r">{{ scenario.tf.total }}</td><td class="r">{{ scenario.esd.total }}</td></tr>
+<tr><td>New level</td><td class="r">{{ scenario.tf.level }}</td><td class="r">{{ scenario.esd.level }}</td></tr></table></section>{% endif %}
+{% if notes %}<section class="notes"><h2>Interpretation notes</h2><p class="fn">How this calculator reads points the codes leave open. Your verification agency may read them differently.</p>{% for n in notes %}<div class="note"><b>{{ n.title }}.</b> {{ n.body }} <span class="fn">Source: {{ n.src }}</span></div>{% endfor %}</section>{% endif %}
+<section><h2>Assumptions, method and disclaimer</h2><p>{{ method_text }}</p><ul>{% for a in assumptions %}<li>{{ a }}</li>{% endfor %}</ul>
+<p class="fn">This report is a planning aid. Confirm with a SANAS-accredited verification agency and the applicable sector code.</p></section>
+</body></html>

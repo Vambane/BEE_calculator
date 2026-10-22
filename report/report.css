@@ -1,0 +1,23 @@
+/* WeasyPrint template styles (design v1.2). Self-hosted fonts; tokens inlined (WeasyPrint). */
+@font-face{font-family:"SourceSerif4";src:url("../static/fonts/SourceSerif4-Variable.ttf");font-weight:400}
+@font-face{font-family:"SourceSerif4";src:url("../static/fonts/SourceSerif4-Variable.ttf");font-weight:700}
+@font-face{font-family:"IBM Plex Sans";src:url("../static/fonts/IBMPlexSans-Variable.ttf");font-weight:400}
+@font-face{font-family:"IBM Plex Sans";src:url("../static/fonts/IBMPlexSans-Variable.ttf");font-weight:600}
+@font-face{font-family:"IBM Plex Mono";src:url("../static/fonts/IBMPlexMono-Medium.ttf");font-weight:500}
+@page{size:A4;margin:18mm 16mm 22mm;
+  @top-left{content:"B-BBEE gap report · " string(company) " · " string(scorecard);font-family:"IBM Plex Sans",sans-serif;font-size:8pt;color:#4A5E59}
+  @bottom-left{content:"Planning tool, not a verification certificate · Ruleset " string(ruleset);font-family:"IBM Plex Sans",sans-serif;font-size:7.5pt;color:#6F7F7B}
+  @bottom-right{content:"Page " counter(page) " of " counter(pages);font-family:"IBM Plex Sans",sans-serif;font-size:7.5pt;color:#6F7F7B}}
+@page:first{@top-left{content:string(scorecard)}}
+body{font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:10pt;line-height:1.5;color:#14302B}
+h1,h2{font-family:"SourceSerif4",Georgia,serif;margin:0 0 6pt} h1{font-size:22pt;string-set:company content()} h2{font-size:14pt;margin-top:16pt}
+.meta{color:#4A5E59} .scorecard{string-set:scorecard content();font-weight:600;color:#1F5C4F} .ruleset{string-set:ruleset content();color:#6F7F7B;font-size:8pt}
+.example{background:#F7ECD9;padding:4pt 8pt;font-size:8pt}
+.level{margin:14pt 0} .level b{font-family:"SourceSerif4",Georgia,serif;font-weight:700;font-size:40pt;color:#1F5C4F} .num{font-family:"IBM Plex Mono",monospace}
+table{width:100%;border-collapse:collapse} th,td{padding:5pt 6pt;border-bottom:.5pt solid #DDD8CC;text-align:left} .r{text-align:right;font-family:"IBM Plex Mono",monospace}
+.bar{height:6pt;background:#F7ECD9;border:.5pt solid #C8892B} .bar i{display:block;height:100%;background:#1F5C4F}
+.draft{border-left:3pt solid #C8892B;padding-left:6pt;color:#A15C07;font-size:8.5pt}
+section{page-break-before:always} section:first-of-type{page-break-before:auto}
+.fn{font-size:7.5pt;color:#6F7F7B}
+.notes .note{border-left:3px solid #C8892B;background:#F7ECD9;padding:6pt 9pt;margin:0 0 6pt;font-size:9pt}
+.notes .note .fn{display:block;margin-top:2pt}

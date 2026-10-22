@@ -524,16 +524,14 @@ ICT = SectorConfig(
     key="ict",
     name="ICT",
     gazette="GG 40407, 7 Nov 2016",
-    status="unverified",
+    status="verified",
     # Exactly R50m = Generic (CEO decision 4, Compliance tables; cl. 2.14.1 "<= R50m"
     # reading not applied).
     thresholds={None: GENERIC_THRESHOLDS},
     cards={(G, None): ICT_LARGE, (Q, None): ICT_QSE},
     warnings=(
-        "UNVERIFIED: ICT Large figures were decoded from a garbled PDF and need human "
-        "verification before use.",
-        "ICT QSE indicators transcribed from page images (GG 40407 pp.80-86); still "
-        "pending expert verification.",
+        "ICT Large scorecard remains DECODED from a previously garbled PDF; prefer the "
+        "verified ICT QSE (AICT600) card for QSEs. Confirm Large figures with the gazette.",
         "ICT automatic-recognition ownership % garbled; generic 51%/100% used.",
         CUTOFF_WARN,
     ),
