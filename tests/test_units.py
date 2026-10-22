@@ -146,3 +146,27 @@ def test_registry_sector():
     assert get_scorecard(EnterpriseSize.GENERIC, "TEST-SECTOR") is card
     res = calculate(ScoreInput(CompanyProfile(60_000_000, sector="test-sector")))
     assert any("Sector" in n for n in res.notes)
+
+
+def test_draft_esd_bonus_2_each():
+    def run(draft):
+        inp = make(60_000_000, draft_rules=draft)
+        inp.indicators = {"esd": {"400 2.4.1": True, "400 2.4.2": True}}
+        return calculate(inp).element_points["esd"]
+
+    assert run(False) == 2 and run(True) == 4
+
+
+def test_qse_bonuses_verified():
+    card = get_scorecard(EnterpriseSize.QSE)
+    esd = {i.clause: i for i in card.element("esd").indicators}
+    assert esd["604 5.1.1.5.1"].points == esd["604 5.1.1.5.2"].points == 1
+    assert (esd["604 5.1.1.2"].points, esd["604 5.1.1.2"].target) == (1, 1)
+    assert card.element("sed").indicators[0].clause == "605 6.2"
+    assert not any("UNVERIFIED" in i.name for e in card.elements for i in e.indicators)
+
+
+def test_interpretation_notes():
+    inp = make(60_000_000, points=gp(23, 6, 17, 18, 22, 8, 4, 0), tier=YesTier.TARGET)
+    notes = " ".join(calculate(inp).notes)
+    assert "INTERPRETATION" in notes and "Annexe 100" in notes
