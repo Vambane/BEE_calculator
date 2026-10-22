@@ -37,8 +37,11 @@ def _deemed(size, level, inp: ScoreInput, notes) -> ScoreResult:
     res = ScoreResult(size, level, 0, deemed=True, level_before_discount=level, notes=notes)
     steps = yes.LEVEL_STEPS[inp.yes.tier]
     if steps:
-        ok, reason = (True, None) if size == EnterpriseSize.EME else (
-            False, "YES uplift for a deemed QSE requires scorecard measurement (opt_scored)")
+        ok, reason = (
+            (True, None)
+            if size == EnterpriseSize.EME
+            else (False, "YES uplift for a deemed QSE requires scorecard measurement (opt_scored)")
+        )
         if ok:
             res.level = levels.uplift(level, steps)
             res.yes_applied = True
@@ -93,9 +96,7 @@ def _scored(size, card: Scorecard, inp: ScoreInput, notes) -> ScoreResult:
             "points for 3% NPAT, either/or with SD+ED, sub-minimum 8; ESD bonuses 2 each; "
             "PP kept at 2019 values (27), so the TF-route ESD maximum is 47."
         )
-    elif inp.indicators.get("esd", {}).get("draft400 2.4.1") or inp.points.get("esd", {}).get(
-        "tf"
-    ):
+    elif inp.indicators.get("esd", {}).get("draft400 2.4.1") or inp.points.get("esd", {}).get("tf"):
         notes.append("Transformation Fund input ignored: draft rules flag is off (D4).")
     core, bonus, groups, tf_route = _groups(card, inp)
     element_points = {k: core[k] + bonus[k] for k in core}
@@ -128,6 +129,16 @@ def _scored(size, card: Scorecard, inp: ScoreInput, notes) -> ScoreResult:
         prev = inp.yes.previous_level
         if prev is not None and lvl > prev:
             yes_ok, reason = False, "S6 cl. 2.4: entity did not maintain its previous level"
+            # YES recognition not achieved: drop the +3 points and redo level + discount.
+            if yes_points:
+                total -= yes_points
+                lvl = before = levels.level_from_points(total)
+                if discounted:
+                    lvl = levels.discount(lvl)
+            notes.append(
+                "S6 cl. 2.4 test compares the previous level with the level after the "
+                "sub-minimum discount (INTERPRETATION; confirm with Compliance)."
+            )
         else:
             lvl = levels.uplift(lvl, yes.LEVEL_STEPS[tier])
             applied = True
