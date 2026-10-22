@@ -88,8 +88,7 @@ def _groups(card: Scorecard, inp: ScoreInput):
     groups: dict[str, dict[str, float]] = {}
     for el in card.elements:
         if el.total is None:
-            raw = element_group_points(el, inp.indicators.get(el.key, {}), inp.financials,
-                                       draft)
+            raw = element_group_points(el, inp.indicators.get(el.key, {}), inp.financials, draft)
         else:
             if inp.indicators.get(el.key):
                 raise ValueError(
@@ -134,8 +133,7 @@ def _ratios(card: Scorecard, core, groups, draft, tf_route) -> dict[str, float]:
     if card.has("ownership"):
         own = card.element("ownership")
         if "net_value" in dict(own.group_max) or own.total is None:
-            r["ownership"] = groups["ownership"].get("net_value", 0) / own.max_points(
-                "net_value")
+            r["ownership"] = groups["ownership"].get("net_value", 0) / own.max_points("net_value")
         else:
             r["ownership"] = core["ownership"] / own.max_points()
     if card.has("skills"):
@@ -153,9 +151,7 @@ def _scored(size, card: Scorecard, inp: ScoreInput, notes) -> ScoreResult:
             "points for 3% NPAT, either/or with SD+ED, sub-minimum 8; ESD bonuses 2 each; "
             "PP kept at 2019 values (27), so the TF-route ESD maximum is 47."
         )
-    elif inp.indicators.get("esd", {}).get("draft400 2.4.1") or inp.points.get("esd", {}).get(
-        "tf"
-    ):
+    elif inp.indicators.get("esd", {}).get("draft400 2.4.1") or inp.points.get("esd", {}).get("tf"):
         notes.append("Transformation Fund input ignored: draft rules flag is off (D4).")
     core, bonus, groups, tf_route = _groups(card, inp)
     element_points = {k: core[k] + bonus[k] for k in core}
@@ -167,12 +163,12 @@ def _scored(size, card: Scorecard, inp: ScoreInput, notes) -> ScoreResult:
     yes_ok, reason = (True, None)
     if tier != YesTier.NONE:
         yes_ok, reason = yes.precondition(size, checks, ratios)
-    if yes_ok:
-        total += yes.BONUS_POINTS.get(tier, 0.0)
+    yes_points = yes.BONUS_POINTS.get(tier, 0.0) if yes_ok else 0.0
+    total += yes_points
     # 1) points -> 2) level (rescaled where the sector code requires it)
-    level_points = total
-    if card.level_base and inp.options.get(card.level_base_option or "", True) is not False:
-        level_points = total * card.level_base / card.max_total()
+    rescale = _rescales(card, inp)
+    level_points = _level_points(card, total, rescale)
+    if rescale:
         notes.append(
             f"Level from points normalised to {card.level_base:g}: {total:.2f} x "
             f"{card.level_base:g} / {card.max_total():g} = {level_points:.2f}."
@@ -189,6 +185,17 @@ def _scored(size, card: Scorecard, inp: ScoreInput, notes) -> ScoreResult:
         prev = inp.yes.previous_level
         if prev is not None and lvl > prev:
             yes_ok, reason = False, "S6 cl. 2.4: entity did not maintain its previous level"
+            # YES recognition not achieved: drop the +3 points and redo level + discount.
+            if yes_points:
+                total -= yes_points
+                level_points = _level_points(card, total, rescale)
+                lvl = before = levels.level_from_points(round(level_points, 6))
+                if discounted:
+                    lvl = levels.discount(lvl)
+            notes.append(
+                "S6 cl. 2.4 test compares the previous level with the level after the "
+                "sub-minimum discount (INTERPRETATION; confirm with Compliance)."
+            )
         else:
             lvl = levels.uplift(lvl, yes.LEVEL_STEPS[tier])
             applied = True
@@ -225,6 +232,18 @@ def _scored(size, card: Scorecard, inp: ScoreInput, notes) -> ScoreResult:
         scorecard=card.key,
         level_points=round(level_points, 4),
     )
+
+
+def _rescales(card: Scorecard, inp: ScoreInput) -> bool:
+    """Normalise to ``level_base`` only for cards whose total is not 100 (CEO decision:
+    a 100-point card such as the FS QSFI is scored raw)."""
+    if not card.level_base or abs(card.max_total() - 100) < 1e-9:
+        return False
+    return inp.options.get(card.level_base_option or "", True) is not False
+
+
+def _level_points(card: Scorecard, total: float, rescale: bool) -> float:
+    return total * card.level_base / card.max_total() if rescale else total
 
 
 def _esd_max(card: Scorecard, draft: bool, tf_route: bool) -> float:

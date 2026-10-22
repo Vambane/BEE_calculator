@@ -5,7 +5,6 @@ import pytest
 
 from bee import CompanyProfile, EnterpriseSize, ScoreInput, YesInput, YesTier, calculate
 from bee.registry import get_scorecard, get_sector
-from bee.sectors import SectorExcludedError
 
 G, Q, E = EnterpriseSize.GENERIC, EnterpriseSize.QSE, EnterpriseSize.EME
 
@@ -55,14 +54,14 @@ def test_construction_eme_table(bo, lvl):
 
 
 def test_con2_bep_r7m_is_qse():
-    r = run("construction", 7_000_000, 30, "bep",
-            {"ownership": {"main": 20}, "skills": {"main": 10}})
+    r = run(
+        "construction", 7_000_000, 30, "bep", {"ownership": {"main": 20}, "skills": {"main": 10}}
+    )
     assert r.size == Q and r.scorecard == "construction-qse"
 
 
 def test_con3_pp_below_7_6_discounts_one_level():
-    p = pts(27, 6, 18, 21,
-            {"main": 15, "pp": 7.0, "sd_programmes": 2, "sd_contributions": 4}, 5)
+    p = pts(27, 6, 18, 21, {"main": 15, "pp": 7.0, "sd_programmes": 2, "sd_contributions": 4}, 5)
     r = run("construction", 200_000_000, 30, "contractor", p)
     assert r.total_points == 99 and r.level_before_discount == 2
     assert r.discounted and r.level == 3
@@ -73,14 +72,22 @@ def test_con4_eme_skills_obligation():
     r = run("construction", 5_000_000, 40, options={"eme_skills_pct_of_qse_target": 30})
     assert (r.level, r.discounted) == (5, True)
     # start-up exemption
-    r = run("construction", 5_000_000, 40,
-            options={"eme_skills_pct_of_qse_target": 30, "start_up": True})
+    r = run(
+        "construction",
+        5_000_000,
+        40,
+        options={"eme_skills_pct_of_qse_target": 30, "start_up": True},
+    )
     assert r.level == 4
 
 
 def test_construction_eme_enhancement():
-    r = run("construction", 8_000_000, 40,
-            options={"eme_full_skills_points": True, "eme_full_sd_points": True})
+    r = run(
+        "construction",
+        8_000_000,
+        40,
+        options={"eme_full_skills_points": True, "eme_full_sd_points": True},
+    )
     assert r.level == 2
 
 
@@ -88,13 +95,19 @@ def test_construction_eme_enhancement():
 def test_fs1_bank_scorecard_total_120():
     card = get_scorecard(G, "financial", "bank")
     assert card.key == "fs-bank" and card.max_total() == 120
-    assert run("financial", 2_000_000_000, variant="bank",
-               points=pts(23, 6, 20, 20, {"main": 15}, 5, ef=25, afs=12)).level == 1
+    assert (
+        run(
+            "financial",
+            2_000_000_000,
+            variant="bank",
+            points=pts(23, 6, 20, 20, {"main": 15}, 5, ef=25, afs=12),
+        ).level
+        == 1
+    )
 
 
 @pytest.mark.parametrize(
-    "variant,total", [("bank", 120), ("short_term_insurer", 115), ("exchange", 103),
-                      ("other", 105)]
+    "variant,total", [("bank", 120), ("short_term_insurer", 115), ("exchange", 103), ("other", 105)]
 )
 def test_fs_scorecard_totals(variant, total):
     assert get_scorecard(G, "financial", variant).max_total() == total
@@ -105,8 +118,13 @@ def test_fs2_normalised_to_109():
     r = run("financial", 500_000_000, variant="short_term_insurer", points=p)
     assert r.total_points == 92
     assert r.level_points == pytest.approx(87.2, abs=0.01) and r.level == 4
-    off = run("financial", 500_000_000, variant="short_term_insurer", points=p,
-              options={"fs_rescale_109": False})
+    off = run(
+        "financial",
+        500_000_000,
+        variant="short_term_insurer",
+        points=p,
+        options={"fs_rescale_109": False},
+    )
     assert off.level_points == 92 and off.level == 3
 
 
@@ -116,9 +134,17 @@ def test_fs3_qsfi_esd_fails_no_discount():
     assert r.size == Q and r.scorecard == "fs-qsfi" and not r.discounted
 
 
+def test_fs_qsfi_100_point_card_not_rescaled():
+    # QA B6 / CEO decision: the 100-point QSFI card scores raw: 75 points -> L5.
+    p = pts(20, 6, 10, 20, {"pp": 15, "sd": 3, "ed": 2}, 5)
+    r = run("financial", 30_000_000, 30, points=p)
+    assert r.scorecard == "fs-qsfi" and r.total_points == 75
+    assert r.level_points == 75 and r.level == 5 and not r.discounted
+    assert not any("normalised" in n for n in r.notes)
+
+
 def test_fs4_other_pp_7_5_discounted():
-    r = run("financial", 100_000_000, variant="other",
-            points=fs_other(esd={"pp": 7.5}))
+    r = run("financial", 100_000_000, variant="other", points=fs_other(esd={"pp": 7.5}))
     assert r.level_before_discount == 2 and r.discounted and r.level == 3
 
 
@@ -131,8 +157,13 @@ def test_fs_d1_skills_submin_default_8_with_note():
 
 
 def test_fs_skills_submin_option_6():
-    r = run("financial", 100_000_000, variant="other", points=fs_other(skills={"main": 7}),
-            options={"fs_skills_submin": 6})
+    r = run(
+        "financial",
+        100_000_000,
+        variant="other",
+        points=fs_other(skills={"main": 7}),
+        options={"fs_skills_submin": 6},
+    )
     assert not r.discounted
 
 
@@ -149,8 +180,7 @@ def test_ag2_r10m_is_eme_with_warning():
 
 
 def test_ag3_silent_esd_submin_40pct():
-    r = run("agri", 100_000_000, 30,
-            points=pts(25, 8, 19, 20, {"main": 15}, 15))
+    r = run("agri", 100_000_000, 30, points=pts(25, 8, 19, 20, {"main": 15}, 15))
     chk = next(c for c in r.submin_checks if c.element == "esd")
     assert chk.required == 16 and not chk.passed and r.discounted
 
@@ -195,12 +225,13 @@ def test_ict2_skills_below_40pct_discounted():
 
 
 # --------------------------------------------------------------------------------- MAC
-@pytest.mark.parametrize("tc,rev", [("MAC-1", 12_000_000), ("MAC-2", 30_000_000)])
-def test_mac_excluded(tc, rev):
-    """MAC-1/MAC-2 expected sizing results; MAC is excluded by owner decision, so the
-    engine refuses with a warning instead (not a spec inconsistency)."""
-    with pytest.raises(SectorExcludedError, match="excluded"):
-        run("mac", rev)
+@pytest.mark.parametrize("tc,rev,size", [("MAC-1", 12_000_000, Q), ("MAC-2", 30_000_000, Q)])
+def test_mac_falls_back_to_generic(tc, rev, size):
+    """CEO decision: MAC is not loaded; scored on the generic codes with a warning
+    (MAC-1/MAC-2 sector sizing is therefore not applied)."""
+    r = run("mac", rev, points=pts(20, 5, 15, 20, {"pp": 20, "sd": 5, "ed": 5}, 5))
+    assert r.size == size and r.scorecard == "qse"
+    assert any("not loaded" in w for w in r.warnings)
 
 
 # ---------------------------------------------------------------- fallback sectors
@@ -234,8 +265,9 @@ def test_tr1_transport_legacy_flag():
 
 def test_sector_points_only():
     with pytest.raises(ValueError, match="indicator inputs"):
-        calculate(ScoreInput(CompanyProfile(100_000_000, sector="tourism"),
-                             indicators={"sed": {"x": 1}}))
+        calculate(
+            ScoreInput(CompanyProfile(100_000_000, sector="tourism"), indicators={"sed": {"x": 1}})
+        )
 
 
 def test_generic_unchanged_has_no_warnings():

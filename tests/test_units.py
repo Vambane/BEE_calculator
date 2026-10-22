@@ -22,8 +22,13 @@ from bee.sizing import classify
 
 @pytest.mark.parametrize(
     "rev,size",
-    [(0, "EME"), (10_000_000, "EME"), (10_000_001, "QSE"), (49_999_999, "QSE"),
-     (50_000_000, "Generic")],
+    [
+        (0, "EME"),
+        (10_000_000, "EME"),
+        (10_000_001, "QSE"),
+        (49_999_999, "QSE"),
+        (50_000_000, "Generic"),
+    ],
 )
 def test_classify(rev, size):
     assert classify(rev) == size
@@ -36,8 +41,19 @@ def test_negative_revenue():
 
 @pytest.mark.parametrize(
     "pts,lvl",
-    [(111, 1), (100, 1), (99.99, 2), (95, 2), (90, 3), (80, 4), (75, 5), (70, 6), (55, 7),
-     (40, 8), (39.99, 9)],
+    [
+        (111, 1),
+        (100, 1),
+        (99.99, 2),
+        (95, 2),
+        (90, 3),
+        (80, 4),
+        (75, 5),
+        (70, 6),
+        (55, 7),
+        (40, 8),
+        (39.99, 9),
+    ],
 )
 def test_levels(pts, lvl):
     assert levels.level_from_points(pts) == lvl
@@ -109,8 +125,9 @@ def test_qse_black_owned_opt_scored():
 
 
 def test_eme_opt_scored_uses_qse_card():
-    inp = ScoreInput(profile=CompanyProfile(5_000_000, 0, opt_scored=True),
-                     points=gp(25, 8, 15, 25, 20, 5, 5, 5))
+    inp = ScoreInput(
+        profile=CompanyProfile(5_000_000, 0, opt_scored=True), points=gp(25, 8, 15, 25, 20, 5, 5, 5)
+    )
     res = calculate(inp)
     assert res.size == EnterpriseSize.EME and res.total_points == 100 and res.level == 1
 
@@ -135,7 +152,9 @@ def test_draft_tf_route():
     g = res.group_points["esd"]
     assert g["tf"] == 20 and g["sd"] == 0
     assert {(c.group, c.required) for c in res.submin_checks if c.element == "esd"} == {
-        ("pp", 10.8), ("tf", 8)}
+        ("pp", 10.8),
+        ("tf", 8),
+    }
 
 
 def test_registry_sector():
@@ -170,3 +189,25 @@ def test_interpretation_notes():
     inp = make(60_000_000, points=gp(23, 6, 17, 18, 22, 8, 4, 0), tier=YesTier.TARGET)
     notes = " ".join(calculate(inp).notes)
     assert "INTERPRETATION" in notes and "Annexe 100" in notes
+
+
+def test_yes_1_5x_points_removed_when_previous_level_not_maintained():
+    # QA B1: 87 pts, YES 1.5x, previous level L1 -> no +3, no uplift -> L4.
+    pts = {
+        "ownership": {"main": 17, "net_value": 8},
+        "management": {"main": 17},
+        "skills": {"main": 18},
+        "esd": {"pp": 18, "sd": 6, "ed": 3},
+        "sed": {"main": 0},
+    }
+    res = calculate(
+        ScoreInput(
+            profile=CompanyProfile(60_000_000, 0),
+            points=pts,
+            yes=YesInput(YesTier.TARGET_1_5X, previous_level=1),
+        )
+    )
+    assert res.total_points == 87
+    assert res.level == 4
+    assert not res.yes_applied
+    assert "2.4" in res.yes_blocked_reason

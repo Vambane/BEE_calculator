@@ -14,10 +14,13 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
+      - run: pip install -r requirements.lock
       - run: pip install -e ".[dev]" pip-audit
       - name: Lint
         run: ruff check bee tests
+      - name: Format check
+        run: ruff format --check bee tests
       - name: Test
         run: pytest
       - name: Dependency audit
-        run: pip-audit -r requirements.txt
+        run: pip-audit -r requirements.lock

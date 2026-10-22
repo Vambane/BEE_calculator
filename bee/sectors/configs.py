@@ -23,8 +23,17 @@ def _card(key, name, elements, submins, rule="all", **kw) -> Scorecard:
 
 
 # ---------------------------------------------------------------- Construction (N931 2017)
-def _con_large(variant: str, skills: float, esd: float, nv: float, nv_min: float,
-               pp_min: float, sdp_min: float, sdc_min: float, esd_bonus: float) -> Scorecard:
+def _con_large(
+    variant: str,
+    skills: float,
+    esd: float,
+    nv: float,
+    nv_min: float,
+    pp_min: float,
+    sdp_min: float,
+    sdc_min: float,
+    esd_bonus: float,
+) -> Scorecard:
     return _card(
         f"construction-{variant}",
         f"Construction ({variant}) Large, GG 41287 N931",
@@ -33,9 +42,14 @@ def _con_large(variant: str, skills: float, esd: float, nv: float, nv_min: float
             el("management", "Management Control", 18, bonus=4),
             el("skills", "Skills Development", skills, True, bonus=5),
             # Sub-element split not extracted: groups are capped at the element weighting.
-            el("esd", "Preferential Procurement & Supplier Development", esd, True,
-               {"pp": esd, "sd_programmes": esd, "sd_contributions": esd},
-               bonus=esd_bonus),
+            el(
+                "esd",
+                "Preferential Procurement & Supplier Development",
+                esd,
+                True,
+                {"pp": esd, "sd_programmes": esd, "sd_contributions": esd},
+                bonus=esd_bonus,
+            ),
             el("sed", "Socio-Economic Development", 5, bonus=1),
         ],
         [
@@ -105,8 +119,13 @@ def _fs_large(variant: str, own: float, esd: float, ef: float, afs: float) -> Sc
         el("ownership", "Ownership (FS100)", own, True, {"net_value": 6}),
         el("management", "Management Control (FS200)", 20),
         el("skills", "Skills Development (FS300)", 20, True),
-        el("esd", "Procurement & ESD (FS400)", esd, True,
-           None if ef else {"pp": esd - 15, "sd": 10, "ed": 5}),
+        el(
+            "esd",
+            "Procurement & ESD (FS400)",
+            esd,
+            True,
+            None if ef else {"pp": esd - 15, "sd": 10, "ed": 5},
+        ),
         el("sed", "SED & Consumer Education (FS500)", 5),
     ]
     if ef:
@@ -130,8 +149,14 @@ def _fs_large(variant: str, own: float, esd: float, ef: float, afs: float) -> Sc
             sm("esd", "sd", 4, "FSC cl. 3.3.1(c)"),
             sm("esd", "ed", 2, "FSC cl. 3.3.1(c)"),
         ]
-    return _card(f"fs-{variant}", f"Financial Services {variant}, GG 41287 N1325",
-                 elements, subs, level_base=109, level_base_option="fs_rescale_109")
+    return _card(
+        f"fs-{variant}",
+        f"Financial Services {variant}, GG 41287 N1325",
+        elements,
+        subs,
+        level_base=109,
+        level_base_option="fs_rescale_109",
+    )
 
 
 FS_QSFI = _card(
@@ -211,10 +236,8 @@ AGRI = SectorConfig(
     cards={
         (G, "standard"): _agri("agri-large", "AgriBEE Large", 25, 19, 20, 40, 15),
         (Q, "standard"): _agri("agri-qse", "AgriBEE QSE", 25, 15, 30, 25, 15),
-        (G, "specialised"): _agri("agri-spec-large", "AgriBEE Specialised Large",
-                                  0, 20, 25, 50, 5),
-        (Q, "specialised"): _agri("agri-spec-qse", "AgriBEE Specialised QSE",
-                                  0, 25, 30, 30, 15),
+        (G, "specialised"): _agri("agri-spec-large", "AgriBEE Specialised Large", 0, 20, 25, 50, 5),
+        (Q, "specialised"): _agri("agri-spec-qse", "AgriBEE Specialised QSE", 0, 25, 30, 30, 15),
     },
     warnings=(
         "AgriBEE R10m boundary: cl. 2.7 'less than' vs cl. 6.10.1 'or less'; app treats "
@@ -256,11 +279,34 @@ TOURISM = SectorConfig(
     status="verified",
     thresholds={None: Thresholds(5_000_000, 45_000_000)},  # cl. 13.1, 14.1, 15.4
     cards={
-        (G, None): _tourism("tourism-large", "Tourism Large (cl. 17.1)", 27, 19, 20,
-                            {"pp": 25, "sd": 10, "ed": 5}, "all", 3.2, 8, 10, 4, 2),
-        (Q, None): _tourism("tourism-qse", "Tourism QSE (cl. 17.2)", 26, 15, 25,
-                            {"pp": 20, "sd": 5, "ed": 5}, "ownership_plus_one",
-                            3.2, 10, 8, 2, 2),
+        (G, None): _tourism(
+            "tourism-large",
+            "Tourism Large (cl. 17.1)",
+            27,
+            19,
+            20,
+            {"pp": 25, "sd": 10, "ed": 5},
+            "all",
+            3.2,
+            8,
+            10,
+            4,
+            2,
+        ),
+        (Q, None): _tourism(
+            "tourism-qse",
+            "Tourism QSE (cl. 17.2)",
+            26,
+            15,
+            25,
+            {"pp": 20, "sd": 5, "ed": 5},
+            "ownership_plus_one",
+            3.2,
+            10,
+            8,
+            2,
+            2,
+        ),
     },
     warnings=("Tourism QSE sub-minimums use the 2013 QSE pattern (silent -> D2).",),
 )
@@ -305,28 +351,30 @@ ICT = SectorConfig(
 
 
 # --------------------------------------------------------------- excluded / not loaded
-MAC = SectorConfig(
-    key="mac",
-    name="Marketing, Advertising & Communication",
-    gazette="GG 39887, Apr 2016",
-    status="excluded",
-    cards={},
-    warnings=(
-        "MAC sector code is excluded from this version (internal total inconsistency "
-        "124 vs 134; sub-minimums not extracted). Use a verification agency.",
-    ),
-)
 
 _GENERIC_CARDS = {(G, None): generic.SCORECARD, (Q, None): qse.SCORECARD}
 
 
 def _fallback(key, name, gazette, status="not_loaded", extra=()):
-    return SectorConfig(key, name, gazette, status, dict(_GENERIC_CARDS),
-                        warnings=(NOT_LOADED, *extra))
+    return SectorConfig(
+        key, name, gazette, status, dict(_GENERIC_CARDS), warnings=(NOT_LOADED, *extra)
+    )
 
 
-GENERIC = SectorConfig("generic", "Generic (Amended Codes)", "GG 36928 / GG 42496",
-                       "verified", dict(_GENERIC_CARDS))
+MAC = _fallback(
+    "mac",
+    "Marketing, Advertising & Communication",
+    "GG 39887, Apr 2016",
+    extra=(
+        "MAC sector code not loaded (CEO decision): the gazetted card has an internal "
+        "total inconsistency (124 vs 134); scored on the generic Amended Codes.",
+    ),
+)
+
+
+GENERIC = SectorConfig(
+    "generic", "Generic (Amended Codes)", "GG 36928 / GG 42496", "verified", dict(_GENERIC_CARDS)
+)
 
 SECTORS: dict[str, SectorConfig] = {
     s.key: s
@@ -348,8 +396,10 @@ SECTORS: dict[str, SectorConfig] = {
             "Integrated Transport",
             "GG 32511, 21 Aug 2009",
             "legacy",
-            ("Legacy 2007-Codes sector code; confirm with the dtic. Not mixed with "
-             "Amended weightings.",),
+            (
+                "Legacy 2007-Codes sector code; confirm with the dtic. Not mixed with "
+                "Amended weightings.",
+            ),
         ),
     )
 }

@@ -42,9 +42,7 @@ class Element:
         return sum(
             i.points
             for i in self.indicators
-            if not i.bonus
-            and (group is None or i.group == group)
-            and (draft or not i.draft_only)
+            if not i.bonus and (group is None or i.group == group) and (draft or not i.draft_only)
         )
 
     def groups(self) -> list[str]:

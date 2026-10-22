@@ -9,8 +9,14 @@ from bee.sectors.base import SectorConfig
 from bee.sectors.configs import SECTORS
 
 DEFAULT_SECTOR = "generic"
-ALIASES = {"fsc": "financial", "financial_services": "financial", "agribee": "agri",
-           "agriculture": "agri", "ca": "chartered_accountancy", "bep": "construction"}
+ALIASES = {
+    "fsc": "financial",
+    "financial_services": "financial",
+    "agribee": "agri",
+    "agriculture": "agri",
+    "ca": "chartered_accountancy",
+    "bep": "construction",
+}
 
 
 def _key(sector: str) -> str:

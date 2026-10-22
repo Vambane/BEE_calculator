@@ -30,11 +30,11 @@ def evaluate(
             required = float(options[sm.option_key])
             used = f"Sub-minimum {sm.element} overridden by option {sm.option_key}={required:g}."
         elif sm.option_key:
-            used = (f"Interpretation: {sm.element} sub-minimum {required:g} ({sm.clause}); "
-                    f"configurable via options['{sm.option_key}'].")
-        checks.append(
-            SubMinimumCheck(sm.element, sm.group, achieved, required, sm.clause, used)
-        )
+            used = (
+                f"Interpretation: {sm.element} sub-minimum {required:g} ({sm.clause}); "
+                f"configurable via options['{sm.option_key}']."
+            )
+        checks.append(SubMinimumCheck(sm.element, sm.group, achieved, required, sm.clause, used))
     return checks
 
 

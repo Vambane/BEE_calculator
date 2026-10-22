@@ -16,8 +16,9 @@ def classify(total_revenue: float) -> EnterpriseSize:
     return EnterpriseSize.GENERIC
 
 
-def classify_for_sector(total_revenue: float, sector: str = "generic",
-                        variant: str | None = None) -> EnterpriseSize:
+def classify_for_sector(
+    total_revenue: float, sector: str = "generic", variant: str | None = None
+) -> EnterpriseSize:
     from bee.registry import get_sector
 
     cfg = get_sector(sector)
