@@ -670,7 +670,8 @@ def results_step():
                 hide_index=True,
                 width="stretch",
                 column_config={
-                    c: st.column_config.NumberColumn(format="%.1f") for c in ["Points", "Max", "Gap"]
+                    c: st.column_config.NumberColumn(format="%.1f")
+                    for c in ["Points", "Max", "Gap"]
                 },
             )
         else:
@@ -706,7 +707,8 @@ def results_step():
                     continue
                 el = next(e for e in elements if e.name == row.Element)
                 tips = sorted(
-                    (x for x in visible_indicators(el, S.draft) if not x.bonus), key=lambda x: -x.points
+                    (x for x in visible_indicators(el, S.draft) if not x.bonus),
+                    key=lambda x: -x.points,
                 )[:2]
                 with st.container(border=True):
                     a, b = st.columns([4, 1])
