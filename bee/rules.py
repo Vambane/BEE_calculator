@@ -18,6 +18,7 @@ class Indicator:
     group: str = "main"
     bonus: bool = False
     draft_only: bool = False
+    draft_points: float | None = None  # weighting under the 2026 draft, if it changes
 
 
 @dataclass(frozen=True)

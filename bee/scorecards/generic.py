@@ -72,8 +72,10 @@ ESD = Element(
           "pp", bonus=True),
         I("400 2.2.1", "Supplier Development", 10, 2, "npat", "sd"),
         I("400 2.3.1", "Enterprise Development", 5, 1, "npat", "ed"),
-        I("400 2.4.1", "Bonus: ED beneficiary graduates to SD", 1, 0, "bool", "ed", bonus=True),
-        I("400 2.4.2", "Bonus: jobs created through ED/SD", 1, 0, "bool", "ed", bonus=True),
+        I("400 2.4.1", "Bonus: ED beneficiary graduates to SD", 1, 0, "bool", "ed", bonus=True,
+          draft_points=2),  # Draft S400 2026 cl. 2.5.1: [1] 2
+        I("400 2.4.2", "Bonus: jobs created through ED/SD", 1, 0, "bool", "ed", bonus=True,
+          draft_points=2),  # Draft S400 2026 cl. 2.5.2: [1] 2
         # Draft Statement 400 of 2026 (GG 54032), NOT LAW. Alternative route to SD + ED.
         I("draft400 2.4.1", "Transformation Fund contribution", 20, 3, "npat", "tf",
           draft_only=True),

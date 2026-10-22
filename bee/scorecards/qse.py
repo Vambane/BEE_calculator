@@ -1,7 +1,7 @@
 """QSE scorecard (Code Series 600, GG 38766, 2015): 100 points before bonuses.
 
-The QSE ESD bonus points for ED graduation / jobs created did not extract from the
-gazette PDF (UNVERIFIED); they are modelled as 1 point each like the Generic codes.
+ESD bonuses (604 cl. 5.1.1.2, 5.1.1.5.1-2) and SED (605 cl. 6.2: 5 points, 1% of NPAT)
+verified from the GG 38766 page images (cto-interpretations.md §4).
 """
 
 from bee.rules import Element, Indicator, Scorecard, SubMinimum
@@ -56,9 +56,9 @@ ESD = Element(
           "pp", bonus=True),
         I("604 5.1.1.3.1", "Supplier Development", 5, 1, "npat", "sd"),
         I("604 5.1.1.4.1", "Enterprise Development", 5, 1, "npat", "ed"),
-        I("604 5.1.1.5.1", "Bonus: ED graduation (UNVERIFIED points)", 1, 0, "bool", "ed",
+        I("604 5.1.1.5.1", "Bonus: ED beneficiary graduates to SD", 1, 0, "bool", "ed",
           bonus=True),
-        I("604 5.1.1.5.2", "Bonus: jobs created (UNVERIFIED points)", 1, 0, "bool", "ed",
+        I("604 5.1.1.5.2", "Bonus: jobs created through ED/SD", 1, 0, "bool", "ed",
           bonus=True),
     ),
     priority=True,
@@ -67,7 +67,7 @@ ESD = Element(
 SED = Element(
     "sed",
     "Socio-Economic Development",
-    (I("605 6.1.1", "SED contributions (target UNVERIFIED)", 5, 1, "npat"),),
+    (I("605 6.2", "SED contributions", 5, 1, "npat"),),
 )
 
 SCORECARD = Scorecard(

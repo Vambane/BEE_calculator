@@ -108,17 +108,41 @@ def test_tc19_path():
     assert res.total_points == 99 and res.level_before_discount == 2 and res.discounted
 
 
-def test_tc20_draft_flag_off():
-    inp = make(GEN)
+def _tc20_21(draft, tf_rand):
+    inp = make(GEN, points=gp(25, 8, 19, 20, 27, 0, 0, 5), draft_rules=draft)
+    inp.points["esd"] = {"pp": 27}
     inp.financials = Financials(npat=10_000_000)
     inp.indicators = {
         "esd": {
-            "draft400 2.4.1": Rand(300_000),
+            "draft400 2.4.1": Rand(tf_rand),
             "400 2.2.1": Rand(200_000),
             "400 2.3.1": Rand(100_000),
         }
     }
-    res = calculate(inp)
+    return calculate(inp)
+
+
+def test_tc20_draft_flag_off():
+    """Exact split: 25(8)/19/20/PP 27 + SD 10 + ED 5/5 = 111 -> L1; TF ignored."""
+    res = _tc20_21(False, 300_000)
     assert "tf" not in res.group_points["esd"]
     assert res.group_points["esd"]["sd"] == 10 and res.group_points["esd"]["ed"] == 5
+    assert not any(c.group == "tf" for c in res.submin_checks)
+    assert (res.total_points, res.level, res.recognition_pct) == (111, 1, 135)
     assert any("ignored" in n for n in res.notes)
+
+
+@pytest.mark.parametrize(
+    "tf_rand,tf_pts,total,before,level",
+    [(200_000, 13.3333, 109.3333, 1, 1), (100_000, 6.6667, 102.6667, 1, 2)],
+    ids=["TC21-TF2pct", "TC21-TF1pct"],
+)
+def test_tc21_tf_route_draft_on(tf_rand, tf_pts, total, before, level):
+    res = _tc20_21(True, tf_rand)
+    g = res.group_points["esd"]
+    assert g["tf"] == pytest.approx(tf_pts, abs=1e-3) and g["sd"] == g["ed"] == 0
+    assert res.total_points == pytest.approx(total, abs=1e-3)
+    tf = next(c for c in res.submin_checks if c.group == "tf")
+    assert tf.required == 8
+    assert not any(c.group in ("sd", "ed") for c in res.submin_checks)
+    assert (res.level_before_discount, res.level) == (before, level)

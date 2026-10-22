@@ -148,7 +148,11 @@ def _ratios(card: Scorecard, core, groups, draft, tf_route) -> dict[str, float]:
 def _scored(size, card: Scorecard, inp: ScoreInput, notes) -> ScoreResult:
     draft = inp.draft_rules
     if draft:
-        notes.append("DRAFT rules on: Transformation Fund per Draft S400 2026 (not law).")
+        notes.append(
+            "DRAFT rules on (Draft S400 2026, GG 54032, NOT LAW): Transformation Fund 20 "
+            "points for 3% NPAT, either/or with SD+ED, sub-minimum 8; ESD bonuses 2 each; "
+            "PP kept at 2019 values (27), so the TF-route ESD maximum is 47."
+        )
     elif inp.indicators.get("esd", {}).get("draft400 2.4.1") or inp.points.get("esd", {}).get(
         "tf"
     ):
@@ -189,7 +193,19 @@ def _scored(size, card: Scorecard, inp: ScoreInput, notes) -> ScoreResult:
             lvl = levels.uplift(lvl, yes.LEVEL_STEPS[tier])
             applied = True
     if tier != YesTier.NONE:
-        notes.append("YES precondition averages use the engine's ratio interpretation.")
+        notes.append(
+            "YES precondition (GG 41866 cl. 2.1-2.2): Ownership = Net Value / 8 and Skills = "
+            "core / max are per S5 cl. 3.3; ESD = core points / ESD max is an "
+            "INTERPRETATION (alternative: mean of the PP, SD and ED ratios)."
+        )
+    if "net_value" in inp.points.get("ownership", {}) or any(
+        "Net Value" in i.name and i.clause in inp.indicators.get("ownership", {})
+        for i in (card.element("ownership").indicators if card.has("ownership") else ())
+    ):
+        notes.append(
+            "Net Value is not calculated by the app: enter the verifier's or consultant's "
+            "figure, calculated per Annexe 100 (graduation and flow-through included)."
+        )
     for c in checks:
         if c.option_used:
             notes.append(c.option_used)

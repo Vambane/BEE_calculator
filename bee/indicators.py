@@ -29,13 +29,16 @@ def to_percent(ind: Indicator, value: IndicatorValue, fin: Financials) -> float:
     return float(value)
 
 
-def indicator_points(ind: Indicator, value: IndicatorValue, fin: Financials) -> float:
+def indicator_points(
+    ind: Indicator, value: IndicatorValue, fin: Financials, draft: bool = False
+) -> float:
+    points = ind.draft_points if draft and ind.draft_points is not None else ind.points
     if ind.base == "bool":
-        return ind.points if bool(value) else 0.0
+        return points if bool(value) else 0.0
     pct = to_percent(ind, value, fin)
     if pct <= 0 or ind.target <= 0:
         return 0.0
-    return min(pct / ind.target, 1.0) * ind.points
+    return min(pct / ind.target, 1.0) * points
 
 
 def element_group_points(
@@ -56,6 +59,6 @@ def element_group_points(
         g = out.setdefault(ind.group, {"points": 0.0, "bonus": 0.0})
         if ind.clause not in values:
             continue
-        pts = indicator_points(ind, values[ind.clause], fin)
+        pts = indicator_points(ind, values[ind.clause], fin, draft)
         g["bonus" if ind.bonus else "points"] += pts
     return out
