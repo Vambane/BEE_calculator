@@ -626,46 +626,55 @@ def results_step():
         + (["TF vs ED/SD (draft)"] if S.draft and tf_card else [])
     )
     with tabs[0]:
-        fig = go.Figure()
-        fig.add_bar(
-            y=df.Element,
-            x=df.Points,
-            orientation="h",
-            name="Achieved",
-            marker_color=GREEN,
-            hovertemplate="%{y}: %{x:.1f}<extra></extra>",
-        )
-        fig.add_bar(
-            y=df.Element,
-            x=df.Gap,
-            orientation="h",
-            name="Available",
-            marker=dict(
-                color=OCHRE_TINT,
-                line=dict(color=OCHRE, width=1),
-                pattern=dict(shape="/", fgcolor=OCHRE, bgcolor=OCHRE_TINT, fillmode="overlay"),
-            ),
-        )
-        fig.update_layout(
-            barmode="stack",
-            height=320,
-            margin=dict(l=0, r=0, t=10, b=0),
-            legend=dict(orientation="h", y=-0.18),
-            font=dict(family="IBM Plex Sans, sans-serif", color=INK),
-            plot_bgcolor="rgba(0,0,0,0)",
-            paper_bgcolor="rgba(0,0,0,0)",
-            yaxis=dict(autorange="reversed"),
-            xaxis=dict(gridcolor=LINE),
-        )
-        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
-        st.dataframe(
-            df,
-            hide_index=True,
-            width="stretch",
-            column_config={
-                c: st.column_config.NumberColumn(format="%.1f") for c in ["Points", "Max", "Gap"]
-            },
-        )
+        if df.empty or "Element" not in df.columns:
+            st.info(
+                "No scorecard elements to chart yet. Enter points or indicators, "
+                "or untick the full-scorecard option for a deemed EME/QSE level."
+            )
+        else:
+            fig = go.Figure()
+            fig.add_bar(
+                y=df["Element"],
+                x=df["Points"],
+                orientation="h",
+                name="Achieved",
+                marker_color=GREEN,
+                hovertemplate="%{y}: %{x:.1f}<extra></extra>",
+            )
+            fig.add_bar(
+                y=df["Element"],
+                x=df["Gap"],
+                orientation="h",
+                name="Available",
+                marker=dict(
+                    color=OCHRE_TINT,
+                    line=dict(color=OCHRE, width=1),
+                    pattern=dict(shape="/", fgcolor=OCHRE, bgcolor=OCHRE_TINT, fillmode="overlay"),
+                ),
+            )
+            fig.update_layout(
+                barmode="stack",
+                height=320,
+                margin=dict(l=0, r=0, t=10, b=0),
+                legend=dict(orientation="h", y=-0.18),
+                font=dict(family="IBM Plex Sans, sans-serif", color=INK),
+                plot_bgcolor="rgba(0,0,0,0)",
+                paper_bgcolor="rgba(0,0,0,0)",
+                yaxis=dict(autorange="reversed"),
+                xaxis=dict(gridcolor=LINE),
+            )
+            st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+        if not df.empty and "Element" in df.columns:
+            st.dataframe(
+                df,
+                hide_index=True,
+                width="stretch",
+                column_config={
+                    c: st.column_config.NumberColumn(format="%.1f") for c in ["Points", "Max", "Gap"]
+                },
+            )
+        else:
+            st.caption("No element rows to show.")
         if r.level_points is not None and abs(r.level_points - r.total_points) > 1e-9:
             st.caption(
                 f"Points used for the level table after normalisation: {r.level_points:.1f}."
@@ -689,23 +698,26 @@ def results_step():
             txt = f"**{names.get(c.element, c.element)}{' · ' + c.group if c.group else ''}**: {c.achieved:.1f} of {c.required:g} required ({c.clause})"
             (st.success if c.passed else st.warning)(txt)
     with tabs[2]:
-        for i, row in enumerate(df.sort_values("Gap", ascending=False).itertuples(), 1):
-            if row.Gap <= 0:
-                continue
-            el = next(e for e in elements if e.name == row.Element)
-            tips = sorted(
-                (x for x in visible_indicators(el, S.draft) if not x.bonus), key=lambda x: -x.points
-            )[:2]
-            with st.container(border=True):
-                a, b = st.columns([4, 1])
-                a.markdown(
-                    f"**{i}. {row.Element}**  \n"
-                    + "; ".join(
-                        f"{t.name}: target {t.target:g}{'' if t.base == 'bool' else '%'} ({t.points:g} pts, cl. {t.clause})"
-                        for t in tips
+        if df.empty or "Gap" not in df.columns:
+            st.info("No gaps to show until element scores are entered.")
+        else:
+            for i, row in enumerate(df.sort_values("Gap", ascending=False).itertuples(), 1):
+                if row.Gap <= 0:
+                    continue
+                el = next(e for e in elements if e.name == row.Element)
+                tips = sorted(
+                    (x for x in visible_indicators(el, S.draft) if not x.bonus), key=lambda x: -x.points
+                )[:2]
+                with st.container(border=True):
+                    a, b = st.columns([4, 1])
+                    a.markdown(
+                        f"**{i}. {row.Element}**  \n"
+                        + "; ".join(
+                            f"{t.name}: target {t.target:g}{'' if t.base == 'bool' else '%'} ({t.points:g} pts, cl. {t.clause})"
+                            for t in tips
+                        )
                     )
-                )
-                b.metric("Available", f"+{row.Gap:.1f}", label_visibility="collapsed")
+                    b.metric("Available", f"+{row.Gap:.1f}", label_visibility="collapsed")
     if S.draft and tf_card:
         with tabs[3]:
             tf_planner(r)
