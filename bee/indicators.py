@@ -13,6 +13,14 @@ _BASE_ATTR = {
 }
 
 
+def _finite_nonneg(clause: str, amount: float, what: str = "value") -> float:
+    if amount != amount or amount in (float("inf"), float("-inf")):  # NaN / inf
+        raise ValueError(f"{clause}: {what} must be a finite number")
+    if amount < 0:
+        raise ValueError(f"{clause}: {what} cannot be negative")
+    return amount
+
+
 def to_percent(ind: Indicator, value: IndicatorValue, fin: Financials) -> float:
     """Return the achieved percentage. Rand amounts are divided by the indicator's base."""
     if isinstance(value, Rand):
@@ -23,10 +31,10 @@ def to_percent(ind: Indicator, value: IndicatorValue, fin: Financials) -> float:
         if not base or base <= 0:
             # Negative or zero NPAT etc.: no meaningful %; caller should pass a percentage.
             raise ValueError(f"{ind.clause}: Financials.{attr} must be > 0 to use a rand amount")
-        return value.amount / base * 100
+        return _finite_nonneg(ind.clause, value.amount, "rand amount") / base * 100
     if isinstance(value, bool):
         raise ValueError(f"{ind.clause}: boolean given for a non-boolean indicator")
-    return float(value)
+    return _finite_nonneg(ind.clause, float(value))
 
 
 def indicator_points(

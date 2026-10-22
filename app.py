@@ -1,333 +1,706 @@
-import math
-from typing import Dict, Literal
+"""BEE Check: thin Streamlit UI over the ``bee`` engine (design spec v1.1).
+
+All scoring is done by ``bee.calculate``; this file only collects inputs, validates them and
+renders results. No inputs are logged. Run: ``streamlit run app.py``.
+"""
+
+from __future__ import annotations
 
 import pandas as pd
+import plotly.graph_objects as go
 import streamlit as st
-import altair as alt
 
-EnterpriseSize = Literal["EME", "QSE", "Generic"]
+from bee import Financials, Rand, calculate
+from bee.registry import get_sector
+from bee_ui.core import (
+    BASE_FIN,
+    BASE_LABEL,
+    PCT_ONLY_ELEMENTS,
+    build_input,
+    card_for,
+    entry_options,
+    next_level_gap,
+    rand_capable,
+    scorecard_label,
+    sector_choices,
+    size_for,
+    to_pct,
+    to_rand,
+    validate,
+    visible_indicators,
+)
+
+GREEN, OCHRE, OCHRE_TINT, LINE, INK = "#1F5C4F", "#C8892B", "#F7ECD9", "#DDD8CC", "#14302B"
+MODES = {"rand": "Rand amounts", "pct": "Percentages"}
+ENTRY = {"ind": "Indicators", "pts": "Points (pre-calculated)"}
+DRAFT_LABEL = "Draft 2026 rules (Transformation Fund)"
+
+st.set_page_config(page_title="BEE Check", layout="centered")
+st.markdown("<style>.block-container{max-width:960px}</style>", unsafe_allow_html=True)
+
+Q = st.query_params
+S = st.session_state
+S.setdefault("step", int(Q.get("step", 0)) if str(Q.get("step", "0")).isdigit() else 0)
+S.setdefault("sector", Q.get("sector", "generic"))
+S.setdefault("draft", Q.get("draft", "0") == "1")
+S.setdefault("default_mode", "pct" if Q.get("mode") == "pct" else "rand")
+# Canonical store: widget state is dropped for unrendered steps, so values live here.
+S.setdefault(
+    "store",
+    {
+        "profile": {
+            "company": "",
+            "revenue": 0.0,
+            "black_ownership": 0.0,
+            "variant": None,
+            "yes_tier": "none",
+            "yes_prev_level": None,
+            "opt_scored": False,
+        },
+        "fin": {"npat": 0.0, "leviable_amount": 0.0, "tmps": 0.0, "employees": 0.0},
+        "values": {"rand": {}, "pct": {}},
+        "modes": {},
+        "entry": {},
+        "points": {},
+        "options": {},
+        "consent": False,
+    },
+)
+store = S.store
+if Q.get("demo") == "1" and not S.get("demo_seeded"):  # illustrative inputs for demos only
+    S.demo_seeded = True
+    store["consent"] = True
+    store["profile"].update(
+        company="Example Co (Pty) Ltd", revenue=120_000_000.0, black_ownership=40.0
+    )
+    store["fin"].update(
+        npat=8_000_000.0, leviable_amount=30_000_000.0, tmps=60_000_000.0, employees=150.0
+    )
+if S.get("demo_seeded"):
+    st.info("EXAMPLE DATA: illustrative inputs (points entry), not a real company.")
+valid_sectors = dict(sector_choices())
+if S.sector not in valid_sectors:
+    S.sector = "generic"
 
 
-def enterprise_size_from_turnover(turnover: float) -> EnterpriseSize:
-    if turnover <= 10_000_000:
-        return "EME"
-    if turnover <= 50_000_000:
-        return "QSE"
-    return "Generic"
+def bind(key: str, current):
+    """Seed a widget key from the store before rendering it."""
+    if key not in S:
+        S[key] = current
+    return key
 
 
-LEVELS = [
-    {"threshold": 100, "label": "Level 1"},
-    {"threshold": 95, "label": "Level 2"},
-    {"threshold": 90, "label": "Level 3"},
-    {"threshold": 80, "label": "Level 4"},
-    {"threshold": 75, "label": "Level 5"},
-    {"threshold": 70, "label": "Level 6"},
-    {"threshold": 55, "label": "Level 7"},
-    {"threshold": 40, "label": "Level 8"},
-]
+def fin_obj() -> Financials:
+    f = store["fin"]
+    return Financials(
+        npat=f["npat"] or None,
+        leviable_amount=f["leviable_amount"] or None,
+        tmps=f["tmps"] or None,
+        employees=f["employees"] or None,
+    )
 
 
-def level_from_score(score: float) -> str:
-    for level in LEVELS:
-        if score >= level["threshold"]:
-            return level["label"]
-    return "Non-compliant"
+def context():
+    cfg = get_sector(S.sector)
+    variant = store["profile"]["variant"] if cfg.variants else None
+    if variant not in (cfg.variants or (None,)):
+        variant = cfg.default_variant
+    size = size_for(cfg, store["profile"]["revenue"], variant)
+    card = card_for(cfg, size, variant) if size.value != "EME" else None
+    return cfg, variant, size, card
 
 
-def calculate_bee_score(profile: Dict, spend: Dict) -> Dict:
-    size = enterprise_size_from_turnover(profile["turnover"])
-
-    if size == "EME":
-        level = (
-            "Level 1"
-            if profile["black_ownership"] >= 100
-            else "Level 2"
-            if profile["black_ownership"] >= 51
-            else "Level 4"
-        )
-        total = 100 if level == "Level 1" else 95 if level == "Level 2" else 80
-        ownership = total * 0.25
-        management = total * 0.1
-        skills = total * 0.15
-        procurement = total * 0.3
-        enterprise_dev = total * 0.1
-        socio_economic = total * 0.1
-        return {
-            "ownership": ownership,
-            "management": management,
-            "skills": skills,
-            "procurement": procurement,
-            "enterprise_dev": enterprise_dev,
-            "socio_economic": socio_economic,
-            "total": total,
-            "level": level,
-            "discount_applied": False,
-            "size": size,
+cfg, variant, size, card = context()
+if S.get("demo_seeded") and card and not store["points"]:
+    for e in card.elements:  # demo: 60% of every group's maximum, entered as points
+        store["entry"][e.key] = "pts"
+        gs = [g for g in e.groups() if g != "tf"]
+        if e.total is not None and sum(dict(e.group_max).values()) >= e.total:
+            gs = [g for g in gs if g != "main"]
+        store["points"][e.key] = {
+            g: round(0.6 * e.max_points(g), 1) for g in gs if e.max_points(g) > 0
         }
+elements = [e for e in card.elements if e.max_points() > 0] if card else []  # hide 0-max elements
+steps = ["Profile", *[e.name for e in elements], "Results"]
+S.step = min(S.step, len(steps) - 1)
+label = scorecard_label(cfg, size, variant)
 
-    ownership_weight = 25
-    management_weight = 15
-    skills_weight = 20
-    procurement_weight = 20
-    enterprise_dev_weight = 10
-    socio_economic_weight = 10
 
-    ownership_base = (
-        min(profile["black_ownership"], 100) / 100 * ownership_weight
-    )
-    women_bonus = min(profile["black_women_ownership"], 30) / 30
-    ownership = min(
-        ownership_weight,
-        ownership_base + women_bonus * (ownership_weight * 0.2),
-    )
-
-    management = (
-        min(profile["black_management"], 100) / 100 * management_weight
-    )
-    skills = min(1, spend["skills_development_pct"] / 3) * skills_weight
-
-    procurement_bo = min(1, spend["supplier_black_owned_pct"] / 40)
-    procurement_eme_qse = min(1, spend["supplier_eme_qse_pct"] / 25)
-    procurement = procurement_bo * (procurement_weight * 0.65) + procurement_eme_qse * (
-        procurement_weight * 0.35
-    )
-
-    enterprise_dev = min(1, spend["enterprise_dev_pct"] / 1) * enterprise_dev_weight
-    socio_economic = min(1, spend["socio_economic_pct"] / 1) * socio_economic_weight
-
-    total = ownership + management + skills + procurement + enterprise_dev + socio_economic
-    level = level_from_score(total)
-    discount_applied = False
-
-    if size == "Generic" and profile["black_ownership"] < 10:
-        discount_applied = True
-        current_index = next(
-            (i for i, lv in enumerate(LEVELS) if lv["label"] == level), None
+def badge_line():
+    st.markdown(f"**Scorecard: {label}**")
+    if cfg.status == "verified" and cfg.key != "generic":
+        st.markdown(":green-badge[Verified sector code]")
+    elif cfg.status == "unverified":
+        st.markdown(":orange-badge[Pending expert verification]")
+        st.warning(
+            "ICT targets are decoded but not yet verified by an expert; treat results as indicative."
         )
-        if current_index is not None and level != "Non-compliant":
-            downgraded = LEVELS[min(current_index + 1, len(LEVELS) - 1)]
-            level = downgraded["label"]
-
-    return {
-        "ownership": ownership,
-        "management": management,
-        "skills": skills,
-        "procurement": procurement,
-        "enterprise_dev": enterprise_dev,
-        "socio_economic": socio_economic,
-        "total": total,
-        "level": level,
-        "discount_applied": discount_applied,
-        "size": size,
-    }
+    elif cfg.status in ("not_loaded", "legacy"):
+        st.warning(
+            f"No verified {cfg.name} scorecard in this version: Generic targets are applied "
+            "(fallback)."
+        )
 
 
-def main():
-    st.set_page_config(
-        page_title="B-BBEE SME Calculator",
-        page_icon="⚖️",
-        layout="wide",
+def go_to(n: int):
+    S.step = n
+
+
+def footer(problems_fn=None):
+    a, b = st.columns(2)
+    if S.step > 0:
+        a.button("Back", width="stretch", on_click=go_to, args=(S.step - 1,))
+    if S.step < len(steps) - 1:
+        nxt = steps[S.step + 1]
+        if b.button(f"Continue to {nxt}", type="primary", width="stretch"):
+            probs = problems_fn() if problems_fn else []
+            if probs:
+                st.error("Please fix:\n\n" + "\n".join(f"- {p}" for p in probs))
+            else:
+                go_to(S.step + 1)
+                st.rerun()
+
+
+# ------------------------------------------------------------------ sidebar
+with st.sidebar:
+    st.markdown("**BEE Check**")
+    st.caption(f"{store['profile']['company'] or 'Your company'}  \n{label}")
+    for i, s in enumerate(steps):
+        st.markdown(f"**→ {s}**" if i == S.step else ("✓ " if i < S.step else "○ ") + s)
+    st.divider()
+    S.draft = st.toggle(
+        DRAFT_LABEL,
+        value=S.draft,
+        help="Draft Statement 400 / draft QSE Code Series 600 of 2026 (GG 54032). NOT IN "
+        "FORCE. Off by default.",
     )
-    st.title("B-BBEE Calculator for South African SMEs/QSEs")
     st.caption(
-        "Plan your scorecard inputs. Simplified model; confirm with your verification agency and sector code."
+        "Ruleset: Amended Codes 2019, QSE CS600 (2015) and gazetted sector codes. Planning "
+        "tool, not a verification certificate."
     )
 
-    default_profile = {
-        "company": "Ubuntu Manufacturing (Pty) Ltd",
-        "province": "Gauteng",
-        "turnover": 24_000_000,
-        "payroll": 7_500_000,
-        "black_ownership": 35.0,
-        "black_women_ownership": 12.0,
-        "black_management": 40.0,
+st.progress((S.step + 1) / len(steps), text=f"Step {S.step + 1} of {len(steps)} · {steps[S.step]}")
+
+
+# ------------------------------------------------------------------ step 0: profile
+def profile_step():
+    st.title("Tell us about your company")
+    with st.container(border=True):
+        st.markdown(
+            "**Privacy notice.** We use the figures you enter only to calculate your "
+            "scorecard in this session. Nothing is stored after you close the page, and "
+            "nothing you enter is logged. Do not enter ID numbers or individuals' names "
+            "(POPIA)."
+        )
+        store["consent"] = st.checkbox(
+            "I understand and consent to my company figures being processed for this calculation.",
+            value=store["consent"],
+        )
+    p = store["profile"]
+    with st.container(border=True):
+        p["company"] = st.text_input("Company name (optional)", p["company"], max_chars=120)
+        keys = list(valid_sectors)
+        S.sector = st.selectbox(
+            "Sector code",
+            keys,
+            index=keys.index(S.sector),
+            format_func=lambda k: valid_sectors[k],
+            help="Pick the sector code your business is measured under. If unsure, keep Generic.",
+        )
+        c = get_sector(S.sector)
+        if c.variants:
+            v = p["variant"] if p["variant"] in c.variants else c.default_variant
+            p["variant"] = st.selectbox(
+                "Scorecard variant",
+                list(c.variants),
+                index=list(c.variants).index(v),
+                format_func=lambda s: s.replace("_", " ").title(),
+            )
+        p["revenue"] = st.number_input(
+            "Total revenue, last financial year (R)",
+            min_value=0.0,
+            value=float(p["revenue"]),
+            step=500_000.0,
+            format="%.0f",
+        )
+        p["black_ownership"] = st.number_input(
+            "Black ownership (%)",
+            min_value=0.0,
+            max_value=100.0,
+            value=float(p["black_ownership"]),
+            step=1.0,
+        )
+        cfg2, _, size2, _ = context()
+        st.caption(f":green-badge[Size: {cfg2.size_labels.get(size2, size2.value)}]")
+        st.markdown(
+            f"**Scorecard: {scorecard_label(cfg2, size2, p['variant'] if cfg2.variants else None)}**"
+        )
+        f = store["fin"]
+        a, b = st.columns(2)
+        f["leviable_amount"] = a.number_input(
+            "Leviable payroll (R)",
+            0.0,
+            value=float(f["leviable_amount"]),
+            step=100_000.0,
+            format="%.0f",
+        )
+        f["npat"] = b.number_input(
+            "Net profit after tax (R)", value=float(f["npat"]), step=100_000.0, format="%.0f"
+        )
+        a, b = st.columns(2)
+        f["tmps"] = a.number_input(
+            "Total measured procurement spend (R)",
+            0.0,
+            value=float(f["tmps"]),
+            step=100_000.0,
+            format="%.0f",
+        )
+        f["employees"] = b.number_input(
+            "Headcount (employees)", 0.0, value=float(f["employees"]), step=1.0, format="%.0f"
+        )
+        st.caption("These bases are captured once and used when you enter rand amounts later.")
+        p["opt_scored"] = st.checkbox(
+            "Score on the full scorecard even if a deemed (affidavit) level applies",
+            value=p["opt_scored"],
+        )
+    with st.expander("YES Initiative (optional)"):
+        tiers = ["none", "target", "1.5x", "2x"]
+        p["yes_tier"] = st.selectbox("YES tier achieved", tiers, index=tiers.index(p["yes_tier"]))
+        prev = st.selectbox(
+            "Previous B-BBEE level (needed for YES)",
+            [None, *range(1, 9)],
+            index=[None, *range(1, 9)].index(p["yes_prev_level"]),
+        )
+        p["yes_prev_level"] = prev
+    if S.sector == "financial":
+        with st.expander("Financial Services options (interpretations)"):
+            o = store["options"]
+            o["fs_skills_submin"] = st.radio(
+                "Skills sub-minimum (cl. 3.3.1(b))",
+                [8.0, 6.0],
+                index=[8.0, 6.0].index(o.get("fs_skills_submin", 8.0)),
+                format_func=lambda x: (
+                    f"{x:g} points"
+                    + (" (40% of 20, default)" if x == 8 else " (40% of 15, as printed)")
+                ),
+            )
+            o["fs_rescale_109"] = st.checkbox(
+                "Normalise Large scorecards to 109 before the level table",
+                value=o.get("fs_rescale_109", True),
+            )
+
+    def problems():
+        out = [] if store["consent"] else ["Tick the privacy consent box to continue."]
+        cfg_, _, _, card_ = context()
+        if card_:
+            out += [p.message for p in validate(card_, store["profile"], fin_obj(), {}, {}, {})]
+        return out
+
+    footer(problems)
+
+
+# ------------------------------------------------------------------ element steps
+def element_step(el):
+    st.title(el.name)
+    draft = S.draft
+    opts = entry_options(el)
+    ent = store["entry"].get(el.key, opts[0])
+    if len(opts) > 1:
+        ent = (
+            st.segmented_control(
+                "Enter", opts, default=ent, format_func=ENTRY.get, key=bind(f"entry_{el.key}", ent)
+            )
+            or ent
+        )
+    store["entry"][el.key] = ent
+    fin = fin_obj()
+    if ent == "pts":
+        pts = store["points"].setdefault(el.key, {})
+        with st.container(border=True):
+            st.caption("Enter points from your verification agency or consultant.")
+            covered = el.total is not None and sum(dict(el.group_max).values()) >= el.total
+            groups = [
+                g
+                for g in el.groups()
+                if (draft or g != "tf")
+                and not (g == "main" and covered)
+                and el.max_points(g, draft) > 0
+            ]
+            for g in groups:
+                mx = el.max_points(g, draft)
+                pts[g] = st.number_input(
+                    f"{'Points' if g == 'main' else g.replace('_', ' ').title() + ' points'} (max {mx:g})",
+                    min_value=0.0,
+                    value=float(pts.get(g, 0.0)),
+                    step=0.5,
+                    key=f"pt_{el.key}_{g}",
+                )
+            bmax = (
+                el.bonus_max
+                if el.bonus_max is not None
+                else sum(i.points for i in el.indicators if i.bonus)
+            )
+            if bmax:
+                pts["bonus"] = st.number_input(
+                    f"Bonus points (max {bmax:g})",
+                    min_value=0.0,
+                    value=float(pts.get("bonus", 0.0)),
+                    step=0.5,
+                    key=f"pt_{el.key}_bonus",
+                )
+    else:
+        can_rand = el.key not in PCT_ONLY_ELEMENTS and any(
+            rand_capable(el, i) for i in el.indicators
+        )
+        mode = store["modes"].get(el.key, S.default_mode if can_rand else "pct")
+        if can_rand:
+            new = (
+                st.segmented_control(
+                    "Enter as",
+                    list(MODES),
+                    default=mode,
+                    format_func=MODES.get,
+                    key=bind(f"mode_{el.key}", mode),
+                )
+                or mode
+            )
+            if new != mode:  # convert entered values through the profile base
+                src = store["values"][mode].get(el.key, {})
+                dst = store["values"][new].setdefault(el.key, {})
+                for i in el.indicators:
+                    if (
+                        i.clause in src
+                        and rand_capable(el, i)
+                        and not isinstance(src[i.clause], bool)
+                    ):
+                        base = getattr(fin, BASE_FIN[i.base])
+                        dst[i.clause] = (to_rand if new == "rand" else to_pct)(src[i.clause], base)
+                        S.pop(f"v_{new}_{i.clause}", None)
+                mode = new
+        else:
+            mode = "pct"
+        store["modes"][el.key] = mode
+        vals = store["values"][mode].setdefault(el.key, {})
+        nv = next((i for i in el.indicators if i.group == "net_value"), None)
+        if nv is not None:
+            with st.container(border=True):
+                st.markdown("**Net Value**")
+                cur = float(vals.get(nv.clause, 0.0) or 0.0) * nv.points / 100
+                got = st.number_input(
+                    f"Net Value points (0 to {nv.points:g}), from your verification agency",
+                    0.0,
+                    float(nv.points),
+                    cur,
+                    0.1,
+                    key=f"nv_{mode}_{el.key}",
+                    help="Net Value uses the Annexe 100(E) formula on share values and debt. "
+                    "This version does not calculate it; use your verification agency's figure.",
+                )
+                vals[nv.clause] = got / nv.points * 100  # engine input: % of target achieved
+                nvs = next((s for s in card.submins if s.group == "net_value"), None)
+                st.caption(
+                    (f"Sub-minimum {nvs.required:g} of {nv.points:g}. " if nvs else "")
+                    + "No figure yet? Leave 0 and Ownership is flagged as at risk."
+                )
+        with st.container(border=True):
+            for i in visible_indicators(el, draft):
+                if i is nv:
+                    continue
+                key = f"v_{mode}_{i.clause}"
+                tag = " (DRAFT)" if i.draft_only else (" (bonus)" if i.bonus else "")
+                if i.base == "bool":
+                    vals[i.clause] = st.checkbox(
+                        f"{i.name}{tag}", key=bind(key, bool(vals.get(i.clause, False)))
+                    )
+                    continue
+                rand = mode == "rand" and rand_capable(el, i)
+                if rand:
+                    unit = "count" if i.base == "employees" else "R"
+                    lab = f"{i.name}{tag} ({unit})"
+                elif i.base in BASE_LABEL:
+                    lab = f"{i.name}{tag} (% of {BASE_LABEL[i.base]})"
+                else:
+                    lab = f"{i.name}{tag} (%)"
+                vals[i.clause] = st.number_input(
+                    lab,
+                    min_value=0.0,
+                    step=1000.0 if rand else 0.5,
+                    format="%.0f" if rand else "%.2f",
+                    key=bind(key, float(vals.get(i.clause, 0.0) or 0.0)),
+                    help=f"Target {i.target:g}{'%' if i.base != 'bool' else ''} · "
+                    f"{i.points:g} pts · cl. {i.clause}",
+                )
+            used = {i.base for i in el.indicators if rand_capable(el, i)}
+            if mode == "rand" and used:
+                st.caption(
+                    "Base from profile: "
+                    + ", ".join(
+                        f"{BASE_LABEL[b]} R{getattr(fin, BASE_FIN[b]) or 0:,.0f}".replace(",", " ")
+                        for b in sorted(used)
+                    )
+                )
+    for s in card.submins:
+        if s.element == el.key and (draft or not s.draft_only):
+            st.caption(f"Sub-minimum: {s.group or 'element'} {s.required:g} points ({s.clause}).")
+
+    def problems():
+        return [
+            p.message
+            for p in validate(
+                card,
+                store["profile"],
+                fin_obj(),
+                {el.key: store["values"][store["modes"].get(el.key, "pct")].get(el.key, {})}
+                if ent == "ind"
+                else {},
+                store["modes"],
+                {el.key: store["points"].get(el.key, {})} if ent == "pts" else {},
+            )
+        ]
+
+    footer(problems)
+
+
+# ------------------------------------------------------------------ results
+def current_input(esd_override: dict | None = None):
+    values = {
+        k: store["values"][store["modes"].get(k, "pct")].get(k, {})
+        for k in {e.key for e in elements}
     }
-    default_spend = {
-        "skills_development_pct": 1.8,
-        "supplier_black_owned_pct": 28.0,
-        "supplier_eme_qse_pct": 18.0,
-        "enterprise_dev_pct": 0.6,
-        "socio_economic_pct": 0.4,
-    }
-
-    with st.form("inputs"):
-        cols = st.columns(2)
-        with cols[0]:
-            st.subheader("Company profile")
-            company = st.text_input("Company name", default_profile["company"])
-            province = st.selectbox(
-                "Province",
-                [
-                    "Gauteng",
-                    "Western Cape",
-                    "KwaZulu-Natal",
-                    "Eastern Cape",
-                    "Free State",
-                    "North West",
-                    "Mpumalanga",
-                    "Northern Cape",
-                    "Limpopo",
-                ],
-                index=0,
-            )
-            turnover = st.number_input(
-                "Annual turnover (ZAR)", min_value=0.0, value=float(default_profile["turnover"]), step=500_000.0
-            )
-            payroll = st.number_input(
-                "Annual payroll (ZAR)", min_value=0.0, value=float(default_profile["payroll"]), step=100_000.0
-            )
-            black_ownership = st.slider(
-                "Black ownership (%)", 0.0, 100.0, float(default_profile["black_ownership"]), 1.0
-            )
-            black_women_ownership = st.slider(
-                "Black women ownership (%)",
-                0.0,
-                100.0,
-                float(default_profile["black_women_ownership"]),
-                1.0,
-            )
-            black_management = st.slider(
-                "Black management (%)", 0.0, 100.0, float(default_profile["black_management"]), 1.0
-            )
-        with cols[1]:
-            st.subheader("Contributions")
-            skills_development_pct = st.number_input(
-                "Skills development (% of payroll)",
-                min_value=0.0,
-                value=float(default_spend["skills_development_pct"]),
-                step=0.1,
-            )
-            supplier_black_owned_pct = st.number_input(
-                "Spend with ≥51% black-owned suppliers (% of total)",
-                min_value=0.0,
-                max_value=100.0,
-                value=float(default_spend["supplier_black_owned_pct"]),
-                step=1.0,
-            )
-            supplier_eme_qse_pct = st.number_input(
-                "Spend with EMEs/QSEs (% of total)",
-                min_value=0.0,
-                max_value=100.0,
-                value=float(default_spend["supplier_eme_qse_pct"]),
-                step=1.0,
-            )
-            enterprise_dev_pct = st.number_input(
-                "Enterprise & supplier development (% of NPAT)",
-                min_value=0.0,
-                value=float(default_spend["enterprise_dev_pct"]),
-                step=0.1,
-            )
-            socio_economic_pct = st.number_input(
-                "Socio-economic development (% of NPAT)",
-                min_value=0.0,
-                value=float(default_spend["socio_economic_pct"]),
-                step=0.1,
-            )
-        submitted = st.form_submit_button("Calculate")
-
-    if submitted:
-        profile = {
-            "company": company,
-            "province": province,
-            "turnover": turnover,
-            "payroll": payroll,
-            "black_ownership": black_ownership,
-            "black_women_ownership": black_women_ownership,
-            "black_management": black_management,
+    inp = build_input(
+        S.sector,
+        variant,
+        store["profile"],
+        fin_obj(),
+        values,
+        store["modes"],
+        store["points"],
+        S.draft,
+        store["options"],
+        store["entry"],
+    )
+    if esd_override is not None:
+        row = {
+            k: v for k, v in inp.indicators.get("esd", {}).items() if k not in esd_override["drop"]
         }
-        spend = {
-            "skills_development_pct": skills_development_pct,
-            "supplier_black_owned_pct": supplier_black_owned_pct,
-            "supplier_eme_qse_pct": supplier_eme_qse_pct,
-            "enterprise_dev_pct": enterprise_dev_pct,
-            "socio_economic_pct": socio_economic_pct,
+        row.update(esd_override["add"])
+        inp.indicators["esd"] = row
+    return inp
+
+
+def results_step():
+    st.title("Your scorecard")
+    badge_line()
+    all_probs = []
+    if card:
+        values = {
+            k: store["values"][store["modes"].get(k, "pct")].get(k, {})
+            for k in {e.key for e in elements}
         }
-        breakdown = calculate_bee_score(profile, spend)
-
-        st.markdown("---")
-        cols = st.columns([1, 1])
-        with cols[0]:
-            st.metric("Recognition level", breakdown["level"])
-            st.metric(
-                "Total points",
-                f"{breakdown['total']:.1f}",
-                help="Simplified SME/QSE weighting to 100 points",
-            )
-            st.metric("Enterprise size", breakdown["size"])
-            if breakdown["discount_applied"]:
-                st.warning("Ownership <10% triggered a one-level discount.")
-        with cols[1]:
-            st.markdown("**Quick recommendations**")
-            st.write(
-                "- Raise ownership/management for higher base points (especially QSE/Generic).\n"
-                "- Target ~3% of payroll to skills development.\n"
-                "- Increase spend with ≥51% black-owned suppliers (~40%) and EMEs/QSEs (~25%).\n"
-                "- Allocate ~1% NPAT to enterprise & supplier development and socio-economic development."
-            )
-
-        st.markdown("### Score breakdown")
-        df = pd.DataFrame(
+        ind_vals = {k: v for k, v in values.items() if store["entry"].get(k, "ind") == "ind"}
+        pts_vals = {k: v for k, v in store["points"].items() if store["entry"].get(k) == "pts"}
+        all_probs = validate(card, store["profile"], fin_obj(), ind_vals, store["modes"], pts_vals)
+    if all_probs:
+        st.error("Some inputs need fixing:\n\n" + "\n".join(f"- {p.message}" for p in all_probs))
+        st.button("Go to profile", on_click=go_to, args=(0,))
+        return
+    try:
+        r = calculate(current_input())
+    except Exception:  # noqa: BLE001 - shown generically; no details or inputs logged
+        st.error("We could not calculate this scorecard. Please check your inputs and try again.")
+        st.button("Try again", on_click=st.rerun)
+        return
+    c1, c2, c3 = st.columns(3)
+    c1.metric(
+        "Recognition level", r.level_label, f"{r.recognition_pct}% recognition", delta_color="off"
+    )
+    c2.metric("Total points", "Deemed" if r.deemed else f"{r.total_points:.1f}")
+    gap = None if r.deemed or r.level_points is None else next_level_gap(r.level_points)
+    c3.metric(f"To Level {gap[1]}" if gap else "Next level", f"{gap[0]:.1f} pts" if gap else "-")
+    if r.discounted:
+        st.warning(
+            f"Sub-minimum missed: discounted from Level {r.level_before_discount} by one level."
+        )
+    if r.yes_applied:
+        st.success("YES Initiative recognition applied.")
+    elif r.yes_blocked_reason:
+        st.info(f"YES not applied: {r.yes_blocked_reason}")
+    with st.expander("Interpretation notes", expanded=True):
+        st.caption(
+            "How this calculator reads points the codes leave open. Your verification agency may read them differently."
+        )
+        for n in r.notes:
+            st.markdown(f"- {n}")
+    for w in r.warnings:
+        st.warning(w)
+    if r.deemed:
+        st.info(
+            "Deemed level from black ownership (affidavit route). Tick 'Score on the full scorecard' in the profile for a points breakdown."
+        )
+        return
+    names = {e.key: e.name for e in elements}
+    rows = []
+    for e in elements:
+        mx = e.max_points(draft=S.draft)
+        rows.append(
             {
-                "Element": [
-                    "Ownership",
-                    "Management",
-                    "Skills",
-                    "Procurement",
-                    "Enterprise Dev",
-                    "Socio-economic",
-                ],
-                "Points": [
-                    breakdown["ownership"],
-                    breakdown["management"],
-                    breakdown["skills"],
-                    breakdown["procurement"],
-                    breakdown["enterprise_dev"],
-                    breakdown["socio_economic"],
-                ],
-                "Max": [25, 15, 20, 20, 10, 10],
+                "Element": e.name,
+                "Points": r.element_points.get(e.key, 0.0),
+                "Max": mx,
+                "Gap": max(mx - r.element_points.get(e.key, 0.0), 0.0),
             }
         )
-        df["% of max"] = (df["Points"] / df["Max"]) * 100
-        df["Label"] = df.apply(lambda row: f"{row['Points']:.1f} / {row['Max']}", axis=1)
-
-        max_domain = math.ceil(df["Max"].max() / 5) * 5
-
-        base = (
-            alt.Chart(df)
-            .mark_bar(size=26, color="#e5e7eb")
-            .encode(
-                x=alt.X("Max:Q", title="Points", scale=alt.Scale(domain=[0, max_domain])),
-                y=alt.Y("Element:N", sort="-x", title=""),
+    df = pd.DataFrame(rows)
+    tf_card = any(i.group == "tf" for e in elements for i in e.indicators)
+    tabs = st.tabs(
+        ["Scorecard", "Sub-minimums", "Where to gain points"]
+        + (["TF vs ED/SD (draft)"] if S.draft and tf_card else [])
+    )
+    with tabs[0]:
+        fig = go.Figure()
+        fig.add_bar(
+            y=df.Element,
+            x=df.Points,
+            orientation="h",
+            name="Achieved",
+            marker_color=GREEN,
+            hovertemplate="%{y}: %{x:.1f}<extra></extra>",
+        )
+        fig.add_bar(
+            y=df.Element,
+            x=df.Gap,
+            orientation="h",
+            name="Available",
+            marker=dict(
+                color=OCHRE_TINT,
+                line=dict(color=OCHRE, width=1),
+                pattern=dict(shape="/", fgcolor=OCHRE, bgcolor=OCHRE_TINT, fillmode="overlay"),
+            ),
+        )
+        fig.update_layout(
+            barmode="stack",
+            height=320,
+            margin=dict(l=0, r=0, t=10, b=0),
+            legend=dict(orientation="h", y=-0.18),
+            font=dict(family="IBM Plex Sans, sans-serif", color=INK),
+            plot_bgcolor="rgba(0,0,0,0)",
+            paper_bgcolor="rgba(0,0,0,0)",
+            yaxis=dict(autorange="reversed"),
+            xaxis=dict(gridcolor=LINE),
+        )
+        st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
+        st.dataframe(
+            df,
+            hide_index=True,
+            width="stretch",
+            column_config={
+                c: st.column_config.NumberColumn(format="%.1f") for c in ["Points", "Max", "Gap"]
+            },
+        )
+        if r.level_points is not None and abs(r.level_points - r.total_points) > 1e-9:
+            st.caption(
+                f"Points used for the level table after normalisation: {r.level_points:.1f}."
             )
-        )
-
-        actual = (
-            alt.Chart(df)
-            .mark_bar(size=20, color="#22c55e")
-            .encode(
-                x="Points:Q",
-                y=alt.Y("Element:N", sort="-x"),
-                tooltip=[
-                    alt.Tooltip("Points:Q", format=".1f"),
-                    alt.Tooltip("Max:Q", format=".0f"),
-                    alt.Tooltip("% of max:Q", format=".0f"),
-                ],
+        with st.expander("Group detail"):
+            st.dataframe(
+                pd.DataFrame(
+                    [
+                        {"Element": names.get(k, k), "Group": g, "Points": v}
+                        for k, d in r.group_points.items()
+                        for g, v in d.items()
+                    ]
+                ),
+                hide_index=True,
+                width="stretch",
             )
-        )
+    with tabs[1]:
+        if not r.submin_checks:
+            st.write("No sub-minimums apply to this scorecard.")
+        for c in r.submin_checks:
+            txt = f"**{names.get(c.element, c.element)}{' · ' + c.group if c.group else ''}**: {c.achieved:.1f} of {c.required:g} required ({c.clause})"
+            (st.success if c.passed else st.warning)(txt)
+    with tabs[2]:
+        for i, row in enumerate(df.sort_values("Gap", ascending=False).itertuples(), 1):
+            if row.Gap <= 0:
+                continue
+            el = next(e for e in elements if e.name == row.Element)
+            tips = sorted(
+                (x for x in visible_indicators(el, S.draft) if not x.bonus), key=lambda x: -x.points
+            )[:2]
+            with st.container(border=True):
+                a, b = st.columns([4, 1])
+                a.markdown(
+                    f"**{i}. {row.Element}**  \n"
+                    + "; ".join(
+                        f"{t.name}: target {t.target:g}{'' if t.base == 'bool' else '%'} ({t.points:g} pts, cl. {t.clause})"
+                        for t in tips
+                    )
+                )
+                b.metric("Available", f"+{row.Gap:.1f}", label_visibility="collapsed")
+    if S.draft and tf_card:
+        with tabs[3]:
+            tf_planner(r)
 
-        labels = (
-            alt.Chart(df)
-            .mark_text(align="left", baseline="middle", dx=5, color="#0f172a")
-            .encode(x="Points:Q", y=alt.Y("Element:N", sort="-x"), text="Label:N")
-        )
 
-        st.altair_chart(base + actual + labels, use_container_width=True)
+def tf_planner(base):
+    esd = next(e for e in elements if e.key == "esd")
+    tf = next(i for i in esd.indicators if i.group == "tf")
+    sd = [i for i in esd.indicators if i.group == "sd" and not i.bonus and i.base == "npat"]
+    ed = [i for i in esd.indicators if i.group == "ed" and not i.bonus and i.base == "npat"]
+    st.warning("DRAFT, NOT IN FORCE. Draft 2026 rules (GG 54032). Planning only.")
+    npat = store["fin"]["npat"]
+    if not npat or npat <= 0:
+        st.error("Enter a positive NPAT in the profile to compare the routes.")
+        st.button("Go to profile", on_click=go_to, args=(0,), key="tf_prof")
+        return
+    if store["entry"].get("esd", "ind") != "ind":
+        st.info("The planner needs ESD entered as indicators (not points).")
+        return
+    budget = st.slider(
+        "Contribution budget (R per year)",
+        0,
+        int(max(npat * 0.05, 10_000)),
+        int(npat * tf.target / 100),
+        1_000,
+    )
+    st.caption(f"= {budget / npat * 100:.2f}% of NPAT. The two routes are either/or.")
+    drop = {i.clause for i in sd + ed} | {tf.clause}
+    weights = [(i, i.target) for i in sd + ed]
+    tot_w = sum(w for _, w in weights) or 1
+    routes = {
+        "Transformation Fund": {"drop": drop, "add": {tf.clause: Rand(float(budget))}},
+        "Direct SD + ED": {
+            "drop": drop,
+            "add": {i.clause: Rand(budget * w / tot_w) for i, w in weights},
+        },
+    }
+    cols = st.columns(2)
+    for col, (name, ov) in zip(cols, routes.items(), strict=True):
+        try:
+            res = calculate(current_input(ov))
+        except Exception:  # noqa: BLE001
+            col.error("Could not score this route.")
+            continue
+        with col.container(border=True):
+            st.subheader(name)
+            st.metric("ESD points", f"{res.element_points.get('esd', 0):.1f}")
+            st.metric(
+                "New total",
+                f"{res.total_points:.1f}",
+                f"{res.total_points - base.total_points:+.1f}",
+            )
+            st.metric("Level", res.level_label)
+    st.caption(
+        "SD + ED budget split in proportion to their NPAT targets "
+        + ", ".join(f"{i.name} {i.target:g}%" for i, _ in weights)
+        + "."
+    )
 
-        st.info(
-            "Disclaimer: This is a planning tool. Confirm calculations with your verification agency and apply the correct sector code targets."
-        )
 
-
-if __name__ == "__main__":
-    main()
+if S.step == 0:
+    profile_step()
+elif S.step == len(steps) - 1:
+    results_step()
+    st.button("Back", on_click=go_to, args=(S.step - 1,))
+else:
+    element_step(elements[S.step - 1])

@@ -21,6 +21,8 @@ class Thresholds:
     large_inclusive: bool = True
 
     def classify(self, revenue: float) -> EnterpriseSize:
+        if revenue != revenue or revenue in (float("inf"), float("-inf")):
+            raise ValueError("total_revenue must be a finite number")
         if revenue < 0:
             raise ValueError("total_revenue must be >= 0")
         if revenue < self.eme_max or (self.eme_inclusive and revenue == self.eme_max):

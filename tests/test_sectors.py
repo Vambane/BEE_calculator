@@ -385,3 +385,14 @@ def test_qse_draft_tf_route():
     assert any("Draft QSE" in n for n in on.notes)
     tf = next(c for c in on.submin_checks if c.group == "tf")
     assert tf.required == 6 and tf.passed
+
+
+def test_ict_qse_107_core_from_csv():
+    card = get_sector("ict").card(Q, None)
+    assert card.key == "ict-qse"
+    assert card.max_total() == 107
+    assert check_reconciles(card) == []
+
+
+def test_tourism_qse_max_101():
+    assert get_sector("tourism").card(Q, None).max_total() == 101

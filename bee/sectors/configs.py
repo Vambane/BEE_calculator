@@ -495,6 +495,31 @@ ICT_LARGE = _card(
     ],
 )
 
+# ICT QSE (AICT600 Statement 600 cl. 3.1): 25+15+25+30+12 = 107 core. Indicators from CSV.
+ICT_QSE = attach(
+    _card(
+        "ict-qse",
+        "ICT QSE (AICT600 Statement 600), GG 40407",
+        [
+            el("ownership", "Ownership", 25, True, {"net_value": 8}),
+            el("management", "Management Control", 15),
+            el("skills", "Skills Development", 25, True, bonus=5),
+            el("esd", "ESD", 30, True, {"pp": 20, "sd": 5, "ed": 5}, bonus=5),
+            el("sed", "SED", 12),
+        ],
+        [
+            sm("ownership", "net_value", 3.2, "ICT QSE (40% of 8)"),
+            sm("skills", None, 10, "ICT QSE (40% of 25)"),
+            sm("esd", "pp", 8, "ICT QSE (40% of 20)"),
+            sm("esd", "sd", 2, "ICT QSE (40% of 5)"),
+            sm("esd", "ed", 2, "ICT QSE (40% of 5)"),
+        ],
+        rule="ownership_plus_one",
+    ),
+    "ICT",
+    {"*": ("QSE",)},
+)
+
 ICT = SectorConfig(
     key="ict",
     name="ICT",
@@ -503,11 +528,12 @@ ICT = SectorConfig(
     # Exactly R50m = Generic (CEO decision 4, Compliance tables; cl. 2.14.1 "<= R50m"
     # reading not applied).
     thresholds={None: GENERIC_THRESHOLDS},
-    cards={(G, None): ICT_LARGE, (Q, None): qse.SCORECARD},
+    cards={(G, None): ICT_LARGE, (Q, None): ICT_QSE},
     warnings=(
-        "UNVERIFIED: ICT sector code figures were decoded from a garbled PDF and need "
-        "human verification before use.",
-        "ICT QSE table not decoded: QSEs use the generic QSE scorecard.",
+        "UNVERIFIED: ICT Large figures were decoded from a garbled PDF and need human "
+        "verification before use.",
+        "ICT QSE indicators transcribed from page images (GG 40407 pp.80-86); still "
+        "pending expert verification.",
         "ICT automatic-recognition ownership % garbled; generic 51%/100% used.",
         CUTOFF_WARN,
     ),
