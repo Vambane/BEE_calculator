@@ -12,6 +12,7 @@ from bee.models import EnterpriseSize as S
 from bee.rules import Scorecard
 from bee.scorecards import generic, qse
 from bee.sectors.base import GENERIC_THRESHOLDS, SectorConfig, Thresholds, el, sm
+from bee.sectors.tables import attach
 
 G, Q = S.GENERIC, S.QSE
 NOT_LOADED = "Sector code not loaded: scored on the generic Amended Codes."
@@ -23,62 +24,99 @@ def _card(key, name, elements, submins, rule="all", **kw) -> Scorecard:
 
 
 # ---------------------------------------------------------------- Construction (N931 2017)
+CON_LEVELS = (
+    "Construction levels: CSC000 cl. 8.3 absolute points (>=100 L1 ... <40 non-compliant), "
+    "no rescaling of the 123-point Large or the QSE scorecard."
+)
+
+
 def _con_large(
     variant: str,
     skills: float,
-    esd: float,
+    esd: dict,
+    esd_bonus: float,
     nv: float,
     nv_min: float,
     pp_min: float,
     sdp_min: float,
     sdc_min: float,
-    esd_bonus: float,
+    skills_min: float,
+    label: str,
 ) -> Scorecard:
-    return _card(
+    card = _card(
         f"construction-{variant}",
         f"Construction ({variant}) Large, GG 41287 N931",
         [
             el("ownership", "Ownership", 27, True, {"net_value": nv}, bonus=4),
             el("management", "Management Control", 18, bonus=4),
             el("skills", "Skills Development", skills, True, bonus=5),
-            # Sub-element split not extracted: groups are capped at the element weighting.
+            # CSC400 cl. 2 split (VERIFIED): PP / SD programmes / SD contributions. No ED.
             el(
                 "esd",
                 "Preferential Procurement & Supplier Development",
-                esd,
+                sum(esd.values()),
                 True,
-                {"pp": esd, "sd_programmes": esd, "sd_contributions": esd},
+                esd,
                 bonus=esd_bonus,
             ),
             el("sed", "Socio-Economic Development", 5, bonus=1),
         ],
         [
-            sm("ownership", "net_value", nv_min, "Construction cl. 3.6.1"),
-            sm("skills", None, round(0.4 * skills, 4), "silent -> D2 (40% of weighting)"),
-            sm("esd", "pp", pp_min, "Construction cl. 3.6.1"),
-            sm("esd", "sd_programmes", sdp_min, "Construction cl. 3.6.1"),
-            sm("esd", "sd_contributions", sdc_min, "Construction cl. 3.6.1"),
+            sm("ownership", "net_value", nv_min, "CSC000 cl. 3.6.1.1.1"),
+            sm("skills", None, skills_min, "CSC000 cl. 3.6.1.2.1 (40% of weighting)"),
+            sm("esd", "pp", pp_min, "CSC000 cl. 3.6.1.3.1(i)"),
+            sm("esd", "sd_programmes", sdp_min, "CSC000 cl. 3.6.1.3.1(ii)"),
+            sm("esd", "sd_contributions", sdc_min, "CSC000 cl. 3.6.1.3.1(iii)"),
         ],
+        notes=(CON_LEVELS,),
+    )
+    return attach(card, "Construction", {"*": (label,)})
+
+
+def _con_qse(variant: str, new_entrant_target: float) -> Scorecard:
+    card = _card(
+        f"construction-qse-{variant}",
+        f"Construction QSE ({variant}), GG 41287 N931 cl. 8.2",
+        [
+            el("ownership", "Ownership", 27, True, {"net_value": 5}, bonus=3),
+            el("management", "Management Control", 20),
+            el("skills", "Skills Development", 24, True, bonus=2),
+            el(
+                "esd",
+                "Preferential Procurement & Supplier Development",
+                29,
+                True,
+                {"pp": 22, "sd_contributions": 7},
+            ),
+            # CSC605 table: 3 core + 2 bonus (the cl. 8.2 scorecard prints 5).
+            el("sed", "Socio-Economic Development", 3, bonus=2),
+        ],
+        [
+            sm("ownership", "net_value", 2, "CSC601 2.1 -> CSC100 (40% of 5, INTERPRETATION)"),
+            sm("skills", None, 9.6, "CSC603 2.1 -> CSC300 (40% of 24, INTERPRETATION)"),
+            sm("esd", "pp", 8.8, "CSC604 2.1 -> CSC400 (40% of 22, INTERPRETATION)"),
+            sm("esd", "sd_contributions", 2.8, "CSC604 2.1 -> CSC400 (40% of 7, INTERPRETATION)"),
+        ],
+        rule="ownership_plus_one",
+        notes=(
+            CON_LEVELS,
+            "Gazette inconsistency (Construction QSE SED): cl. 8.2 scorecard prints 5 but the "
+            "CSC605 table prints 3 + 2 bonus; the app uses 3 core + 2 bonus (max 5). "
+            "INTERPRETATION.",
+            "Gazette inconsistency (Construction QSE MC 2.1/2.2): senior+middle management "
+            "targets print as 20% / 10%, below junior management's 40%; reproduced as "
+            "printed (likely typo, UNVERIFIED intent).",
+            "Construction QSE SD 1.3 target printed '3%' with a struck-through figure; "
+            "the app uses 3%.",
+        ),
+    )
+    return attach(
+        card,
+        "Construction",
+        {"*": ("QSE (Contractor & BEP)",)},
+        {"CSC601 1.2.3": new_entrant_target},
     )
 
-
-CON_QSE = _card(
-    "construction-qse",
-    "Construction QSE, GG 41287 N931 cl. 8.2",
-    [
-        el("ownership", "Ownership", 27, True, bonus=3),
-        el("management", "Management Control", 20),
-        el("skills", "Skills Development", 24, True, bonus=2),
-        el("esd", "Preferential Procurement & Supplier Development", 29, True),
-        el("sed", "Socio-Economic Development", 5),
-    ],
-    [
-        sm("ownership", None, 10.8, "silent -> D2 (40% of 27)"),
-        sm("skills", None, 9.6, "silent -> D2 (40% of 24)"),
-        sm("esd", None, 11.6, "silent -> D2 (40% of 29)"),
-    ],
-    rule="ownership_plus_one",
-)
 
 CONSTRUCTION = SectorConfig(
     key="construction",
@@ -93,13 +131,37 @@ CONSTRUCTION = SectorConfig(
     },
     eme_deemed=((100, 1), (51, 2), (30, 4), (0, 5)),  # cl. 4.2
     cards={
-        (G, "contractor"): _con_large("contractor", 21, 34, 6, 2.4, 7.6, 2, 4, 4),
-        (G, "bep"): _con_large("bep", 29, 27, 4, 1.6, 7.2, 1.6, 2, 3),
-        (Q, None): CON_QSE,
+        (G, "contractor"): _con_large(
+            "contractor",
+            21,
+            {"pp": 19, "sd_programmes": 5, "sd_contributions": 10},
+            4,
+            6,
+            2.4,
+            7.6,
+            2,
+            4,
+            8.4,
+            "Large-Contractor",
+        ),
+        (G, "bep"): _con_large(
+            "bep",
+            29,
+            {"pp": 18, "sd_programmes": 4, "sd_contributions": 5},
+            3,
+            4,
+            1.6,
+            7.2,
+            1.6,
+            2,
+            11.6,
+            "Large-BEP",
+        ),
+        (Q, "contractor"): _con_qse("contractor", 10),
+        (Q, "bep"): _con_qse("bep", 5),
     },
     construction_eme_rules=True,
     warnings=(
-        CUTOFF_WARN,
         "QSEs on automatic levels must still comply with QSE Skills Development "
         "(cl. 3.6.2.3); not assessed by the calculator.",
     ),
@@ -112,36 +174,52 @@ FS_NOTE = (
     "FSC Skills sub-minimum: cl. 3.3.1(b) reads '40% of 15' but the weighting is 20; the "
     "app uses 8 (40% of 20) per owner decision FS-D1 (interpretation)."
 )
+FS2A = "Large (Table 2a: banks, insurers, exchanges)"
+FS_ALL = "Large (all)"
+FS_OTHER = "Large-Other (STI, exchanges, others)"
+FS_BANK = "Large-Banks&Life"
+FS_AFS = "Large-Banks&Life + STI"
 
 
-def _fs_large(variant: str, own: float, esd: float, ef: float, afs: float) -> Scorecard:
+def _fs_large(variant: str, own: float, afs: float, labels: dict) -> Scorecard:
+    bank = variant == "bank"
     elements = [
-        el("ownership", "Ownership (FS100)", own, True, {"net_value": 6}),
+        el("ownership", "Ownership (FS100)", own, True, {"net_value": 6}, bonus=5),
         el("management", "Management Control (FS200)", 20),
-        el("skills", "Skills Development (FS300)", 20, True),
+        el("skills", "Skills Development (FS300)", 20, True, bonus=3),
         el(
             "esd",
             "Procurement & ESD (FS400)",
-            esd,
+            15 if bank else 35,
             True,
-            None if ef else {"pp": esd - 15, "sd": 10, "ed": 5},
+            {"pp": 15} if bank else {"pp": 20, "sd": 10, "ed": 5},
+            bonus=4 if bank else 8,
         ),
-        el("sed", "SED & Consumer Education (FS500)", 5),
+        el("sed", "SED & Consumer Education (FS500)", 5, bonus=1),
     ]
-    if ef:
-        elements.append(el("ef", "Empowerment Financing & ESD (FS600)", ef, True))
+    if bank:
+        # FS600 (VERIFIED): EF 15 (12 + 3), SD 7 (1.8% NPAT), ED 3 (0.2% NPAT), bonus 4.
+        elements.append(
+            el(
+                "ef",
+                "Empowerment Financing & ESD (FS600)",
+                25,
+                True,
+                {"ef": 15, "sd": 7, "ed": 3},
+                bonus=4,
+            )
+        )
     if afs:
         elements.append(el("afs", "Access to Financial Services (FS700)", afs))
     subs = [
         sm("ownership", "net_value", 2.4, "FSC cl. 3.3.1(a)"),
         sm("skills", None, 8, "FSC cl. 3.3.1(b) per FS-D1", **FS_SKILLS),
     ]
-    if ef:
-        # cl. 3.3.1: 40% of each of EF, SD, ED. The EF/SD/ED split was not extracted, so
-        # the app tests 40% of FS600 and 40% of FS400 (interpretation, UNVERIFIED).
+    if bank:
         subs += [
-            sm("ef", None, 0.4 * ef, "FSC cl. 3.3.1 (element-level, UNVERIFIED split)"),
-            sm("esd", None, 0.4 * esd, "FSC cl. 3.3.1 (element-level, UNVERIFIED split)"),
+            sm("ef", "ef", 6, "FSC cl. 3.3.1(d) (40% of 15)"),
+            sm("ef", "sd", 2.8, "FSC cl. 3.3.1(d) (40% of 7)"),
+            sm("ef", "ed", 1.2, "FSC cl. 3.3.1(d) (40% of 3)"),
         ]
     else:
         subs += [
@@ -149,38 +227,52 @@ def _fs_large(variant: str, own: float, esd: float, ef: float, afs: float) -> Sc
             sm("esd", "sd", 4, "FSC cl. 3.3.1(c)"),
             sm("esd", "ed", 2, "FSC cl. 3.3.1(c)"),
         ]
-    return _card(
+    notes = ("FS indicator targets with a year-3+ step use the year 1-3 figure.",)
+    if variant == "other":
+        notes += (
+            "FS 'Other' Ownership: the 25-point indicator split is not extracted "
+            "(UNVERIFIED); enter Ownership as points.",
+        )
+    card = _card(
         f"fs-{variant}",
         f"Financial Services {variant}, GG 41287 N1325",
         elements,
         subs,
         level_base=109,
         level_base_option="fs_rescale_109",
+        notes=notes,
     )
+    return attach(card, "FS 2017", labels)
 
 
-FS_QSFI = _card(
-    "fs-qsfi",
-    "Financial Services QSFI (FS800), GG 41287 N1325",
-    [
-        el("ownership", "Ownership", 25, True, {"net_value": 6}),
-        el("management", "Management Control", 15),
-        el("skills", "Skills Development", 25, True),
-        el("esd", "ESD", 30, True, {"pp": 20, "sd": 5, "ed": 5}),
-        el("sed", "SED", 5),
-    ],
-    [
-        sm("ownership", "net_value", 2.4, "FSC cl. 3.3.1(a)"),
-        sm("skills", None, 10, "silent -> D2 (40% of 25)"),
-        sm("esd", "pp", 8, "silent -> D2 (40% of 20)"),
-        sm("esd", "sd", 2, "silent -> D2"),
-        sm("esd", "ed", 2, "silent -> D2"),
-    ],
-    rule="ownership_plus_one",  # cl. 3.3.2(b)
-    level_base=109,
-    level_base_option="fs_rescale_109",
+FS_QSFI = attach(
+    _card(
+        "fs-qsfi",
+        "Financial Services QSFI (FS800), GG 41287 N1325",
+        [
+            # Net Value 8 = 25 - 17 listed indicators (DERIVED, Compliance table).
+            el("ownership", "Ownership", 25, True, {"net_value": 8}, bonus=4),
+            el("management", "Management Control", 15),
+            el("skills", "Skills Development", 25, True),
+            el("esd", "ESD", 30, True, {"pp": 20, "sd": 5, "ed": 5}),
+            el("sed", "SED & Consumer Education", 5, bonus=1),
+        ],
+        [
+            sm("ownership", "net_value", 3.2, "FSC cl. 3.3.2 -> FS100 (40% of 8, derived)"),
+            sm("skills", None, 10, "silent -> D2 (40% of 25)"),
+            sm("esd", "pp", 8, "silent -> D2 (40% of 20)"),
+            sm("esd", "sd", 2, "silent -> D2"),
+            sm("esd", "ed", 2, "silent -> D2"),
+        ],
+        rule="ownership_plus_one",  # cl. 3.3.2(b)
+        level_base=109,
+        level_base_option="fs_rescale_109",
+    ),
+    "FS 2017",
+    {"*": ("QSFI",)},
 )
 
+_FS_COMMON = {"management": (FS_ALL,), "skills": (FS_ALL,)}
 FINANCIAL = SectorConfig(
     key="financial",
     name="Financial Services (Amended FSC 2017)",
@@ -189,38 +281,76 @@ FINANCIAL = SectorConfig(
     variants=("bank", "short_term_insurer", "exchange", "other"),
     default_variant="other",
     cards={
-        (G, "bank"): _fs_large("bank", 23, 15, 25, 12),
-        (G, "short_term_insurer"): _fs_large("short_term_insurer", 23, 35, 0, 12),
-        (G, "exchange"): _fs_large("exchange", 23, 35, 0, 0),
-        (G, "other"): _fs_large("other", 25, 35, 0, 0),
+        (G, "bank"): _fs_large(
+            "bank",
+            23,
+            12,
+            {
+                **_FS_COMMON,
+                "ownership": (FS2A,),
+                "esd": (FS_BANK,),
+                "ef": (FS_BANK,),
+                "sed": (FS_BANK,),
+                "afs": (FS_AFS,),
+            },
+        ),
+        (G, "short_term_insurer"): _fs_large(
+            "short_term_insurer",
+            23,
+            12,
+            {
+                **_FS_COMMON,
+                "ownership": (FS2A,),
+                "esd": (FS_OTHER,),
+                "sed": (FS_OTHER,),
+                "afs": (FS_AFS,),
+            },
+        ),
+        (G, "exchange"): _fs_large(
+            "exchange",
+            23,
+            0,
+            {**_FS_COMMON, "ownership": (FS2A,), "esd": (FS_OTHER,), "sed": (FS_OTHER,)},
+        ),
+        (G, "other"): _fs_large(
+            "other", 25, 0, {**_FS_COMMON, "esd": (FS_OTHER,), "sed": (FS_OTHER,)}
+        ),
         (Q, None): FS_QSFI,
     },
     size_labels={Q: "QSFI"},
     warnings=(
         FS_NOTE,
-        "FSC levels: score normalised to 109 (score x 109 / scorecard total) before the "
-        "cl. 8.2.1 table (interpretation; switch off with options['fs_rescale_109']=False).",
+        "FSC levels: Large scorecards (not 100 points) normalised to 109 (score x 109 / "
+        "scorecard total) before the cl. 8.2.1 table (interpretation; switch off with "
+        "options['fs_rescale_109']=False). The 100-point QSFI card is scored raw.",
     ),
 )
 
 
 # -------------------------------------------------------------- AgriBEE (N1354 2017)
-def _agri(key, name, own, mc, sd, esd, sed, rule="all"):
+def _agri(key, name, own, mc, sd, esd, sed, sd_min, esd_mins, rule="all", label=None):
     elements, subs = [], []
     if own:
         elements.append(el("ownership", "Ownership", own, True, {"net_value": 8}))
-        subs.append(sm("ownership", "net_value", 3.2, "generic via AgriBEE cl. 1.3"))
+        subs.append(sm("ownership", "net_value", 3.2, "AgriBEE cl. 5.1.1"))
     elements += [
         el("management", "Management Control", mc),
         el("skills", "Skills Development", sd, True),
-        el("esd", "ESD", esd, True),
+        el("esd", "ESD", sum(esd.values()) if esd else 0, True, esd),
         el("sed", "SED", sed),
     ]
-    subs += [
-        sm("skills", None, 0.4 * sd, "AgriBEE cl. 5.1; silent figure -> D2"),
-        sm("esd", None, 0.4 * esd, "AgriBEE cl. 5.1; silent figure -> D2"),
-    ]
-    return _card(key, name, elements, subs, rule)
+    subs.append(sm("skills", None, sd_min, "AgriBEE cl. 5.1.2 (40% of weighting)"))
+    for g, v in esd_mins.items():
+        subs.append(sm("esd", g, v, "AgriBEE cl. 5.1.3 (40% of category)"))
+    card = _card(
+        key,
+        name,
+        elements,
+        subs,
+        rule,
+        notes=("AgriBEE levels: cl. 4.3 absolute points (same table as Generic).",),
+    )
+    return attach(card, "AgriBEE", {"*": (label,)}) if label else card
 
 
 AGRI = SectorConfig(
@@ -234,24 +364,56 @@ AGRI = SectorConfig(
     thresholds={None: GENERIC_THRESHOLDS},
     qse_deemed=True,  # black QSEs need not be measured (cl. 2.6)
     cards={
-        (G, "standard"): _agri("agri-large", "AgriBEE Large", 25, 19, 20, 40, 15),
-        (Q, "standard"): _agri("agri-qse", "AgriBEE QSE", 25, 15, 30, 25, 15),
-        (G, "specialised"): _agri("agri-spec-large", "AgriBEE Specialised Large", 0, 20, 25, 50, 5),
-        (Q, "specialised"): _agri("agri-spec-qse", "AgriBEE Specialised QSE", 0, 25, 30, 30, 15),
+        (G, "standard"): _agri(
+            "agri-large",
+            "AgriBEE Large",
+            25,
+            19,
+            20,
+            {"pp": 25, "sd": 10, "ed": 5},
+            15,
+            8,
+            {"pp": 10, "sd": 4, "ed": 2},
+            label="Large",
+        ),
+        (Q, "standard"): _agri(
+            "agri-qse",
+            "AgriBEE QSE",
+            25,
+            15,
+            30,
+            {"pp": 15, "sd": 5, "ed": 5},
+            15,
+            12,
+            {"pp": 6, "sd": 2, "ed": 2},
+            label="QSE",
+        ),
+        # Specialised scorecards (7.3.4, 7.4.5, 7.5.2, 7.6.2) not tabulated: points only.
+        (G, "specialised"): _agri(
+            "agri-spec-large",
+            "AgriBEE Specialised Large",
+            0,
+            20,
+            25,
+            {"main": 50},
+            5,
+            10,
+            {None: 20},
+        ),
+        (Q, "specialised"): _agri(
+            "agri-spec-qse", "AgriBEE Specialised QSE", 0, 25, 30, {"main": 30}, 15, 12, {None: 12}
+        ),
     },
     warnings=(
         "AgriBEE R10m boundary: cl. 2.7 'less than' vs cl. 6.10.1 'or less'; app treats "
         "R10m as EME (cl. 6.10.1).",
-        "AgriBEE indicator targets not extracted; ESD/Skills sub-minimums use 40% of the "
-        "AgriBEE weighting (silent -> D2).",
-        CUTOFF_WARN,
     ),
 )
 
 
 # --------------------------------------------------------------- Tourism (GG 39430 2015)
 def _tourism(key, name, own, mc, sd, esd_groups, rule, nv_min, sd_min, pp, sdv, ed):
-    return _card(
+    card = _card(
         key,
         name,
         [
@@ -270,6 +432,7 @@ def _tourism(key, name, own, mc, sd, esd_groups, rule, nv_min, sd_min, pp, sdv, 
         ],
         rule,
     )
+    return attach(card, "Tourism", {"*": ("Large" if key == "tourism-large" else "QSE",)})
 
 
 TOURISM = SectorConfig(
@@ -299,12 +462,12 @@ TOURISM = SectorConfig(
             26,
             15,
             25,
-            {"pp": 20, "sd": 5, "ed": 5},
+            {"pp": 18, "sd": 7, "ed": 5},
             "ownership_plus_one",
             3.2,
             10,
-            8,
-            2,
+            7.2,
+            2.8,
             2,
         ),
     },
@@ -337,8 +500,9 @@ ICT = SectorConfig(
     name="ICT",
     gazette="GG 40407, 7 Nov 2016",
     status="unverified",
-    # cl. 2.14.1 "QSE <= R50m": exactly R50m is a QSE under ICT.
-    thresholds={None: Thresholds(10_000_000, 50_000_000, large_inclusive=False)},
+    # Exactly R50m = Generic (CEO decision 4, Compliance tables; cl. 2.14.1 "<= R50m"
+    # reading not applied).
+    thresholds={None: GENERIC_THRESHOLDS},
     cards={(G, None): ICT_LARGE, (Q, None): qse.SCORECARD},
     warnings=(
         "UNVERIFIED: ICT sector code figures were decoded from a garbled PDF and need "

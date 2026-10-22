@@ -90,12 +90,13 @@ def _groups(card: Scorecard, inp: ScoreInput):
         if el.total is None:
             raw = element_group_points(el, inp.indicators.get(el.key, {}), inp.financials, draft)
         else:
-            if inp.indicators.get(el.key):
+            vals = inp.indicators.get(el.key, {})
+            if vals and not el.indicators:
                 raise ValueError(
-                    f"{card.key}/{el.key}: indicator inputs not available for this sector "
-                    "scorecard (indicator tables not extracted); give points instead"
+                    f"{card.key}/{el.key}: indicator targets not tabulated for this "
+                    "scorecard; give points instead"
                 )
-            raw = {}
+            raw = element_group_points(el, vals, inp.financials, draft) if vals else {}
         g = {k: v["points"] for k, v in raw.items()}
         b = sum(v["bonus"] for v in raw.values())
         given = dict(inp.points.get(el.key, {}))
@@ -145,13 +146,25 @@ def _ratios(card: Scorecard, core, groups, draft, tf_route) -> dict[str, float]:
 
 def _scored(size, card: Scorecard, inp: ScoreInput, notes) -> ScoreResult:
     draft = inp.draft_rules
-    if draft:
+    notes.extend(card.notes)
+    qse_tf = card.has("esd") and any(
+        i.clause.startswith("draft604") for i in card.element("esd").indicators
+    )
+    if draft and qse_tf:
+        notes.append(
+            "DRAFT rules on (Draft QSE 2026, NOT LAW): Transformation Fund 15 points for 2% "
+            "NPAT, either/or with SD+ED; TF-route ESD maximum = PP + TF (45 + 5 bonus); "
+            "TF sub-minimum 6 (INTERPRETATION); ESD bonuses 2 each."
+        )
+    elif draft:
         notes.append(
             "DRAFT rules on (Draft S400 2026, GG 54032, NOT LAW): Transformation Fund 20 "
             "points for 3% NPAT, either/or with SD+ED, sub-minimum 8; ESD bonuses 2 each; "
             "PP kept at 2019 values (27), so the TF-route ESD maximum is 47."
         )
-    elif inp.indicators.get("esd", {}).get("draft400 2.4.1") or inp.points.get("esd", {}).get("tf"):
+    elif any(
+        k.startswith(("draft400", "draft604")) for k in inp.indicators.get("esd", {})
+    ) or inp.points.get("esd", {}).get("tf"):
         notes.append("Transformation Fund input ignored: draft rules flag is off (D4).")
     core, bonus, groups, tf_route = _groups(card, inp)
     element_points = {k: core[k] + bonus[k] for k in core}

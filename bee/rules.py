@@ -75,6 +75,7 @@ class Scorecard:
     # Rescale the total to this base before applying the level table (FSC cl. 8.2.1).
     level_base: float | None = None
     level_base_option: str | None = None  # options key (bool) that switches rescaling off
+    notes: tuple[str, ...] = ()  # interpretation / gazette-inconsistency notes for results
 
     def max_total(self) -> float:
         return sum(e.max_points() for e in self.elements)

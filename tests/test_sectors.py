@@ -57,7 +57,7 @@ def test_con2_bep_r7m_is_qse():
     r = run(
         "construction", 7_000_000, 30, "bep", {"ownership": {"main": 20}, "skills": {"main": 10}}
     )
-    assert r.size == Q and r.scorecard == "construction-qse"
+    assert r.size == Q and r.scorecard == "construction-qse-bep"
 
 
 def test_con3_pp_below_7_6_discounts_one_level():
@@ -100,7 +100,10 @@ def test_fs1_bank_scorecard_total_120():
             "financial",
             2_000_000_000,
             variant="bank",
-            points=pts(23, 6, 20, 20, {"main": 15}, 5, ef=25, afs=12),
+            points={
+                **pts(23, 6, 20, 20, {"pp": 15}, 5, afs=12),
+                "ef": {"ef": 15, "sd": 7, "ed": 3},
+            },
         ).level
         == 1
     )
@@ -179,10 +182,18 @@ def test_ag2_r10m_is_eme_with_warning():
     assert r.size == E and any("cl. 2.7" in w for w in r.warnings)
 
 
-def test_ag3_silent_esd_submin_40pct():
-    r = run("agri", 100_000_000, 30, points=pts(25, 8, 19, 20, {"main": 15}, 15))
-    chk = next(c for c in r.submin_checks if c.element == "esd")
-    assert chk.required == 16 and not chk.passed and r.discounted
+def test_ag3_esd_category_submins():
+    """Compliance table: AgriBEE Large ESD sub-mins PP/SD/ED 10/4/2 (cl. 5.1.3)."""
+    r = run("agri", 100_000_000, 30, points=pts(25, 8, 19, 20, {"pp": 9, "sd": 4, "ed": 2}, 15))
+    req = {c.group: (c.required, c.passed) for c in r.submin_checks if c.element == "esd"}
+    assert req == {"pp": (10, False), "sd": (4, True), "ed": (2, True)} and r.discounted
+    q = get_sector("agri").card(Q, "standard")
+    assert {s.group: s.required for s in q.submins if s.element == "esd"} == {
+        "pp": 6,
+        "sd": 2,
+        "ed": 2,
+    }
+    assert next(s.required for s in q.submins if s.element == "skills") == 12
 
 
 def test_agri_large_total_119():
@@ -264,12 +275,113 @@ def test_tr1_transport_legacy_flag():
 
 
 def test_sector_points_only():
-    with pytest.raises(ValueError, match="indicator inputs"):
+    with pytest.raises(ValueError, match="not tabulated"):
         calculate(
-            ScoreInput(CompanyProfile(100_000_000, sector="tourism"), indicators={"sed": {"x": 1}})
+            ScoreInput(
+                CompanyProfile(100_000_000, sector="agri", variant="specialised"),
+                indicators={"sed": {"x": 1}},
+            )
         )
 
 
 def test_generic_unchanged_has_no_warnings():
     r = run("generic", 100_000_000, points=pts(22, 5, 14, 15, {"pp": 20, "sd": 8, "ed": 4}, 5))
     assert r.warnings == [] and r.level == 4
+
+
+# ------------------------------------------------------- Compliance tables (23 Oct 2026)
+from bee.sectors.tables import check_reconciles  # noqa: E402
+
+ALL_CARDS = [
+    (s, size, v)
+    for s in ("construction", "financial", "agri", "tourism")
+    for (size, v) in get_sector(s).cards
+]
+
+
+@pytest.mark.parametrize("sector,size,variant", ALL_CARDS)
+def test_csv_indicators_reconcile_with_weightings(sector, size, variant):
+    card = get_sector(sector).card(size, variant)
+    assert check_reconciles(card) == []
+
+
+def test_construction_esd_splits_and_submins():
+    c = get_sector("construction").card(G, "contractor").element("esd")
+    assert dict(c.group_max) == {"pp": 19, "sd_programmes": 5, "sd_contributions": 10}
+    assert c.bonus_max == 4
+    b = get_sector("construction").card(G, "bep")
+    assert dict(b.element("esd").group_max) == {"pp": 18, "sd_programmes": 4, "sd_contributions": 5}
+    assert {s.group: s.required for s in b.submins if s.element == "esd"} == {
+        "pp": 7.2,
+        "sd_programmes": 1.6,
+        "sd_contributions": 2,
+    }
+    assert next(s.required for s in b.submins if s.element == "skills") == 11.6
+    q = get_sector("construction").card(Q, "contractor")
+    assert dict(q.element("esd").group_max) == {"pp": 22, "sd_contributions": 7}
+    assert (q.element("sed").total, q.element("sed").bonus_max) == (3, 2)
+
+
+def test_construction_absolute_levels_no_cutoff_warning():
+    p = pts(27, 6, 18, 21, {"pp": 19, "sd_programmes": 5, "sd_contributions": 10}, 5)
+    r = run("construction", 200_000_000, 30, "contractor", p)
+    assert r.total_points == 105 and r.level == 1
+    assert not any("cut-offs" in w for w in r.warnings)
+    assert any("cl. 8.3" in n for n in r.notes)
+
+
+def test_construction_qse_gazette_notes():
+    r = run("construction", 20_000_000, 30, "contractor", {"ownership": {"main": 20}})
+    assert any("Construction QSE SED" in n for n in r.notes)
+    assert any("Construction QSE MC" in n for n in r.notes)
+
+
+def test_fs_bank_ef_submins():
+    card = get_sector("financial").card(G, "bank")
+    assert dict(card.element("ef").group_max) == {"ef": 15, "sd": 7, "ed": 3}
+    assert card.element("esd").total == 15 and card.element("esd").bonus_max == 4
+    subs = {(s.element, s.group): s.required for s in card.submins}
+    assert subs[("ef", "ef")] == 6 and subs[("ef", "sd")] == 2.8 and subs[("ef", "ed")] == 1.2
+    assert ("esd", "sd") not in subs
+
+
+def test_ict_exactly_r50m_is_generic():
+    assert run("ict", 50_000_000).size == G
+
+
+def test_agri_r10m_is_eme():
+    assert run("agri", 10_000_000).size == E
+
+
+def test_sector_raw_indicators_score_from_csv_targets():
+    """Tourism Large SED (TSC500 2.4.1): full target achieved -> full points, from raw
+    indicators rather than points."""
+    card = get_sector("tourism").card(G, None)
+    sed = card.element("sed")
+    core = next(i for i in sed.indicators if not i.bonus)
+    r = calculate(
+        ScoreInput(
+            CompanyProfile(100_000_000, 30, sector="tourism"),
+            indicators={"sed": {core.clause: core.target}},
+            financials=__import__("bee").Financials(npat=1_000_000)
+            if core.base == "npat"
+            else __import__("bee").Financials(),
+        )
+    )
+    assert r.element_points["sed"] == core.points
+
+
+def test_qse_draft_tf_route():
+    from bee import Financials
+
+    inp = dict(
+        indicators={"esd": {"draft604 7.1.1.5.1": 20_000}},
+        financials=Financials(npat=1_000_000),
+    )
+    off = calculate(ScoreInput(CompanyProfile(20_000_000, 30), **inp))
+    assert any("ignored" in n for n in off.notes)
+    on = calculate(ScoreInput(CompanyProfile(20_000_000, 30), draft_rules=True, **inp))
+    assert on.element_points["esd"] == 15
+    assert any("Draft QSE" in n for n in on.notes)
+    tf = next(c for c in on.submin_checks if c.group == "tf")
+    assert tf.required == 6 and tf.passed
