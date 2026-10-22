@@ -221,11 +221,12 @@ def profile_step():
     with st.container(border=True):
         st.markdown(
             "**Privacy notice.** We use the figures you enter only to calculate your "
-            "scorecard in this session. Aggregate black ownership and management-control "
+            "scorecard in this browser session. Nothing is stored on our servers after "
+            "you close the page. Aggregate black ownership and management-control "
             "figures are race- and gender-related special personal information "
-            "(POPIA s26), used only for this session's calculation and not retained after "
-            "you close the page. Nothing you enter is logged. Do not enter ID numbers or "
-            "individuals' names."
+            "(POPIA s26), used only for this session's calculation. This MVP is hosted "
+            "on Streamlit Community Cloud outside South Africa (POPIA s72 noted); "
+            "phase 2 moves hosting to SA. Do not enter ID numbers or individuals' names."
         )
         store["consent"] = st.checkbox(
             "I understand and consent to my company figures being processed for this calculation.",
@@ -715,8 +716,9 @@ def results_step():
         gate = store.setdefault("pdf_gate", {"email": "", "marketing": False, "unlocked": False})
         if not gate.get("unlocked"):
             st.markdown(
-                "Enter your email to unlock the download. We use it only to send the report "
-                "if you ask us to (POPIA)."
+                "Enter your work email to unlock the PDF download on this device. "
+                "Nothing is emailed from this app yet; the address stays in this browser "
+                "session only and is not stored on our servers (POPIA)."
             )
             gate["email"] = st.text_input("Work email", gate.get("email", ""), key="pdf_email")
             gate["marketing"] = st.checkbox(
@@ -733,7 +735,7 @@ def results_step():
                     st.error("Please fix:\n\n- Enter a valid email address to continue.")
         else:
             st.caption(
-                f"Signed in as {gate['email']}. Marketing opt-in: "
+                f"Email on file for this session: {gate['email']}. Marketing preference: "
                 f"{'yes' if gate.get('marketing') else 'no'}."
             )
             try:
