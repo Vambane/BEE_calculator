@@ -1,0 +1,345 @@
+sector,scorecard,element,clause,indicator,points,bonus,target,status
+Construction,Large-Contractor,Ownership,CSC100 2.1.1,"Voting rights, black people",4.5,N,32.5% (35% yr4),VERIFIED
+Construction,Large-Contractor,Ownership,CSC100 2.1.2,"Voting rights, black women",2,N,10% (14% yr4),VERIFIED
+Construction,Large-Contractor,Ownership,CSC100 2.2.1,"Economic interest, black people",4.5,N,32.5% (35% yr4),VERIFIED
+Construction,Large-Contractor,Ownership,CSC100 2.2.2,"Economic interest, black women",2,N,10% (14% yr4),VERIFIED
+Construction,Large-Contractor,Ownership,CSC100 2.2.3,EI designated groups/ESOP/BBOS/co-ops,3,N,10% (12% yr4),VERIFIED
+Construction,Large-Contractor,Ownership,CSC100 2.2.4,Black new entrants,5,N,5%,VERIFIED
+Construction,Large-Contractor,Ownership,CSC100 2.3.1,Net Value,6,N,Annexe CSC100(E),VERIFIED
+Construction,Large-Contractor,Ownership,CSC100 2.4.1,Voting rights black people >50%,1,Y,Yes,VERIFIED
+Construction,Large-Contractor,Ownership,CSC100 2.4.2,Voting rights black people >75%,2,Y,Yes,VERIFIED
+Construction,Large-Contractor,Ownership,CSC100 2.4.3,Voting rights black women >50%,1,Y,Yes,VERIFIED
+Construction,Large-BEP,Ownership,CSC100 2.1.1,"Voting rights, black people",5.5,N,32.5% (35% yr4),VERIFIED
+Construction,Large-BEP,Ownership,CSC100 2.1.2,"Voting rights, black women",2,N,10% (14% yr4),VERIFIED
+Construction,Large-BEP,Ownership,CSC100 2.2.1,"Economic interest, black people",5.5,N,32.5% (35% yr4),VERIFIED
+Construction,Large-BEP,Ownership,CSC100 2.2.2,"Economic interest, black women",2,N,10% (14% yr4),VERIFIED
+Construction,Large-BEP,Ownership,CSC100 2.2.3,EI designated groups/ESOP/BBOS/co-ops,3,N,5% (6% yr4),VERIFIED
+Construction,Large-BEP,Ownership,CSC100 2.2.4,Black new entrants,5,N,6%,VERIFIED
+Construction,Large-BEP,Ownership,CSC100 2.3.1,Net Value,4,N,Annexe CSC100(E),VERIFIED
+Construction,Large-BEP,Ownership,CSC100 2.4.1,Voting rights black people >50%,1,Y,Yes,VERIFIED
+Construction,Large-BEP,Ownership,CSC100 2.4.2,Voting rights black people >75%,2,Y,Yes,VERIFIED
+Construction,Large-BEP,Ownership,CSC100 2.4.3,Voting rights black women >50%,1,Y,Yes,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.1.1,Black board voting rights,3,N,50%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.1.1,Black board voting rights,2.5,N,50%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.1.2,Black female board voting rights,1,N,20%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.1.2,Black female board voting rights,1,N,20%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.1.3,Black executive directors,2,N,50%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.1.3,Black executive directors,2.5,N,50%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.1.4,Black female executive directors,1,N,20%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.1.4,Black female executive directors,1,N,20%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.2.1,Black other exec mgmt,2,N,60%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.2.1,Black other exec mgmt,2,N,60%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.2.2,Black female other exec mgmt,1,N,30%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.2.2,Black female other exec mgmt,1,N,30%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.3.1,Black senior mgmt,2,N,60%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.3.1,Black senior mgmt,2,N,60%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.3.2,Black female senior mgmt,0.5,N,30%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.3.2,Black female senior mgmt,1,N,30%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.4.1,Black middle mgmt,1,N,75%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.4.1,Black middle mgmt,1.5,N,75%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.4.2,Black female middle mgmt,0.5,N,30%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.4.2,Black female middle mgmt,1,N,30%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.5.1,Black junior mgmt,1,N,88%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.5.2,Black female junior mgmt,0.5,N,35%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.6.1,Black employees with disabilities,0.5,N,2%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.6.1,Black employees with disabilities,0.5,N,2%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.7.1,Black professionally registered employees,2,N,50%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.7.1,Black professionally registered employees,2,N,50%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.1.5,Exceeding black ED target,1,Y,>50%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.1.6,Exceeding black female ED target,1,Y,>20%,VERIFIED
+Construction,Large-Contractor,Management Control,CSC200 2.8.1,Black youth employees (adjusted for gender),2,Y,30%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.1.5,Exceeding black ED target,1,Y,>50%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.1.6,Exceeding black female ED target,1,Y,>20%,VERIFIED
+Construction,Large-BEP,Management Control,CSC200 2.8.1,Black youth employees (adjusted for gender),2,Y,30%,VERIFIED
+Construction,Large-Contractor,Skills Development,CSC300 2.1.1.1,"SD spend on black people, % of leviable amount",4,N,2% (2.5% yr3; 3% yr5),VERIFIED
+Construction,Large-BEP,Skills Development,CSC300 2.1.1.1,"SD spend on black people, % of leviable amount",7,N,2% (2.5% yr3; 3% yr5),VERIFIED
+Construction,Large-Contractor,Skills Development,CSC300 2.1.2.1,African people share of SD spend,2,N,% of Africans in EAP,VERIFIED
+Construction,Large-BEP,Skills Development,CSC300 2.1.2.1,African people share of SD spend,2,N,% of Africans in EAP,VERIFIED
+Construction,Large-Contractor,Skills Development,CSC300 2.1.2.2,Black management (exec/senior/middle),2,N,15%,VERIFIED
+Construction,Large-BEP,Skills Development,CSC300 2.1.2.2,Black management (exec/senior/middle),3,N,15%,VERIFIED
+Construction,Large-Contractor,Skills Development,CSC300 2.1.2.3,Black junior management,1,N,10%,VERIFIED
+Construction,Large-BEP,Skills Development,CSC300 2.1.2.3,Black junior management,1,N,10%,VERIFIED
+Construction,Large-Contractor,Skills Development,CSC300 2.1.2.4,Bursaries/scholarships for black people,2,N,15%,VERIFIED
+Construction,Large-BEP,Skills Development,CSC300 2.1.2.4,Bursaries/scholarships for black people,4,N,15%,VERIFIED
+Construction,Large-Contractor,Skills Development,CSC300 2.1.3.1,"Black people in Cat A-D learning programmes, % of employees",3,N,2.5%,VERIFIED
+Construction,Large-BEP,Skills Development,CSC300 2.1.3.1,"Black people in Cat A-D learning programmes, % of employees",4,N,2.5%,VERIFIED
+Construction,Large-Contractor,Skills Development,CSC300 2.1.3.2,Black candidates registered with professional bodies,3,N,60%,VERIFIED
+Construction,Large-BEP,Skills Development,CSC300 2.1.3.2,Black candidates registered with professional bodies,4,N,60%,VERIFIED
+Construction,Large-Contractor,Skills Development,CSC300 2.1.3.3,Black people with disabilities on Cat A-D programmes,1,N,5%,VERIFIED
+Construction,Large-BEP,Skills Development,CSC300 2.1.3.3,Black people with disabilities on Cat A-D programmes,1,N,5%,VERIFIED
+Construction,Large-Contractor,Skills Development,CSC300 2.1.4.1,Approved & verified mentorship programme,3,N,Yes,VERIFIED
+Construction,Large-BEP,Skills Development,CSC300 2.1.4.1,Approved & verified mentorship programme,3,N,Yes,VERIFIED
+Construction,Large-Contractor,Skills Development,CSC300 2.1.5.1,Black people absorbed after Cat A-D programme,1,Y,100%,VERIFIED
+Construction,Large-BEP,Skills Development,CSC300 2.1.5.1,Black people absorbed after Cat A-D programme,1,Y,100%,VERIFIED
+Construction,Large-Contractor,Skills Development,CSC300 2.1.5.2,Mentored black employees promoted,2,Y,15%,VERIFIED
+Construction,Large-Contractor,Skills Development,CSC300 2.1.5.3,Black employees registered as professionals,2,Y,60%,VERIFIED
+Construction,Large-BEP,Skills Development,CSC300 2.1.5.3,Black employees registered as professionals,4,Y,60%,VERIFIED
+Construction,Large-Contractor,PP&SD: Preferential Procurement,CSC400 2.1.1,PP spend all Empowering Suppliers,6,N,80%,VERIFIED
+Construction,Large-BEP,PP&SD: Preferential Procurement,CSC400 2.1.1,PP spend all Empowering Suppliers,6,N,80%,VERIFIED
+Construction,Large-Contractor,PP&SD: Preferential Procurement,CSC400 2.1.2,PP spend EMEs,3,N,15%,VERIFIED
+Construction,Large-BEP,PP&SD: Preferential Procurement,CSC400 2.1.2,PP spend EMEs,3,N,20%,VERIFIED
+Construction,Large-Contractor,PP&SD: Preferential Procurement,CSC400 2.1.3,PP spend QSEs,3,N,15%,VERIFIED
+Construction,Large-BEP,PP&SD: Preferential Procurement,CSC400 2.1.3,PP spend QSEs,2,N,10%,VERIFIED
+Construction,Large-Contractor,PP&SD: Preferential Procurement,CSC400 2.1.4,PP spend >=51% black owned,4,N,20%,VERIFIED
+Construction,Large-BEP,PP&SD: Preferential Procurement,CSC400 2.1.4,PP spend >=51% black owned,4,N,20%,VERIFIED
+Construction,Large-Contractor,PP&SD: Preferential Procurement,CSC400 2.1.5,PP spend >=35% black women owned,3,N,12%,VERIFIED
+Construction,Large-BEP,PP&SD: Preferential Procurement,CSC400 2.1.5,PP spend >=35% black women owned,3,N,12%,VERIFIED
+Construction,Large-Contractor,PP&SD: Preferential Procurement,CSC400 2.1.6,PP spend >=51% black designated-group owned,3,Y,20%,VERIFIED
+Construction,Large-BEP,PP&SD: Preferential Procurement,CSC400 2.1.6,PP spend >=51% black designated-group owned,2,Y,20%,VERIFIED
+Construction,Large-Contractor,PP&SD: Preferential Procurement,CSC400 2.1.7,PP spend >=51% black women owned,1,Y,8%,VERIFIED
+Construction,Large-BEP,PP&SD: Preferential Procurement,CSC400 2.1.7,PP spend >=51% black women owned,1,Y,8%,VERIFIED
+Construction,Large-Contractor,PP&SD: SD Programmes,CSC400 2.2.1,Compliant supplier & contractor development programmes,5,N,Annexe CSC400(C),VERIFIED
+Construction,Large-BEP,PP&SD: SD Programmes,CSC400 2.2.1,Compliant supplier & contractor development programmes,4,N,Annexe CSC400(C),VERIFIED
+Construction,Large-Contractor,PP&SD: SD Contributions,CSC400 2.3.1,Qualifying SD contributions,8,N,3% of NPAT,VERIFIED
+Construction,Large-BEP,PP&SD: SD Contributions,CSC400 2.3.1,Qualifying SD contributions,4,N,3% of NPAT,VERIFIED
+Construction,Large-Contractor,PP&SD: SD Contributions,CSC400 2.3.2,SD contributions to 51% black women owned,2,N,20% of value in 2.3.1,VERIFIED
+Construction,Large-BEP,PP&SD: SD Contributions,CSC400 2.3.2,SD contributions to 51% black women owned,1,N,20% of value in 2.3.1,VERIFIED
+Construction,Large-Contractor,SED,CSC500 2.4.1,Qualifying SED contributions,4,N,1.25% of NPAT,VERIFIED
+Construction,Large-Contractor,SED,CSC500 2.4.2,SED spend in communities with limited services,1,N,30% of 2.4.1 target,VERIFIED
+Construction,Large-Contractor,SED,CSC500 2.4.3,Structured SED projects,1,Y,1.25% of NPAT,VERIFIED
+Construction,Large-BEP,SED,CSC500 2.4.1,Qualifying SED contributions,4,N,1.25% of NPAT,VERIFIED
+Construction,Large-BEP,SED,CSC500 2.4.2,SED spend in communities with limited services,1,N,30% of 2.4.1 target,VERIFIED
+Construction,Large-BEP,SED,CSC500 2.4.3,Structured SED projects,1,Y,1.25% of NPAT,VERIFIED
+Construction,QSE (Contractor & BEP),Ownership,CSC601 1.1.1,"Voting rights, black people",5.5,N,25% (30% yr4),VERIFIED
+Construction,QSE (Contractor & BEP),Ownership,CSC601 1.1.2,"Voting rights, black women",2,N,10%,VERIFIED
+Construction,QSE (Contractor & BEP),Ownership,CSC601 1.2.1,"Economic interest, black people",5.5,N,25% (30% yr4),VERIFIED
+Construction,QSE (Contractor & BEP),Ownership,CSC601 1.2.2,"Economic interest, black women",2,N,10%,VERIFIED
+Construction,QSE (Contractor & BEP),Ownership,CSC601 1.2.3,EI new entrants/designated groups,7,N,10% Contractors / 5% BEPs,VERIFIED
+Construction,QSE (Contractor & BEP),Ownership,CSC601 1.3,Net Value,5,N,Annexe CSC100(E),VERIFIED
+Construction,QSE (Contractor & BEP),Ownership,CSC601 1.4.1,VR+EI black people,1.5,Y,40%,VERIFIED
+Construction,QSE (Contractor & BEP),Ownership,CSC601 1.4.2,VR+EI black women,1.5,Y,12.5%,VERIFIED
+Construction,QSE (Contractor & BEP),Management Control,CSC602 1.1,Black executive management,5,N,50%,VERIFIED
+Construction,QSE (Contractor & BEP),Management Control,CSC602 1.2,Black female executive management,2,N,20%,VERIFIED
+Construction,QSE (Contractor & BEP),Management Control,CSC602 2.1,Black senior+middle mgmt,6,N,20% (as printed),VERIFIED
+Construction,QSE (Contractor & BEP),Management Control,CSC602 2.2,Black female senior+middle mgmt,2,N,10% (as printed),VERIFIED
+Construction,QSE (Contractor & BEP),Management Control,CSC602 2.3,Black junior mgmt,4,N,40%,VERIFIED
+Construction,QSE (Contractor & BEP),Management Control,CSC602 2.4,Black female junior mgmt,1,N,20%,VERIFIED
+Construction,QSE (Contractor & BEP),Skills Development,CSC603 1.1,"SD spend on black people, % leviable amount",14,N,1.5%,VERIFIED
+Construction,QSE (Contractor & BEP),Skills Development,CSC603 1.2,"SD spend on black management, % of black SD spend",7,N,25%,VERIFIED
+Construction,QSE (Contractor & BEP),Skills Development,CSC603 1.3,SD spend on black people with disabilities,3,N,3% (gazette shows struck-through '???2'),VERIFIED
+Construction,QSE (Contractor & BEP),Skills Development,CSC603 2.1,Black people absorbed,1,Y,100%,VERIFIED
+Construction,QSE (Contractor & BEP),Skills Development,CSC603 2.2,Black employees registered with professional bodies,1,Y,50%,VERIFIED
+Construction,QSE (Contractor & BEP),PP&SD: Preferential Procurement,CSC604 1.1,PP spend all Empowering Suppliers,13,N,60%,VERIFIED
+Construction,QSE (Contractor & BEP),PP&SD: Preferential Procurement,CSC604 1.2,PP spend >=51% black owned,5,N,17.5%,VERIFIED
+Construction,QSE (Contractor & BEP),PP&SD: Preferential Procurement,CSC604 1.3,PP spend >=35% black women owned,4,N,7.5%,VERIFIED
+Construction,QSE (Contractor & BEP),PP&SD: SD Contributions,CSC604 2.1,Qualifying SD contributions,7,N,1% of NPAT,VERIFIED
+Construction,QSE (Contractor & BEP),SED,CSC605 1,Qualifying SED contributions,3,N,1% of NPAT,VERIFIED
+Construction,QSE (Contractor & BEP),SED,CSC605 bonus,SED in communities with limited services,2,Y,50% of target above,VERIFIED
+FS 2017,"Large (Table 2a: banks, insurers, exchanges)",Ownership,FS100 2a 2.1.1,"Voting rights, black people",4,N,25%+1 vote,VERIFIED
+FS 2017,"Large (Table 2a: banks, insurers, exchanges)",Ownership,FS100 2a 2.1.2,"Voting rights, black women",2,N,10%,VERIFIED
+FS 2017,"Large (Table 2a: banks, insurers, exchanges)",Ownership,FS100 2a 2.2.1,"Economic interest, black people",3,N,25%,VERIFIED
+FS 2017,"Large (Table 2a: banks, insurers, exchanges)",Ownership,FS100 2a 2.2.2,"Economic interest, black women",2,N,10%,VERIFIED
+FS 2017,"Large (Table 2a: banks, insurers, exchanges)",Ownership,FS100 2a 2.2.3,EI designated groups/ESOP/BBOS/co-ops,3,N,3%,VERIFIED
+FS 2017,"Large (Table 2a: banks, insurers, exchanges)",Ownership,FS100 2a 2.2.4,New entrants,3,N,2%,VERIFIED
+FS 2017,"Large (Table 2a: banks, insurers, exchanges)",Ownership,FS100 2a 2.3,Net Value,6,N,"Formula, Annexe 100(C)",VERIFIED
+FS 2017,"Large (Table 2a: banks, insurers, exchanges)",Ownership,FS100 2a 2.4,Direct/indirect ownership >15%,3,Y,10%,VERIFIED
+FS 2017,"Large (Table 2a: banks, insurers, exchanges)",Ownership,FS100 2a 2.5,EI & VR above 32.5% / 40%,2,Y,"1 pt @32.5%, 1 pt @40%",VERIFIED
+FS 2017,Large (Table 2b: exempt multinationals),Ownership,FS100 2b 2.1,Black business growth funding / equity equivalents,20,N,25% of value at 31/12/2010,VERIFIED
+FS 2017,Large (Table 2b: exempt multinationals),Ownership,FS100 2b 2.2,Equity equivalents in financial sector,5,Y,25%,VERIFIED
+FS 2017,Large-Other (Table 2a variant),Ownership,FS000 8.1,Other institutions: Ownership weighting 25 (indicator split not separately extracted),25,N,see FS100,UNVERIFIED
+FS 2017,Large (all),Management Control,FS200 2.1.1,Black board voting rights,1,N,50%,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.1.2,Black female board voting rights,1,N,25%,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.1.3,Black executive directors,2,N,50%,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.1.4,Black female executive directors,1,N,25%,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.2.1,Black executive management,2,N,60%,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.2.2,Black female executive management,1,N,30%,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.3.1,Black senior management,2,N,60%,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.3.2,Black female senior management,1,N,30%,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.3.3,African senior managers,1,N,EAP %,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.4.1,Black middle management,2,N,75%,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.4.2,Black female middle management,1,N,38%,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.4.3,African middle managers,1,N,EAP %,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.5.1,Black junior management,1,N,88%,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.5.2,Black female junior management,1,N,44%,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.5.3,African junior managers,1,N,EAP %,VERIFIED
+FS 2017,Large (all),Management Control,FS200 2.6,Black employees with disabilities,1,N,2%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.1.1,"SD spend black senior/exec mgrs, % LA at level",1,N,2.00%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.1.2,...black women senior/exec mgrs,0.5,N,1.00%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.1.3,...African senior/exec mgrs,0.5,N,EAP%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.2.1,...black middle mgrs,1,N,3.00%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.2.2,...black women middle mgrs,0.5,N,1.50%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.2.3,...African middle mgrs,0.5,N,EAP%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.3.1,...black junior mgrs,1,N,5.00%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.3.2,...black women junior mgrs,1,N,2.50%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.3.3,...African junior mgrs,1,N,EAP%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.4.1,...black non-management staff,2,N,8.00%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.4.2,...black women non-management,1,N,4.00%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.4.3,...African non-management,1,N,EAP%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.5,"SD spend black unemployed, % LA",4,N,1.5%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.6,"SD spend black people with disabilities, % LA",1,N,0.30%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.7,"Black learners (learnerships/apprenticeships/internships/Cat B-D), % employees",4,N,5.00%,VERIFIED
+FS 2017,Large (all),Skills Development,FS300 2.8,Previously unemployed black learners absorbed,3,Y,100%,VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",PESD: Procurement,FS400 2.1.1,PP all Empowering Suppliers,5,N,75% (yr1-3) / 80% (yr3+),VERIFIED
+FS 2017,Large-Banks&Life,PESD: Procurement,FS400 2.1.1,PP all Empowering Suppliers,4,N,75% (yr1-3) / 80% (yr3+),VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",PESD: Procurement,FS400 2.1.2,PP from QSEs,3,N,14% / 18%,VERIFIED
+FS 2017,Large-Banks&Life,PESD: Procurement,FS400 2.1.2,PP from QSEs,2,N,14% / 18%,VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",PESD: Procurement,FS400 2.1.3,PP from EMEs,2,N,8% / 12%,VERIFIED
+FS 2017,Large-Banks&Life,PESD: Procurement,FS400 2.1.3,PP from EMEs,2,N,8% / 12%,VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",PESD: Procurement,FS400 2.1.4,PP >=51% black owned,7,N,20% / 30%,VERIFIED
+FS 2017,Large-Banks&Life,PESD: Procurement,FS400 2.1.4,PP >=51% black owned,5,N,20% / 30%,VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",PESD: Procurement,FS400 2.1.5,PP >=30% black women owned,3,N,9% / 10%,VERIFIED
+FS 2017,Large-Banks&Life,PESD: Procurement,FS400 2.1.5,PP >=30% black women owned,2,N,9% / 10%,VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",PESD: Supplier Development,FS400 2.2.1,SD contributions,10,N,2% of NPAT,VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",PESD: Enterprise Development,FS400 2.3.1,ED & sector-specific contributions,5,N,1% of NPAT,VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",PESD: Bonus,FS400 2.4.1,ED beneficiary graduates to SD,1,Y,Yes,VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",PESD: Bonus,FS400 2.4.2,Jobs created via SD/ED,1,Y,Yes,VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",PESD: Bonus,FS400 2.4.3(a)/(b),Intermediated black professional providers / black stockbrokers & fund managers,2,Y,5%,VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",PESD: Bonus,FS400 2.4.4,PP designated-group >=51% black owned,2,Y,2%,VERIFIED
+FS 2017,Large-Banks&Life,PESD: Bonus,FS400 2.4.1,ED beneficiary graduates to SD,0,Y,n/a,VERIFIED
+FS 2017,Large-Banks&Life,PESD: Bonus,FS400 2.4.2,Jobs created via SD/ED,0,Y,n/a,VERIFIED
+FS 2017,Large-Banks&Life,PESD: Bonus,FS400 2.4.3(a)/(b),Intermediated black professional providers / black stockbrokers & fund managers,2,Y,5%,VERIFIED
+FS 2017,Large-Banks&Life,PESD: Bonus,FS400 2.4.4,PP designated-group >=51% black owned,2,Y,2%,VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",PESD: Bonus,FS400 2.4.5,ED support of black stockbrokers/fund managers/intermediaries,2,Y,0.5% of NPAT,VERIFIED
+FS 2017,Large-Banks&Life,Empowerment Financing & ESD,FS600 2.1,"Targeted investments (infrastructure, agri, housing, SME)",12,N,Banks R48bn / Life R27bn,VERIFIED
+FS 2017,Large-Banks&Life,Empowerment Financing & ESD,FS600 2.2,B-BBEE transaction financing & black business/SME funding,3,N,Banks R32bn / Life R15bn,VERIFIED
+FS 2017,Large-Banks&Life,Empowerment Financing & ESD,FS600 2.3,Supplier Development contributions,7,N,1.8% of NPAT,VERIFIED
+FS 2017,Large-Banks&Life,Empowerment Financing & ESD,FS600 2.4,Enterprise Development contributions,3,N,0.2% of NPAT (non-recoverable),VERIFIED
+FS 2017,Large-Banks&Life,Empowerment Financing & ESD,FS600 2.5.1,ED beneficiary graduates to SD,1,Y,Yes,VERIFIED
+FS 2017,Large-Banks&Life,Empowerment Financing & ESD,FS600 2.5.2,Jobs created via SD/ED,1,Y,Yes,VERIFIED
+FS 2017,Large-Banks&Life,Empowerment Financing & ESD,FS600 2.5.3,Development of black stockbrokers/fund managers/intermediaries,2,Y,Banks TBD / Life 0.5% NPAT,VERIFIED
+FS 2017,Large-Banks&Life + STI,Access to Financial Services,FS700 2.1.1,Geographic access: transaction point within 5 km,1,N,85%,VERIFIED (targets per bank scorecard; insurer variant table not extracted)
+FS 2017,Large-Banks&Life + STI,Access to Financial Services,FS700 2.1.2,Geographic access: service point within 10 km,1,N,70%,VERIFIED (targets per bank scorecard; insurer variant table not extracted)
+FS 2017,Large-Banks&Life + STI,Access to Financial Services,FS700 2.1.3,Geographic access: sales point within 15 km,2,N,60%,VERIFIED (targets per bank scorecard; insurer variant table not extracted)
+FS 2017,Large-Banks&Life + STI,Access to Financial Services,FS700 2.1.4,"Electronic access (earners < R5,000 pm)",2,N,19% of account holders in target market,VERIFIED (targets per bank scorecard; insurer variant table not extracted)
+FS 2017,Large-Banks&Life + STI,Access to Financial Services,FS700 2.2,Banking densification,3,N,"1,500 adults per point of presence",VERIFIED (targets per bank scorecard; insurer variant table not extracted)
+FS 2017,Large-Banks&Life + STI,Access to Financial Services,FS700 2.3,Product-related access (active LSM 1-5 accounts),3,N,"12,370,082 active accounts (2017)",VERIFIED (targets per bank scorecard; insurer variant table not extracted)
+FS 2017,Large-Banks&Life,SED & Consumer Education,FS500 2.1,SED contributions,3,N,0.60% NPAT (0.7% foreign bank branches/SAVCA/reinsurers),VERIFIED
+FS 2017,Large-Banks&Life,SED & Consumer Education,FS500 2.2,Consumer Education contributions,2,N,0.40% NPAT (0 for foreign branches etc.),VERIFIED
+FS 2017,Large-Banks&Life,SED & Consumer Education,FS500 2.3.1,Additional CE contributions,1,Y,0.10% NPAT,VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",SED & Consumer Education,FS500 2.1,SED contributions,3,N,0.60% NPAT (0.7% foreign bank branches/SAVCA/reinsurers),VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",SED & Consumer Education,FS500 2.2,Consumer Education contributions,2,N,0.40% NPAT (0 for foreign branches etc.),VERIFIED
+FS 2017,"Large-Other (STI, exchanges, others)",SED & Consumer Education,FS500 2.3.1,Additional CE contributions,1,Y,0.10% NPAT,VERIFIED
+FS 2017,QSFI,Ownership,FS801 1.1.1,"Voting rights, black people",5,N,25%+1 vote,VERIFIED
+FS 2017,QSFI,Ownership,FS801 1.1.2,"Voting rights, black women",2,N,10%,VERIFIED
+FS 2017,QSFI,Ownership,FS801 1.2.1,"Economic interest, black people",5,N,25%,VERIFIED
+FS 2017,QSFI,Ownership,FS801 1.2.2,"Economic interest, black women",2,N,10%,VERIFIED
+FS 2017,QSFI,Ownership,FS801 1.2.3,EI new entrants/designated groups,3,N,2%,VERIFIED
+FS 2017,QSFI,Ownership,FS801 1.3,Net Value (points derived: 25-17),8,N,Annexe FS100(C),DERIVED (weighting minus listed indicators)
+FS 2017,QSFI,Ownership,FS801 1.4.1,Direct/indirect ownership >15%,2,Y,10%,VERIFIED
+FS 2017,QSFI,Ownership,FS801 1.4.2,EI & VR above 25%,2,Y,"1 @32.5%, 1 @40%",VERIFIED
+FS 2017,QSFI,Management Control,FS802 1.1.1,Black executive management,5,N,50%,VERIFIED
+FS 2017,QSFI,Management Control,FS802 1.1.2,Black female executive management,2,N,25%,VERIFIED
+FS 2017,QSFI,Management Control,FS802 1.2.1,Black senior/middle/junior mgmt,6,N,60%,VERIFIED
+FS 2017,QSFI,Management Control,FS802 1.2.2,Black female senior/middle/junior mgmt,2,N,30%,VERIFIED
+FS 2017,QSFI,Skills Development,FS803 1.1,"SD spend black people, % LA",20,N,3%,VERIFIED
+FS 2017,QSFI,Skills Development,FS803 1.2,"SD spend black females, % LA",5,N,1%,VERIFIED
+FS 2017,QSFI,ESD: PP,FS804 1.1.1,PP all Empowering Suppliers,15,N,60%,VERIFIED
+FS 2017,QSFI,ESD: PP,FS804 1.1.2,PP >=51% black owned,5,N,15%,VERIFIED
+FS 2017,QSFI,ESD: SD,FS804 1.2.1,SD contributions,5,N,1% of NPAT,VERIFIED
+FS 2017,QSFI,ESD: ED,FS804 1.3.1,ED contributions,5,N,1% of NPAT,VERIFIED
+FS 2017,QSFI,SED & CE,FS805 1.3.1.1,SED contributions,3,N,0.60% NPAT,VERIFIED
+FS 2017,QSFI,SED & CE,FS805 1.3.1.2,Consumer Education contributions,2,N,0.40% NPAT,VERIFIED
+FS 2017,QSFI,SED & CE,FS805 1.3.2.1,Additional SED contributions,1,Y,0.20% NPAT,VERIFIED
+AgriBEE,Large,Ownership,7.2.3.1.1,"Voting rights, black people",4,N,25%+1 vote,VERIFIED
+AgriBEE,Large,Ownership,7.2.3.1.2,"Voting rights, black women",2,N,10%,VERIFIED
+AgriBEE,Large,Ownership,7.2.3.2.1,"Economic interest, black people",4,N,25%,VERIFIED
+AgriBEE,Large,Ownership,7.2.3.2.2,"Economic interest, black women",2,N,10%,VERIFIED
+AgriBEE,Large,Ownership,7.2.3.2.3,EI designated groups/ESOP/BBOS/co-ops/farm workers,3,N,4%,VERIFIED
+AgriBEE,Large,Ownership,7.2.3.2.4,New entrants,2,N,2%,VERIFIED
+AgriBEE,Large,Ownership,7.2.3.3,Net Value (points not printed; 25-17),8,N,Annexe 100(E) Amended Codes,DERIVED
+AgriBEE,QSE,Ownership,7.2.4.1.1,"Voting rights, black people",5,N,25%+1 vote,VERIFIED
+AgriBEE,QSE,Ownership,7.2.4.1.2,"Voting rights, black women",2,N,10%,VERIFIED
+AgriBEE,QSE,Ownership,7.2.4.2.1,"Economic interest, black people",5,N,25%,VERIFIED
+AgriBEE,QSE,Ownership,7.2.4.2.2,"Economic interest, black women",2,N,10%,VERIFIED
+AgriBEE,QSE,Ownership,7.2.4.2.3,EI new entrants/designated groups,3,N,2%,VERIFIED
+AgriBEE,QSE,Ownership,7.2.4.3,Net Value,8,N,Annexe 100(E) Amended Codes,VERIFIED
+AgriBEE,Large,Management Control,7.3.3.1.1,Black board voting rights,2,N,50%,VERIFIED
+AgriBEE,Large,Management Control,7.3.3.1.2,Black female board voting rights,1,N,25%,VERIFIED
+AgriBEE,Large,Management Control,7.3.3.1.3,Black executive directors,2,N,50%,VERIFIED
+AgriBEE,Large,Management Control,7.3.3.1.4,Black female executive directors,1,N,25%,VERIFIED
+AgriBEE,Large,Management Control,7.1.3.2.1 (numbering as printed),Black executive management,2,N,60%,VERIFIED
+AgriBEE,Large,Management Control,7.1.3.2.2 (numbering as printed),Black female executive management,1,N,30%,VERIFIED
+AgriBEE,Large,Management Control,7.1.3.3.1 (numbering as printed),Black senior management,2,N,60%,VERIFIED
+AgriBEE,Large,Management Control,7.1.3.3.2 (numbering as printed),Black female senior management,1,N,30%,VERIFIED
+AgriBEE,Large,Management Control,7.1.3.4.1 (numbering as printed),Black middle management,2,N,75%,VERIFIED
+AgriBEE,Large,Management Control,7.1.3.4.2 (numbering as printed),Black female middle management,1,N,38%,VERIFIED
+AgriBEE,Large,Management Control,7.1.3.5.1 (numbering as printed),Black junior management,1,N,88%,VERIFIED
+AgriBEE,Large,Management Control,7.1.3.5.2 (numbering as printed),Black female junior management,1,N,44%,VERIFIED
+AgriBEE,Large,Management Control,7.1.3.6.1 (numbering as printed),Black employees with disabilities,2,N,2%,VERIFIED
+AgriBEE,QSE,Management Control,7.3.5.1.1,Black executive management,5,N,50%,VERIFIED
+AgriBEE,QSE,Management Control,7.3.5.1.2,Black female executive management,2,N,25%,VERIFIED
+AgriBEE,QSE,Management Control,7.3.5.2.1,Black non-executive (middle/junior) mgmt,6,N,60%,VERIFIED
+AgriBEE,QSE,Management Control,7.3.5.2.2,Black female non-executive mgmt,2,N,30%,VERIFIED
+AgriBEE,Large,Skills Development,7.4.4.1,"SD spend black people, % leviable (85% scarce/critical)",8,N,6%,VERIFIED
+AgriBEE,Large,Skills Development,7.4.4.2,"SD spend black people with disabilities, % leviable",4,N,0.3%,VERIFIED
+AgriBEE,Large,Skills Development,7.4.4.3,"Black learnerships/apprenticeships/internships, % employees",4,N,2.5%,VERIFIED
+AgriBEE,Large,Skills Development,7.4.4.4,"Black unemployed in training, % employees",4,N,2.5%,VERIFIED
+AgriBEE,Large,Skills Development,7.4.4.5,Black people absorbed after learnership,5,Y,100%,VERIFIED
+AgriBEE,QSE,Skills Development,7.4.6.1,"SD spend black people, % leviable",15,N,3%,VERIFIED
+AgriBEE,QSE,Skills Development,7.4.6.2,"Black unemployed in training, % employees",5,N,1%,VERIFIED
+AgriBEE,QSE,Skills Development,7.4.6.3,"SD spend black women, % leviable",10,N,1%,VERIFIED
+AgriBEE,QSE,Skills Development,7.4.6.4,Black people absorbed after learnership,5,Y,100%,VERIFIED
+AgriBEE,Large,ESD: PP,7.5.1.1,PP all Empowering Suppliers,5,N,80%,VERIFIED (page image p.42-43)
+AgriBEE,Large,ESD: PP,7.5.1.2,PP from QSEs,3,N,15%,VERIFIED (page image p.42-43)
+AgriBEE,Large,ESD: PP,7.5.1.3,PP from EMEs,4,N,15%,VERIFIED (page image p.42-43)
+AgriBEE,Large,ESD: PP,7.5.1.4,PP >=51% black owned,9,N,40% (phase-in 10/20/25/30/40% yrs 1-5),VERIFIED (page image p.42-43)
+AgriBEE,Large,ESD: PP,7.5.1.5,PP >=30% black women owned,4,N,12% (6% yrs 1-4 if SD target 3%),VERIFIED (page image p.42-43)
+AgriBEE,Large,ESD: PP,7.5.1.6,PP designated-group >=51% black owned,2,Y,2%,VERIFIED (page image p.42-43)
+AgriBEE,Large,ESD: SD,7.5.1.7,SD contributions,10,N,"3% NPAT yrs 1-4, then 2% NPAT",VERIFIED (page image p.42-43)
+AgriBEE,Large,ESD: ED,7.5.1.8,ED & sector-specific contributions,5,N,1.5% of NPAT,VERIFIED (page image p.42-43)
+AgriBEE,Large,ESD: Bonus,7.5.1.9,ED beneficiary graduates to SD,1,Y,Yes,VERIFIED (page image p.42-43)
+AgriBEE,Large,ESD: Bonus,7.5.1.10,Jobs created via SD/ED,1,Y,Yes,VERIFIED (page image p.42-43)
+AgriBEE,QSE,ESD: PP,7.5.3.1,PP all Empowering Suppliers,10,N,60%,VERIFIED
+AgriBEE,QSE,ESD: PP,7.5.3.2,PP >=51% black owned,5,N,15% (phase-in 5/10/15%),VERIFIED
+AgriBEE,QSE,ESD: SD,7.5.3.3,SD contributions,5,N,1% of NPAT,VERIFIED
+AgriBEE,QSE,ESD: ED,7.5.3.4,ED & sector-specific contributions,5,N,1.5% of NPAT,VERIFIED
+AgriBEE,Large,SED,7.6.1.1,SED contributions,15,N,1.5% of NPAT,VERIFIED
+AgriBEE,QSE,SED,7.6.3.1,SED contributions,15,N,1.5% of NPAT,VERIFIED
+Tourism,Large,Ownership,TSC100 2.1.1,"Voting rights, black people",4,N,30%,VERIFIED
+Tourism,Large,Ownership,TSC100 2.1.2,"Voting rights, black women",2,N,15%,VERIFIED
+Tourism,Large,Ownership,TSC100 2.2.1,"Economic interest, black people",4,N,30%,VERIFIED
+Tourism,Large,Ownership,TSC100 2.2.2,"Economic interest, black women",2,N,15%,VERIFIED
+Tourism,Large,Ownership,TSC100 2.2.3,EI designated groups/ESOP/BBOS/co-ops,3,N,3%,VERIFIED
+Tourism,Large,Ownership,TSC100 2.2.4,Black new entrants,4,N,10%,VERIFIED
+Tourism,Large,Ownership,TSC100 2.3.1,Net Value,8,N,Annexe TSC100(E),VERIFIED
+Tourism,Large,Management Control,TSC200 2.1.1,Black board voting rights,2,N,50%,VERIFIED
+Tourism,Large,Management Control,TSC200 2.1.2,Black female board voting rights,1,N,30%,VERIFIED
+Tourism,Large,Management Control,TSC200 2.1.3,Black executive directors,2,N,50%,VERIFIED
+Tourism,Large,Management Control,TSC200 2.1.4,Black female executive directors,1,N,30%,VERIFIED
+Tourism,Large,Management Control,TSC200 2.2.1,Black other executive management,2,N,60%,VERIFIED
+Tourism,Large,Management Control,TSC200 2.2.2,Black female other exec mgmt,1,N,30%,VERIFIED
+Tourism,Large,Management Control,TSC200 2.3.1,Black senior management,2,N,60%,VERIFIED
+Tourism,Large,Management Control,TSC200 2.3.2,Black female senior management,1,N,30%,VERIFIED
+Tourism,Large,Management Control,TSC200 2.4.1,Black middle management,2,N,75%,VERIFIED
+Tourism,Large,Management Control,TSC200 2.4.2,Black female middle management,1,N,38%,VERIFIED
+Tourism,Large,Management Control,TSC200 2.5.1,Black junior management,1,N,80%,VERIFIED
+Tourism,Large,Management Control,TSC200 2.5.2,Black female junior management,1,N,40%,VERIFIED
+Tourism,Large,Management Control,TSC200 2.6.1,Black employees with disabilities,2,N,2%,VERIFIED
+Tourism,Large,Management Control,TSC200 2.7.1,Disabled black employees above 2%,2,Y,1% over 2.6.1,VERIFIED
+Tourism,Large,Skills Development,TSC300 2.1.1.1,"SD spend black people (tourism sub-sectors), % LA",5,N,6%,VERIFIED
+Tourism,Large,Skills Development,TSC300 2.1.1.2,"SD spend black people with disabilities, % LA",3,N,0.3%,VERIFIED
+Tourism,Large,Skills Development,TSC300 2.1.2.1,"Black employees in learnerships/apprenticeships/internships, % employees",8,N,3.5%,VERIFIED
+Tourism,Large,Skills Development,TSC300 2.1.2.2,"Black unemployed learners, % employees",4,N,3%,VERIFIED
+Tourism,Large,Skills Development,TSC300 2.1.3.1,Black people absorbed,5,Y,100%,VERIFIED
+Tourism,Large,ESD: PP,TSC400 2.1.1,PP all Empowering Suppliers,5,N,80%,VERIFIED
+Tourism,Large,ESD: PP,TSC400 2.1.2,PP from QSEs,3,N,15%,VERIFIED
+Tourism,Large,ESD: PP,TSC400 2.1.3,PP from EMEs,4,N,15%,VERIFIED
+Tourism,Large,ESD: PP,TSC400 2.1.4,PP >=51% black owned,9,N,40%,VERIFIED
+Tourism,Large,ESD: PP,TSC400 2.1.5,PP 30% black women owned,4,N,12%,VERIFIED
+Tourism,Large,ESD: SD,TSC400 2.2.1,SD contributions,10,N,3% of NPAT,VERIFIED
+Tourism,Large,ESD: ED,TSC400 2.3.1,ED & sector-specific contributions,5,N,0.5% of NPAT,DERIVED points (40-25-10; not printed in text layer); target VERIFIED
+Tourism,Large,ESD: Bonus,TSC400 2.4.1,ED beneficiary graduates to SD,1,Y,Yes,VERIFIED
+Tourism,Large,ESD: Bonus,TSC400 2.4.2,Jobs created via SD/ED,1,Y,Yes,VERIFIED
+Tourism,Large,SED,TSC500 2.4.1,SED contributions,5,N,1% of NPAT,VERIFIED
+Tourism,Large,SED,TSC500 2.4.2,Status as TOMSA levy collector,3,Y,Yes,VERIFIED
+Tourism,QSE,Ownership,TSC601 1.1.1,"Voting rights, black people",5,N,30%,VERIFIED
+Tourism,QSE,Ownership,TSC601 1.1.2,"Voting rights, black women",2,N,15%,VERIFIED
+Tourism,QSE,Ownership,TSC601 1.2.1,"Economic interest, black people",5,N,30%,VERIFIED
+Tourism,QSE,Ownership,TSC601 1.2.2,"Economic interest, black women",3,N,15%,VERIFIED
+Tourism,QSE,Ownership,TSC601 1.2.3,EI new entrants/designated groups,3,N,3%,VERIFIED
+Tourism,QSE,Ownership,TSC601 1.3.1,Net Value,8,N,Annexe TSC100(E),VERIFIED
+Tourism,QSE,Management Control,TSC602 1.1,Black executive management,5,N,60%,VERIFIED
+Tourism,QSE,Management Control,TSC602 1.2,Black female executive management,2,N,30%,VERIFIED
+Tourism,QSE,Management Control,TSC602 2.1,Black senior/middle/junior mgmt,6,N,60%,VERIFIED
+Tourism,QSE,Management Control,TSC602 2.2,Black female senior/middle/junior mgmt,2,N,30%,VERIFIED
+Tourism,QSE,Management Control,TSC602 3.1,Black employees with disabilities,2,Y,1%,VERIFIED
+Tourism,QSE,Skills Development,TSC603 1.1,"SD spend black people, % LA",10,N,3%,VERIFIED
+Tourism,QSE,Skills Development,TSC603 1.2,"SD spend black females, % LA",9,N,1.5%,VERIFIED
+Tourism,QSE,Skills Development,TSC603 2.1,"Black learnerships/apprenticeships/internships, % employees",6,N,2.5%,VERIFIED
+Tourism,QSE,Skills Development,TSC603 3.1,Black people absorbed,5,Y,100%,VERIFIED
+Tourism,QSE,ESD: PP,TSC604 1.1,PP all Empowering Suppliers,8,N,60%,VERIFIED
+Tourism,QSE,ESD: PP,TSC604 1.2,PP >=51% black owned,10,N,30%,VERIFIED
+Tourism,QSE,ESD: SD,TSC604 2.1,SD contributions,7,N,2% of NPAT,VERIFIED
+Tourism,QSE,ESD: ED,TSC604 3.1,ED contributions,5,N,1% of NPAT,VERIFIED
+Tourism,QSE,SED,TSC605 1,SED contributions,5,N,1% of NPAT,VERIFIED
+Tourism,QSE,SED,TSC605 2,Status as TOMSA levy collector,3,Y,Yes,VERIFIED

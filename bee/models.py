@@ -44,6 +44,7 @@ class CompanyProfile:
     total_revenue: float
     black_ownership_pct: float = 0.0
     sector: str = "generic"
+    variant: str | None = None  # sector sub-scorecard, e.g. "contractor", "bank"
     opt_scored: bool = False  # black-owned QSE / EME electing to be scored (S5 cl. 4.5, 5.4)
 
 
@@ -72,6 +73,9 @@ class ScoreInput:
     points: dict[str, dict[str, float]] = field(default_factory=dict)
     yes: YesInput = field(default_factory=YesInput)
     draft_rules: bool = False  # D4: 2026 draft / Transformation Fund, OFF by default
+    # Sector options, e.g. {"fs_skills_submin": 6, "fs_rescale_109": True,
+    # "eme_skills_pct_of_qse_target": 30, "start_up": False}. See bee/sectors.
+    options: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass
@@ -81,6 +85,7 @@ class SubMinimumCheck:
     achieved: float
     required: float
     clause: str
+    option_used: str | None = None
 
     @property
     def passed(self) -> bool:
@@ -102,6 +107,11 @@ class ScoreResult:
     yes_applied: bool = False
     yes_blocked_reason: str | None = None
     notes: list[str] = field(default_factory=list)
+    sector: str = "generic"
+    variant: str | None = None
+    scorecard: str | None = None
+    warnings: list[str] = field(default_factory=list)
+    level_points: float | None = None  # points used for the level table (after rescaling)
 
     @property
     def level_label(self) -> str:

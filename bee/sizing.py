@@ -14,3 +14,12 @@ def classify(total_revenue: float) -> EnterpriseSize:
     if total_revenue < GENERIC_MIN:
         return EnterpriseSize.QSE
     return EnterpriseSize.GENERIC
+
+
+def classify_for_sector(
+    total_revenue: float, sector: str = "generic", variant: str | None = None
+) -> EnterpriseSize:
+    from bee.registry import get_sector
+
+    cfg = get_sector(sector)
+    return cfg.threshold(cfg.resolve_variant(variant)).classify(total_revenue)
