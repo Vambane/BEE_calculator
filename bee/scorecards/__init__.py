@@ -1,1 +1,1 @@
-"""Scorecards: EME, QSE, Generic."""
+"""Scorecards: EME (deemed), QSE, Generic."""
