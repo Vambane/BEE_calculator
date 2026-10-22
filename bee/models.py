@@ -1,4 +1,5 @@
 """Input/result data models. Stub: fields are added in the engine milestone."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass, field

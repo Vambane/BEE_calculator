@@ -1,4 +1,5 @@
 """Enterprise classification by Total Revenue (rules-baseline §1). Stub."""
+
 from bee.models import EnterpriseSize
 
 
