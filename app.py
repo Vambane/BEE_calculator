@@ -35,6 +35,9 @@ GREEN, OCHRE, OCHRE_TINT, LINE, INK = "#1F5C4F", "#C8892B", "#F7ECD9", "#DDD8CC"
 MODES = {"rand": "Rand amounts", "pct": "Percentages"}
 ENTRY = {"ind": "Indicators", "pts": "Points (pre-calculated)"}
 DRAFT_LABEL = "Draft 2026 rules (Transformation Fund)"
+# Session-scoped abuse guards (Streamlit has no shared backend). Edge/WAF limits: DEFERRED.
+MAX_PDF_UNLOCK_ATTEMPTS = 5
+MAX_PDF_BUILDS = 5
 
 st.set_page_config(page_title="BEE Check", layout="centered")
 st.markdown("<style>.block-container{max-width:960px}</style>", unsafe_allow_html=True)
@@ -733,51 +736,89 @@ def results_step():
         st.subheader("Get your PDF gap report")
         st.caption("A printable report with your scorecard, gaps and interpretation notes.")
         gate = store.setdefault("pdf_gate", {"email": "", "marketing": False, "unlocked": False})
+        rate = store.setdefault("pdf_rate", {"unlock_attempts": 0, "pdf_builds": 0})
         if not gate.get("unlocked"):
             st.markdown(
                 "Enter your work email to unlock the PDF download on this device. "
                 "Nothing is emailed from this app yet; the address stays in this browser "
                 "session only and is not stored on our servers (POPIA)."
             )
-            gate["email"] = st.text_input("Work email", gate.get("email", ""), key="pdf_email")
-            gate["marketing"] = st.checkbox(
-                "Send me occasional B-BBEE updates (optional)",
-                value=gate.get("marketing", False),
-                key="pdf_mkt",
+            st.caption(
+                f"Up to {MAX_PDF_UNLOCK_ATTEMPTS} unlock attempts and "
+                f"{MAX_PDF_BUILDS} PDF builds per browser session "
+                "(Cloud-edge rate limiting is not configured yet)."
             )
-            if st.button("Continue with email", type="primary", width="stretch", key="pdf_unlock"):
-                em = (gate.get("email") or "").strip()
-                if "@" in em and "." in em.split("@")[-1]:
-                    gate["unlocked"] = True
-                    st.rerun()
-                else:
-                    st.error("Please fix:\n\n- Enter a valid email address to continue.")
+            if rate["unlock_attempts"] >= MAX_PDF_UNLOCK_ATTEMPTS:
+                st.error(
+                    "Too many unlock attempts in this session. "
+                    "Refresh the page to start a new session, or try again later."
+                )
+            else:
+                gate["email"] = st.text_input("Work email", gate.get("email", ""), key="pdf_email")
+                gate["marketing"] = st.checkbox(
+                    "Send me occasional B-BBEE updates (optional)",
+                    value=gate.get("marketing", False),
+                    key="pdf_mkt",
+                )
+                if st.button(
+                    "Continue with email", type="primary", width="stretch", key="pdf_unlock"
+                ):
+                    rate["unlock_attempts"] += 1
+                    em = (gate.get("email") or "").strip()
+                    if "@" in em and "." in em.split("@")[-1]:
+                        gate["unlocked"] = True
+                        st.rerun()
+                    else:
+                        st.error("Please fix:\n\n- Enter a valid email address to continue.")
         else:
             st.caption(
                 f"Email on file for this session: {gate['email']}. Marketing preference: "
                 f"{'yes' if gate.get('marketing') else 'no'}."
             )
+            company_name = store["profile"].get("company") or "Your company"
+            cache_key = (
+                company_name,
+                label,
+                S.draft,
+                S.sector,
+                store["profile"].get("revenue"),
+                str(store.get("points")),
+                str(store.get("values")),
+            )
+            cached = store.get("pdf_cache")
             try:
                 from bee.report import render_pdf
 
-                with st.spinner("Building PDF…"):
-                    pdf = render_pdf(
-                        r,
-                        card,
-                        store["profile"],
-                        label,
-                        cfg,
-                        draft=S.draft,
-                        company_name=store["profile"].get("company") or "Your company",
+                if cached and cached.get("key") == cache_key:
+                    pdf = cached["bytes"]
+                elif rate["pdf_builds"] >= MAX_PDF_BUILDS:
+                    st.error(
+                        f"PDF build limit reached for this session (max {MAX_PDF_BUILDS}). "
+                        "Refresh the page to start a new session, or try again later."
                     )
-                st.download_button(
-                    "Download PDF gap report",
-                    pdf,
-                    file_name="bee-gap-report.pdf",
-                    mime="application/pdf",
-                    type="primary",
-                    width="stretch",
-                )
+                    pdf = None
+                else:
+                    with st.spinner("Building PDF…"):
+                        pdf = render_pdf(
+                            r,
+                            card,
+                            store["profile"],
+                            label,
+                            cfg,
+                            draft=S.draft,
+                            company_name=company_name,
+                        )
+                    rate["pdf_builds"] += 1
+                    store["pdf_cache"] = {"key": cache_key, "bytes": pdf}
+                if pdf is not None:
+                    st.download_button(
+                        "Download PDF gap report",
+                        pdf,
+                        file_name="bee-gap-report.pdf",
+                        mime="application/pdf",
+                        type="primary",
+                        width="stretch",
+                    )
             except Exception as exc:  # noqa: BLE001 — no traceback (showErrorDetails=false)
                 # Surface a clear, non-sensitive reason so Cloud/deps failures are actionable.
                 detail = str(exc).strip() or type(exc).__name__

@@ -206,3 +206,31 @@ def test_b16_empty_scorecard_chart_does_not_crash():
     at.session_state["step"] = 99
     at.run()
     assert not at.exception, at.exception
+
+
+def test_pdf_unlock_rate_limit_blocks_after_max_attempts():
+    at = to_results(boot())
+    assert not at.exception
+    at.session_state["store"]["pdf_rate"] = {"unlock_attempts": 5, "pdf_builds": 0}
+    at.run()
+    assert not at.exception
+    errors = [e.value for e in at.error]
+    assert any("Too many unlock attempts" in (e or "") for e in errors)
+    assert not any("Continue with email" in (b.label or "") for b in at.button)
+
+
+def test_pdf_build_rate_limit_blocks_when_exhausted():
+    at = to_results(boot())
+    at.session_state["store"]["pdf_gate"] = {
+        "email": "qa@example.com",
+        "marketing": False,
+        "unlocked": True,
+    }
+    at.session_state["store"]["pdf_rate"] = {"unlock_attempts": 1, "pdf_builds": 5}
+    # No cache → should hit build limit without calling WeasyPrint.
+    at.session_state["store"].pop("pdf_cache", None)
+    at.run()
+    assert not at.exception
+    errors = [e.value for e in at.error]
+    assert any("PDF build limit" in (e or "") for e in errors)
+    assert not any("PDF" in (b.label or "") for b in at.download_button)
