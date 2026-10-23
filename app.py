@@ -14,7 +14,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
 
-from bee import Financials, Rand, calculate
+from bee import EnterpriseSize, Financials, Rand, calculate
 from bee.registry import get_sector
 from bee_ui.core import (
     BASE_FIN,
@@ -249,7 +249,12 @@ def context():
     variant = store["profile"]["variant"] if cfg.variants else None
     if variant not in (cfg.variants or (None,)):
         variant = cfg.default_variant
-    size = size_for(cfg, store["profile"]["revenue"], variant)
+    # Invalid revenue (e.g. -1) must not crash the shell: size falls back for UI layout
+    # only; validate() / footer(problems) still block Continue (Security M3 / Batch1).
+    try:
+        size = size_for(cfg, store["profile"]["revenue"], variant)
+    except ValueError:
+        size = EnterpriseSize.EME
     # UX-C2: EME affidavit hides the element card, but opt_scored must surface the QSE
     # scorecard steps (engine already remaps EME → QSE via SectorConfig.card).
     opt_scored = bool(store["profile"].get("opt_scored"))
@@ -406,9 +411,12 @@ def profile_step():
                 format_func=lambda s: s.replace("_", " ").title(),
                 disabled=not consented,
             )
+        # No min/max on these widgets (F-EDGE-OVER100 / Security M3): Streamlit's range
+        # clamp keeps out-of-range keystrokes out of session_state, so Continue would
+        # validate the *stale* prior value while the UI still shows a red range error.
+        # Accept the typed value and fail-closed in validate() / footer(problems).
         p["revenue"] = st.number_input(
             "Total revenue, last financial year (R)",
-            min_value=0.0,
             value=float(p["revenue"]),
             step=500_000.0,
             format="%.0f",
@@ -416,11 +424,10 @@ def profile_step():
         )
         p["black_ownership"] = st.number_input(
             "Black ownership (%)",
-            min_value=0.0,
-            max_value=100.0,
             value=float(p["black_ownership"]),
             step=1.0,
             disabled=not consented,
+            help="Voting rights / economic interest, 0–100% (GG 36928 Statement 100).",
         )
         cfg2, _, size2, _ = context()
         st.caption(f":green-badge[Size: {cfg2.size_labels.get(size2, size2.value)}]")
@@ -500,9 +507,17 @@ def profile_step():
 
     def problems():
         out = [] if store["consent"] else ["Tick the privacy consent box to continue."]
-        cfg_, _, _, card_ = context()
-        if card_:
-            out += [p.message for p in validate(card_, store["profile"], fin_obj(), {}, {}, {})]
+        cfg_, _, size_, card_ = context()
+        # F-EDGE-OVER100: EME deemed hides the scorecard (card_=None) so element steps are
+        # not shown, but profile BO/revenue must still gate Continue. Use the underlying
+        # card when present; otherwise validate(profile) with card=None.
+        val_card = card_
+        if val_card is None and cfg_.cards:
+            val_card = card_for(cfg_, size_, store["profile"].get("variant"))
+        out += [
+            p.message
+            for p in validate(val_card, store["profile"], fin_obj(), {}, {}, {})
+        ]
         return out
 
     footer(problems)
@@ -640,10 +655,9 @@ def element_step(el):
                 else:
                     lab = f"{label}{tag} (%)"
                 bind(key, float(vals.get(i.clause, 0.0) or 0.0))
+                # No min/max: fail-closed via validate() (Security M3 / F-EDGE-OVER100).
                 vals[i.clause] = st.number_input(
                     lab,
-                    min_value=0.0,
-                    max_value=None if rand else 100.0,
                     step=1000.0 if rand else 0.5,
                     format="%.0f" if rand else "%.2f",
                     key=key,
@@ -734,15 +748,19 @@ def results_step():
     st.title("Your scorecard")
     st.html('<div class="bee-hex-divider" aria-hidden="true"></div>')
     badge_line()
-    all_probs = []
-    if card:
-        values = {
-            k: store["values"][store["modes"].get(k, "pct")].get(k, {})
-            for k in {e.key for e in elements}
-        }
-        ind_vals = {k: v for k, v in values.items() if store["entry"].get(k, "ind") == "ind"}
-        pts_vals = {k: v for k, v in store["points"].items() if store["entry"].get(k) == "pts"}
-        all_probs = validate(card, store["profile"], fin_obj(), ind_vals, store["modes"], pts_vals)
+    # F-EDGE-OVER100: validate profile even when EME deemed hides the element card.
+    values = {
+        k: store["values"][store["modes"].get(k, "pct")].get(k, {})
+        for k in {e.key for e in elements}
+    }
+    ind_vals = {k: v for k, v in values.items() if store["entry"].get(k, "ind") == "ind"}
+    pts_vals = {k: v for k, v in store["points"].items() if store["entry"].get(k) == "pts"}
+    val_card = card
+    if val_card is None and cfg.cards:
+        val_card = card_for(cfg, size, variant)
+    all_probs = validate(
+        val_card, store["profile"], fin_obj(), ind_vals, store["modes"], pts_vals
+    )
     if all_probs:
         st.error("Some inputs need fixing:\n\n" + "\n".join(f"- {p.message}" for p in all_probs))
         st.button("Go to profile", on_click=go_to, args=(0,))

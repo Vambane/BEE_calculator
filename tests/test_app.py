@@ -463,3 +463,61 @@ def test_tourism_ownership_women_help_shows_15():
     assert not at.exception
     helps = " ".join((n.help or "") for n in at.number_input)
     assert "Target 15" in helps
+
+
+def test_bo_over_100_blocks_continue():
+    """F-EDGE-OVER100: BO 101% must block Continue (not score as empty/L4)."""
+    at = boot()
+    store = at.session_state["store"]
+    store["consent"] = True
+    store["profile"]["revenue"] = 5_000_000.0  # EME deemed path
+    store["profile"]["black_ownership"] = 101.0
+    at.run()
+    assert at.session_state["step"] == 0
+    # Primary Continue is the last button on the profile footer
+    at.button[-1].click().run()
+    assert at.session_state["step"] == 0
+    assert any("Black ownership must be between 0% and 100%" in (e.value or "") for e in at.error)
+
+
+def test_bo_over_100_stale_prior_does_not_advance():
+    """F-EDGE-OVER100: after a valid 51%, typing 101 must not keep prior L2 via Continue."""
+    at = boot()
+    store = at.session_state["store"]
+    store["consent"] = True
+    store["profile"]["revenue"] = 5_000_000.0
+    store["profile"]["black_ownership"] = 51.0
+    at.run()
+    # Simulate editing BO to 101 while still on Profile (stale session risk)
+    at.session_state["store"]["profile"]["black_ownership"] = 101.0
+    at.run()
+    at.button[-1].click().run()
+    assert at.session_state["step"] == 0
+    assert any("Black ownership must be between 0% and 100%" in (e.value or "") for e in at.error)
+
+
+def test_bo_over_100_results_does_not_score():
+    """Results with BO 101 must show validation error and no Recognition level."""
+    at = boot()
+    store = at.session_state["store"]
+    store["consent"] = True
+    store["profile"]["revenue"] = 5_000_000.0
+    store["profile"]["black_ownership"] = 101.0
+    at.session_state["step"] = 99
+    at.run()
+    assert not at.exception
+    assert any("Black ownership must be between 0% and 100%" in (e.value or "") for e in at.error)
+    assert not any(m.label == "Recognition level" for m in at.metric)
+
+
+def test_negative_revenue_blocks_continue():
+    """Security M3 / Batch1: revenue -1 must block Continue on the same gate."""
+    at = boot()
+    store = at.session_state["store"]
+    store["consent"] = True
+    store["profile"]["revenue"] = -1.0
+    store["profile"]["black_ownership"] = 30.0
+    at.run()
+    at.button[-1].click().run()
+    assert at.session_state["step"] == 0
+    assert any("revenue" in (e.value or "").lower() for e in at.error)
