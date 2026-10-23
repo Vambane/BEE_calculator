@@ -173,6 +173,23 @@ def test_pdf_email_gate_then_download():
     at.run()
     assert any("PDF" in (b.label or "") for b in at.download_button)
 
+def test_deemed_results_hide_pdf_gate_and_explain():
+    """Deemed affidavit path: no PDF/email gate; caption points to full-scorecard option."""
+    at = boot(sector="construction")
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 20_000_000.0  # QSE
+    at.session_state["store"]["profile"]["variant"] = "contractor"
+    at.session_state["store"]["profile"]["black_ownership"] = 100.0
+    at.session_state["store"]["profile"]["opt_scored"] = False
+    at.session_state["step"] = 99
+    at.run()
+    assert not at.exception, at.exception
+    assert not any("Continue with email" in (b.label or "") for b in at.button)
+    assert not any("PDF" in (b.label or "") for b in at.download_button)
+    caps = " ".join(c.value or "" for c in at.caption)
+    infos = " ".join(i.value or "" for i in at.info)
+    assert "PDF gap report" in (caps + infos)
+
 
 def test_draft_toggle_shows_not_in_force_banner():
     at = to_results(boot(draft="1"))
