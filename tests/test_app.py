@@ -31,6 +31,9 @@ def test_profile_renders_with_privacy_and_generic_default():
     assert not at.exception
     assert any("Privacy notice" in m.value for m in at.markdown)
     assert any("s26" in (m.value or "") for m in at.markdown)
+    assert any("app host" in (m.value or "") for m in at.markdown)
+    assert any("Full privacy notice" in (e.label or "") for e in at.expander)
+    assert any("agree to this processing for this session" in (c.label or "") for c in at.checkbox)
     assert at.selectbox[0].value == "generic"
 
 
@@ -47,7 +50,7 @@ def test_step_query_without_consent_stays_on_profile():
     assert not at.exception
     assert at.session_state["step"] == 0
     assert any("Privacy notice" in m.value for m in at.markdown)
-    assert any("consent" in (c.label or "").lower() for c in at.checkbox)
+    assert any("privacy notice" in (c.label or "").lower() for c in at.checkbox)
     at = boot(step="99")
     assert at.session_state["step"] == 0
     assert any("Privacy notice" in m.value for m in at.markdown)
@@ -234,3 +237,29 @@ def test_pdf_build_rate_limit_blocks_when_exhausted():
     errors = [e.value for e in at.error]
     assert any("PDF build limit" in (e or "") for e in errors)
     assert not any("PDF" in (b.label or "") for b in at.download_button)
+
+
+def test_privacy_page_query_renders_policy():
+    """?page=privacy shows the policy from docs/PRIVACY.md (in-app /privacy stand-in)."""
+    at = boot(page="privacy")
+    assert not at.exception
+    assert any("Privacy policy" in (t.value or "") for t in at.title)
+    body = " ".join(m.value or "" for m in at.markdown)
+    assert "Streamlit Community Cloud" in body
+    assert "s72" in body
+    assert "[Legal entity name" in body or "Legal entity name" in body
+    assert any("Back to calculator" in (b.label or "") for b in at.button)
+
+
+def test_pdf_gate_marketing_is_honest_not_a_list():
+    """Compliance §2 / Security M6: marketing tick must not claim a mailing-list subscribe."""
+    at = to_results(boot())
+    assert not at.exception
+    labels = " ".join((c.label or "") for c in at.checkbox)
+    caps = " ".join((c.value or "") for c in at.caption)
+    md = " ".join((m.value or "") for m in at.markdown)
+    blob = labels + " " + caps + " " + md
+    low = blob.lower()
+    assert "does not add you to a mailing list" in low or "mailing list in v1" in low
+    assert "we do not email the report" in low or "do not email the report" in low
+    assert any("Continue with email" in (b.label or "") for b in at.button)
