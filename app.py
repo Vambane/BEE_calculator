@@ -38,6 +38,7 @@ DRAFT_LABEL = "Draft 2026 rules (Transformation Fund)"
 # Session-scoped abuse guards (Streamlit has no shared backend). Edge/WAF limits: DEFERRED.
 MAX_PDF_UNLOCK_ATTEMPTS = 5
 MAX_PDF_BUILDS = 5
+MAX_CALCULATE_CALLS = 60  # per browser session
 
 st.set_page_config(page_title="BEE Check", layout="centered")
 st.markdown("<style>.block-container{max-width:960px}</style>", unsafe_allow_html=True)
@@ -570,7 +571,16 @@ def results_step():
         st.error("Some inputs need fixing:\n\n" + "\n".join(f"- {p.message}" for p in all_probs))
         st.button("Go to profile", on_click=go_to, args=(0,))
         return
+    calc_rate = store.setdefault("calc_rate", {"calls": 0})
+    if calc_rate["calls"] >= MAX_CALCULATE_CALLS:
+        st.error(
+            "Too many score calculations in this session. Refresh the page to start a new session, "
+            "or come back later."
+        )
+        st.button("Back", on_click=go_to, args=(0,))
+        return
     try:
+        calc_rate["calls"] += 1
         r = calculate(current_input())
     except Exception:  # noqa: BLE001 - shown generically; no details or inputs logged
         st.error("We could not calculate this scorecard. Please check your inputs and try again.")
@@ -744,9 +754,10 @@ def results_step():
                 "session only and is not stored on our servers (POPIA)."
             )
             st.caption(
-                f"Up to {MAX_PDF_UNLOCK_ATTEMPTS} unlock attempts and "
-                f"{MAX_PDF_BUILDS} PDF builds per browser session "
-                "(Cloud-edge rate limiting is not configured yet)."
+                f"Up to {MAX_PDF_UNLOCK_ATTEMPTS} unlock attempts, "
+                f"{MAX_PDF_BUILDS} PDF builds, and {MAX_CALCULATE_CALLS} score calculations "
+                "are allowed per browser session "
+                "(Cloud-edge / IP rate limiting is not configured yet — DEFERRED)."
             )
             if rate["unlock_attempts"] >= MAX_PDF_UNLOCK_ATTEMPTS:
                 st.error(
