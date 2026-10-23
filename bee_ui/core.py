@@ -176,6 +176,211 @@ def _parent_name(name: str, suffix: str) -> str:
     return low.replace(suffix, repl)
 
 
+
+def is_gender_indicator(ind: Indicator) -> bool:
+    """True for Black women / Black female / black-women-owned scorecard lines."""
+    low = ind.name.lower().replace("-", " ")
+    return any(
+        s in low
+        for s in (
+            "black women",
+            "black female",
+            "black females",
+            "black women owned",
+            "women owned",
+            "women-owned",
+        )
+    ) or ("women" in low and "owned" in low)
+
+
+def gender_indicators(card: Scorecard, draft: bool = False) -> list[tuple[Element, Indicator]]:
+    """(element, indicator) for every gender-related line on the active card."""
+    out: list[tuple[Element, Indicator]] = []
+    for el in card.elements:
+        for ind in visible_indicators(el, draft):
+            if is_gender_indicator(ind):
+                out.append((el, ind))
+    return out
+
+
+def gender_max_points(card: Scorecard, draft: bool = False) -> float:
+    """Y: sum of max points for gender indicators on the active scorecard (not hard-coded)."""
+    total = 0.0
+    for _, ind in gender_indicators(card, draft):
+        pts = ind.draft_points if draft and ind.draft_points is not None else ind.points
+        total += pts
+    return total
+
+
+def gender_achieved_points(
+    card: Scorecard,
+    indicators: dict[str, dict],
+    fin: Financials,
+    draft: bool = False,
+) -> float:
+    """X: points achieved on gender indicators from entered indicator values."""
+    from bee.indicators import indicator_points
+
+    total = 0.0
+    for el, ind in gender_indicators(card, draft):
+        vals = indicators.get(el.key, {})
+        if ind.clause not in vals:
+            continue
+        try:
+            total += indicator_points(ind, vals[ind.clause], fin, draft)
+        except (ValueError, TypeError, KeyError):
+            continue
+    return total
+
+
+def gender_contribution(
+    card: Scorecard,
+    indicators: dict[str, dict],
+    fin: Financials,
+    draft: bool = False,
+) -> tuple[float, float]:
+    """Return (X achieved, Y max) for the results / PDF contribution line."""
+    y = gender_max_points(card, draft)
+    x = gender_achieved_points(card, indicators, fin, draft) if y else 0.0
+    return round(min(x, y), 2), round(y, 2)
+
+
+def default_entry_mode(el: Element) -> str:
+    """Indicators by default for Ownership, MC, and Skills that carry gender lines."""
+    opts = entry_options(el)
+    if "ind" not in opts:
+        return "pts"
+    if el.key in ("ownership", "management"):
+        return "ind"
+    if el.key == "skills" and any(is_gender_indicator(i) for i in el.indicators):
+        return "ind"
+    return opts[0]
+
+
+def _pair_heading(parent: Indicator, women: Indicator) -> str:
+    import re
+
+    pl = parent.name
+    h = re.sub(r":?\s*black people\s*$", "", pl, flags=re.I)
+    h = re.sub(r"^black\s+", "", h, flags=re.I)
+    h = h.strip(" :")
+    return h[0].upper() + h[1:] if h else "Indicator"
+
+
+def _pair_labels(parent: Indicator, women: Indicator) -> tuple[str, str]:
+    wl = women.name.lower()
+    if "women" in wl and "female" not in wl:
+        return "Black people", "Black women"
+    if "females" in wl:
+        return "Black people", "Black females"
+    # Management-style: keep gazette "Black female …" on the right; short left label.
+    import re
+
+    right = women.name
+    left = re.sub(r"female\s+", "", women.name, flags=re.I)
+    if left.lower() == women.name.lower():
+        left = parent.name
+    return left, right
+
+
+def indicator_render_units(
+    el: Element, draft: bool
+) -> list[dict]:
+    """Ordered UI units for an element (excluding Net Value).
+
+    Each unit is either:
+      {"kind": "pair", "heading", "black", "women"}
+      {"kind": "single", "ind", "women_owned": bool}
+    """
+    inds = [i for i in visible_indicators(el, draft) if i.group != "net_value"]
+    by_name = {i.name.lower(): i for i in inds}
+    women_to_parent: dict[str, Indicator] = {}
+    paired_women: set[str] = set()
+    paired_parents: set[str] = set()
+    for ind in inds:
+        if not is_gender_indicator(ind):
+            continue
+        # Preferential Procurement women-owned: labelled single row, not a pair.
+        low = ind.name.lower().replace("-", " ")
+        if "owned" in low and ("women" in low or "female" in low):
+            continue
+        parent = None
+        low_name = ind.name.lower()
+        for suf in WOMEN_PAIRS_SUFFIX:
+            if suf in low_name and not (suf == "black female" and "black females" in low_name):
+                parent = by_name.get(_parent_name(ind.name, suf))
+                if parent:
+                    break
+        if parent:
+            women_to_parent[ind.clause] = parent
+            paired_women.add(ind.clause)
+            paired_parents.add(parent.clause)
+
+    units: list[dict] = []
+    seen: set[str] = set()
+    for ind in inds:
+        if ind.clause in seen:
+            continue
+        if ind.clause in paired_parents:
+            # find women partner
+            women = next(w for w, p in women_to_parent.items() if p.clause == ind.clause)
+            w_ind = next(i for i in inds if i.clause == women)
+            units.append(
+                {
+                    "kind": "pair",
+                    "heading": _pair_heading(ind, w_ind),
+                    "black": ind,
+                    "women": w_ind,
+                    "labels": _pair_labels(ind, w_ind),
+                }
+            )
+            seen.add(ind.clause)
+            seen.add(w_ind.clause)
+            continue
+        if ind.clause in paired_women:
+            continue
+        low = ind.name.lower().replace("-", " ")
+        women_owned = is_gender_indicator(ind) and "owned" in low
+        units.append({"kind": "single", "ind": ind, "women_owned": women_owned})
+        seen.add(ind.clause)
+    return units
+
+
+def gender_open_gaps(
+    card: Scorecard,
+    indicators: dict[str, dict],
+    fin: Financials,
+    draft: bool = False,
+) -> list[dict]:
+    """Open points on gender indicators for the gaps tab / PDF (include zeros as 0 open)."""
+    from bee.indicators import indicator_points
+
+    gaps = []
+    for el, ind in gender_indicators(card, draft):
+        pts_max = ind.draft_points if draft and ind.draft_points is not None else ind.points
+        achieved = 0.0
+        vals = indicators.get(el.key, {})
+        if ind.clause in vals:
+            try:
+                achieved = indicator_points(ind, vals[ind.clause], fin, draft)
+            except (ValueError, TypeError, KeyError):
+                achieved = 0.0
+        open_pts = max(pts_max - achieved, 0.0)
+        gaps.append(
+            {
+                "element": el.key,
+                "element_name": el.name,
+                "clause": ind.clause,
+                "name": ind.name,
+                "achieved": round(achieved, 2),
+                "max": pts_max,
+                "open": round(open_pts, 2),
+                "target": ind.target,
+            }
+        )
+    return gaps
+
+
 def entry_options(el: Element) -> list[str]:
     """'ind' (raw indicator inputs) when indicator targets exist; 'pts' always."""
     return (["ind"] if el.indicators else []) + ["pts"]

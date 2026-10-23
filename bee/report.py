@@ -94,8 +94,33 @@ def _report_context(
     draft: bool = False,
     company_name: str = "Your company",
     example: bool = False,
+    indicators: dict | None = None,
+    financials=None,
 ) -> dict:
     els = _elements(card, result, draft)
+    from bee.models import Financials
+    from bee_ui.core import gender_contribution, gender_open_gaps
+
+    fin = financials if financials is not None else Financials()
+    inds = indicators or {}
+    gx, gy = gender_contribution(card, inds, fin, draft)
+    gender_rows = gender_open_gaps(card, inds, fin, draft)
+    # Enrich element detail with women lines (include zeros).
+    by_el: dict[str, list] = {}
+    for g in gender_rows:
+        by_el.setdefault(g["element_name"], []).append(g)
+    for e in els:
+        rows = by_el.get(e["name"], [])
+        if rows:
+            e["gender_rows"] = rows
+            e["explainer"] = (
+                e["explainer"]
+                + " Black women / Black female lines: "
+                + "; ".join(
+                    f"{g['name']} {g['achieved']:g}/{g['max']:g} pts" for g in rows
+                )
+                + "."
+            )
     gaps = sorted(
         [
             {"name": e["name"], "points": e["gap"], "tip": e["explainer"]}
@@ -149,6 +174,12 @@ def _report_context(
             elements=els,
             gaps=gaps,
             next_level=f"{gap[0]:.1f} pts to Level {gap[1]}" if gap else None,
+            gender_contribution=(
+                f"Black women / Black female contribution: {gx:g} of {gy:g} pts"
+                if gy > 0
+                else None
+            ),
+            gender_rows=gender_rows,
         ),
         scenario=None,
         notes=_notes(result),
@@ -178,6 +209,8 @@ def render_report_html(
     draft: bool = False,
     company_name: str = "Your company",
     example: bool = False,
+    indicators: dict | None = None,
+    financials=None,
 ) -> str:
     """Return the gap-report HTML string (autoescaped). Used by ``render_pdf`` and tests."""
     if card is None:
@@ -191,6 +224,8 @@ def render_report_html(
         draft=draft,
         company_name=company_name,
         example=example,
+        indicators=indicators,
+        financials=financials,
     )
     return _jinja_env().get_template("report_template.html").render(**ctx)
 
@@ -205,6 +240,8 @@ def render_pdf(
     draft: bool = False,
     company_name: str = "Your company",
     example: bool = False,
+    indicators: dict | None = None,
+    financials=None,
 ) -> bytes:
     """Return PDF bytes for a scored result. Raises on WeasyPrint/template errors."""
     from weasyprint import HTML  # lazy: keeps app import light when PDF unused
@@ -218,5 +255,7 @@ def render_pdf(
         draft=draft,
         company_name=company_name,
         example=example,
+        indicators=indicators,
+        financials=financials,
     )
     return HTML(string=html, base_url=str(TEMPLATE_DIR)).write_pdf()

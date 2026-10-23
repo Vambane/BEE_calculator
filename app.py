@@ -22,7 +22,11 @@ from bee_ui.core import (
     PCT_ONLY_ELEMENTS,
     build_input,
     card_for,
+    default_entry_mode,
     entry_options,
+    gender_contribution,
+    gender_open_gaps,
+    indicator_render_units,
     next_level_gap,
     rand_capable,
     scorecard_label,
@@ -146,7 +150,7 @@ if Q.get("demo") == "1" and not S.get("demo_seeded"):  # illustrative inputs for
         npat=8_000_000.0, leviable_amount=30_000_000.0, tmps=60_000_000.0, employees=150.0
     )
 if S.get("demo_seeded"):
-    st.info("EXAMPLE DATA: illustrative inputs (points entry), not a real company.")
+    st.info("EXAMPLE DATA: illustrative inputs (Indicators on Ownership/MC), not a real company.")
 # H1: ignore ?step= and force profile until POPIA consent is given.
 if not store.get("consent"):
     S.step = 0
@@ -188,15 +192,25 @@ def context():
 
 
 cfg, variant, size, card = context()
-if S.get("demo_seeded") and card and not store["points"]:
-    for e in card.elements:  # demo: 60% of every group's maximum, entered as points
-        store["entry"][e.key] = "pts"
-        gs = [g for g in e.groups() if g != "tf"]
-        if e.total is not None and sum(dict(e.group_max).values()) >= e.total:
-            gs = [g for g in gs if g != "main"]
-        store["points"][e.key] = {
-            g: round(0.6 * e.max_points(g), 1) for g in gs if e.max_points(g) > 0
-        }
+if S.get("demo_seeded") and card and not store.get("_demo_entries_done"):
+    store["_demo_entries_done"] = True
+    for e in card.elements:
+        mode = default_entry_mode(e)
+        store["entry"][e.key] = mode
+        if mode == "ind" and e.indicators:
+            # Illustrative percentages (~60% of each target) so gender lines are visible.
+            pct_bucket = store["values"]["pct"].setdefault(e.key, {})
+            for i in e.indicators:
+                if i.group == "net_value" or i.base == "bool" or i.draft_only:
+                    continue
+                pct_bucket.setdefault(i.clause, round(0.6 * min(i.target, 100.0), 2))
+        else:
+            gs = [g for g in e.groups() if g != "tf"]
+            if e.total is not None and sum(dict(e.group_max).values()) >= e.total:
+                gs = [g for g in gs if g != "main"]
+            store["points"][e.key] = {
+                g: round(0.6 * e.max_points(g), 1) for g in gs if e.max_points(g) > 0
+            }
 elements = [e for e in card.elements if e.max_points() > 0] if card else []  # hide 0-max elements
 steps = ["Profile", *[e.name for e in elements], "Results"]
 S.step = min(S.step, len(steps) - 1)
@@ -430,7 +444,7 @@ def element_step(el):
     st.title(el.name)
     draft = S.draft
     opts = entry_options(el)
-    ent = store["entry"].get(el.key, opts[0])
+    ent = store["entry"].get(el.key, default_entry_mode(el))
     if len(opts) > 1:
         ek = bind(f"entry_{el.key}", ent)
         ent = st.segmented_control("Enter", opts, format_func=ENTRY.get, key=ek) or S[ek]
@@ -524,25 +538,39 @@ def element_step(el):
                     (f"Sub-minimum {nvs.required:g} of {nv.points:g}. " if nvs else "")
                     + "No figure yet? Leave 0 and Ownership is flagged as at risk."
                 )
+        if el.key == "management":
+            st.caption(
+                "Targets are the gazetted percentages. EAP demographic adjustment, if required, "
+                "is applied by your verification agency."
+            )
         with st.container(border=True):
-            for i in visible_indicators(el, draft):
-                if i is nv:
-                    continue
+            def _ind_help(i):
+                unit = "" if i.base == "bool" else "%"
+                return (
+                    f"Target {i.target:g}{unit} · {i.points:g} pts · cl. {i.clause}"
+                    + (
+                        " · separate points line (counted inside Black people for ownership rules)"
+                        if "women" in i.name.lower() or "female" in i.name.lower()
+                        else ""
+                    )
+                )
+
+            def _render_number(i, label):
                 key = f"v_{mode}_{i.clause}"
                 tag = " (DRAFT)" if i.draft_only else (" (bonus)" if i.bonus else "")
                 if i.base == "bool":
                     vals[i.clause] = st.checkbox(
-                        f"{i.name}{tag}", key=bind(key, bool(vals.get(i.clause, False)))
+                        f"{label}{tag}", key=bind(key, bool(vals.get(i.clause, False)))
                     )
-                    continue
+                    return
                 rand = mode == "rand" and rand_capable(el, i)
                 if rand:
                     unit = "count" if i.base == "employees" else "R"
-                    lab = f"{i.name}{tag} ({unit})"
+                    lab = f"{label}{tag} ({unit})"
                 elif i.base in BASE_LABEL:
-                    lab = f"{i.name}{tag} (% of {BASE_LABEL[i.base]})"
+                    lab = f"{label}{tag} (% of {BASE_LABEL[i.base]})"
                 else:
-                    lab = f"{i.name}{tag} (%)"
+                    lab = f"{label}{tag} (%)"
                 bind(key, float(vals.get(i.clause, 0.0) or 0.0))
                 vals[i.clause] = st.number_input(
                     lab,
@@ -551,9 +579,29 @@ def element_step(el):
                     step=1000.0 if rand else 0.5,
                     format="%.0f" if rand else "%.2f",
                     key=key,
-                    help=f"Target {i.target:g}{'%' if i.base != 'bool' else ''} · "
-                    f"{i.points:g} pts · cl. {i.clause}",
+                    help=_ind_help(i),
                 )
+
+            for unit in indicator_render_units(el, draft):
+                if unit["kind"] == "pair":
+                    st.markdown(f"**{unit['heading']}**")
+                    left_lab, right_lab = unit["labels"]
+                    c1, c2 = st.columns(2)
+                    with c1:
+                        _render_number(unit["black"], left_lab)
+                    with c2:
+                        _render_number(unit["women"], right_lab)
+                    st.caption(
+                        "Black women / Black female is scored on its own. Enter it even when "
+                        "already included in the Black people figure."
+                    )
+                else:
+                    i = unit["ind"]
+                    if unit.get("women_owned"):
+                        st.markdown(f"**{i.name}**")
+                        _render_number(i, i.name)
+                    else:
+                        _render_number(i, i.name)
             used = {i.base for i in el.indicators if rand_capable(el, i)}
             if mode == "rand" and used:
                 st.caption(
@@ -659,6 +707,22 @@ def results_step():
     )
     gap = None if r.deemed or r.level_points is None else next_level_gap(r.level_points)
     c3.metric(f"To Level {gap[1]}" if gap else "Next level", f"{gap[0]:.1f} pts" if gap else "-")
+    # Gender contribution metric (not a fake element). Hidden on deemed affidavit path.
+    gender_x = gender_y = 0.0
+    if not r.deemed and card:
+        inp_for_g = current_input()
+        gender_x, gender_y = gender_contribution(
+            card, inp_for_g.indicators, inp_for_g.financials, S.draft
+        )
+        if gender_y > 0:
+            st.metric(
+                "Black women / Black female contribution",
+                f"{gender_x:g} of {gender_y:g} pts",
+            )
+            st.caption(
+                "Across Ownership, Management, Skills and Preferential Procurement · "
+                "not a separate element"
+            )
     if r.discounted:
         st.warning(
             f"Sub-minimum missed: discounted from Level {r.level_before_discount} by one level."
@@ -798,6 +862,25 @@ def results_step():
                         )
                     )
                     b.metric("Available", f"+{row.Gap:.1f}", label_visibility="collapsed")
+            g_gaps = gender_open_gaps(card, current_input().indicators, fin_obj(), S.draft)
+            if g_gaps:
+                st.markdown("**Black women / Black female lines**")
+                st.caption(
+                    "Black women indicators are scored separately from Black people indicators."
+                )
+                for g in g_gaps:
+                    with st.container(border=True):
+                        a, b = st.columns([4, 1])
+                        a.markdown(
+                            f"**{g['element_name']} · {g['name']}**  \n"
+                            f"{g['achieved']:g} of {g['max']:g} pts · target {g['target']:g}% "
+                            f"(cl. {g['clause']})"
+                        )
+                        b.metric(
+                            "Available",
+                            f"+{g['open']:.1f}",
+                            label_visibility="collapsed",
+                        )
     if S.draft and tf_card:
         with tabs[3]:
             tf_planner(r)
@@ -883,6 +966,7 @@ def results_step():
                     pdf = None
                 else:
                     with st.spinner("Building PDF…"):
+                        _inp = current_input()
                         pdf = render_pdf(
                             r,
                             card,
@@ -891,6 +975,8 @@ def results_step():
                             cfg,
                             draft=S.draft,
                             company_name=company_name,
+                            indicators=_inp.indicators,
+                            financials=_inp.financials,
                         )
                     rate["pdf_builds"] += 1
                     store["pdf_cache"] = {"key": cache_key, "bytes": pdf}
