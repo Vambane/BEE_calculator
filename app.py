@@ -24,9 +24,11 @@ from bee_ui.core import (
     card_for,
     default_entry_mode,
     entry_options,
+    fresh_store,
     gender_contribution,
     gender_open_gaps,
     indicator_render_units,
+    is_scenario_widget_key,
     next_level_gap,
     rand_capable,
     scorecard_label,
@@ -177,27 +179,8 @@ S.setdefault("sector", Q.get("sector", "generic"))
 S.setdefault("draft", Q.get("draft", "0") == "1")
 S.setdefault("default_mode", "pct" if Q.get("mode") == "pct" else "rand")
 # Canonical store: widget state is dropped for unrendered steps, so values live here.
-S.setdefault(
-    "store",
-    {
-        "profile": {
-            "company": "",
-            "revenue": 0.0,
-            "black_ownership": 0.0,
-            "variant": None,
-            "yes_tier": "none",
-            "yes_prev_level": None,
-            "opt_scored": False,
-        },
-        "fin": {"npat": 0.0, "leviable_amount": 0.0, "tmps": 0.0, "employees": 0.0},
-        "values": {"rand": {}, "pct": {}},
-        "modes": {},
-        "entry": {},
-        "points": {},
-        "options": {},
-        "consent": False,
-    },
-)
+S.setdefault("store", fresh_store())
+S.setdefault("max_step", 0)
 store = S.store
 # Dedicated privacy view: ?page=privacy (pages/ multipage would pollute the wizard sidebar).
 if str(Q.get("page", "")).lower() == "privacy":
@@ -285,6 +268,8 @@ if S.get("demo_seeded") and card and not store.get("_demo_entries_done"):
 elements = [e for e in card.elements if e.max_points() > 0] if card else []  # hide 0-max elements
 steps = ["Profile", *[e.name for e in elements], "Results"]
 S.step = min(S.step, len(steps) - 1)
+# Reachable sidebar targets: Profile + steps already opened (incl. Results once visited).
+S.max_step = min(max(S.get("max_step", 0), S.step), len(steps) - 1)
 label = scorecard_label(cfg, size, variant)
 
 
@@ -316,10 +301,27 @@ def require_consent():
 
 
 def go_to(n: int):
-    if not store.get("consent"):
+    """Navigate to step n. Consent gate; does not clear inputs (Design: navigate-only)."""
+    if not S.store.get("consent"):
         S.step = 0
         return
     S.step = n
+    S.max_step = max(S.get("max_step", 0), n)
+
+
+def start_over():
+    """Clear scenario store + PDF unlock + widget keys; return to Profile.
+
+    Keeps draft toggle and default_mode (ruleset / entry prefs, not company data).
+    Sector stays as-is so the picker does not jump; profile/variant reset inside store.
+    """
+    S.store = fresh_store()
+    S.step = 0
+    S.max_step = 0
+    S.pop("demo_seeded", None)
+    for k in list(S.keys()):
+        if is_scenario_widget_key(k):
+            del S[k]
 
 
 def footer(problems_fn=None):
@@ -346,8 +348,30 @@ def footer(problems_fn=None):
 with st.sidebar:
     st.markdown("**BEE Check**")
     st.caption(f"{store['profile']['company'] or 'Your company'}  \n{label}")
+    consented = bool(store.get("consent"))
+    max_reached = S.get("max_step", 0)
     for i, s in enumerate(steps):
-        st.markdown(f"**→ {s}**" if i == S.step else ("✓ " if i < S.step else "○ ") + s)
+        if i == S.step:
+            st.markdown(f"**→ {s}**")
+        elif consented and i <= max_reached:
+            # Navigate-only: preserve inputs; same go_to as Back/Continue.
+            prefix = "✓ " if i < S.step else "○ "
+            st.button(
+                prefix + s,
+                key=f"nav_step_{i}",
+                on_click=go_to,
+                args=(i,),
+                width="stretch",
+            )
+        else:
+            st.markdown(("✓ " if i < S.step else "○ ") + s)
+    st.button(
+        "Start over",
+        key="start_over",
+        on_click=start_over,
+        width="stretch",
+        help="Clear company inputs and PDF unlock, then return to Profile.",
+    )
     st.divider()
     S.draft = st.toggle(
         DRAFT_LABEL,

@@ -289,3 +289,18 @@ def test_validate_rejects_bo_over_100():
         {},
     )
     assert any(p.field == "revenue" for p in probs_neg_rev)
+
+
+def test_fresh_store_and_widget_key_helpers():
+    from bee_ui.core import fresh_store, is_scenario_widget_key
+
+    s = fresh_store()
+    assert s["consent"] is False
+    assert s["profile"]["black_ownership"] == 0.0
+    assert s["values"] == {"rand": {}, "pct": {}}
+    assert is_scenario_widget_key("profile_revenue")
+    assert is_scenario_widget_key("v_pct_2.1.1")
+    assert is_scenario_widget_key("pdf_email")
+    assert not is_scenario_widget_key("draft")
+    assert not is_scenario_widget_key("sector")
+    assert not is_scenario_widget_key("max_step")

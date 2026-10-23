@@ -38,6 +38,19 @@ def sync_profile_keys(at):
     at.session_state["fin_employees"] = float(f.get("employees") or 0.0)
 
 
+def sidebar_labels(at):
+    """Sidebar step labels may be markdown (current/locked) or buttons (reachable)."""
+    labels = [m.value or "" for m in at.sidebar.markdown]
+    labels += [b.label or "" for b in at.sidebar.button]
+    return labels
+
+
+def click_continue(at):
+    """Click the primary Continue footer button (not sidebar Start over / nav)."""
+    btn = next(b for b in at.button if (b.label or "").startswith("Continue"))
+    return btn.click().run()
+
+
 def test_profile_renders_with_privacy_and_generic_default():
     at = boot()
     assert not at.exception
@@ -51,7 +64,7 @@ def test_profile_renders_with_privacy_and_generic_default():
 
 def test_continue_blocked_without_consent():
     at = boot()
-    at.button[-1].click().run()
+    click_continue(at)
     assert any("consent" in e.value for e in at.error)
     assert at.session_state["step"] == 0
 
@@ -59,7 +72,7 @@ def test_continue_blocked_without_consent():
 def test_consent_error_clears_after_tick():
     """UX-M1: stale 'Tick the privacy consent box' must clear once consent is ticked."""
     at = boot()
-    at.button[-1].click().run()
+    click_continue(at)
     assert any("consent" in (e.value or "").lower() for e in at.error)
     for c in at.checkbox:
         if "privacy" in (c.label or "").lower() or "agree" in (c.label or "").lower():
@@ -133,12 +146,12 @@ def test_results_show_out_of_max():
 
 def test_construction_has_no_ed_and_fs_bank_has_afs_step():
     at = to_results(boot(sector="construction"))
-    steps = [m.value for m in at.sidebar.markdown]
+    steps = sidebar_labels(at)
     assert not any("Enterprise Development" in s for s in steps)
     at = boot(sector="financial")
     at.session_state["store"]["profile"]["variant"] = "bank"
     at = to_results(at)
-    assert any("Access to Financial Services" in m.value for m in at.sidebar.markdown)
+    assert any("Access to Financial Services" in s for s in sidebar_labels(at))
 
 
 def test_r50m_generic_card_via_engine():
@@ -462,7 +475,7 @@ def test_eme_opt_scored_shows_ownership_and_mc_steps():
     sync_profile_keys(at)
     at.run()
     assert not at.exception
-    side = " ".join(m.value or "" for m in at.sidebar.markdown)
+    side = " ".join(sidebar_labels(at))
     assert "Ownership" in side
     assert "Management Control" in side or "Management" in side
     assert "Skills Development" in side or "Skills" in side
@@ -483,7 +496,7 @@ def test_eme_deemed_sidebar_is_profile_and_results_only():
     sync_profile_keys(at)
     at.run()
     assert not at.exception
-    side = " ".join(m.value or "" for m in at.sidebar.markdown)
+    side = " ".join(sidebar_labels(at))
     assert "Ownership" not in side
     assert "Management" not in side
     assert "Results" in side
@@ -524,7 +537,7 @@ def test_bo_over_100_blocks_continue():
     at.run()
     assert at.session_state["step"] == 0
     # Primary Continue is the last button on the profile footer
-    at.button[-1].click().run()
+    click_continue(at)
     assert at.session_state["step"] == 0
     assert any("Black ownership must be between 0% and 100%" in (e.value or "") for e in at.error)
 
@@ -542,7 +555,7 @@ def test_bo_over_100_stale_prior_does_not_advance():
     at.session_state["store"]["profile"]["black_ownership"] = 101.0
     sync_profile_keys(at)
     at.run()
-    at.button[-1].click().run()
+    click_continue(at)
     assert at.session_state["step"] == 0
     assert any("Black ownership must be between 0% and 100%" in (e.value or "") for e in at.error)
 
@@ -570,7 +583,7 @@ def test_negative_revenue_blocks_continue():
     store["profile"]["black_ownership"] = 30.0
     sync_profile_keys(at)
     at.run()
-    at.button[-1].click().run()
+    click_continue(at)
     assert at.session_state["step"] == 0
     assert any("revenue" in (e.value or "").lower() for e in at.error)
 
@@ -619,3 +632,84 @@ def test_pdf_invalid_email_shows_error_and_does_not_unlock():
     btn.click().run()
     assert not at.session_state["store"]["pdf_gate"].get("unlocked")
     assert any("valid email" in (e.value or "").lower() for e in at.error)
+
+
+def test_sidebar_step_button_navigates_without_clearing_inputs():
+    """UX polish: clicking a reached sidebar step jumps there; inputs preserved."""
+    at = boot()
+    store = at.session_state["store"]
+    store["consent"] = True
+    store["profile"]["revenue"] = 100_000_000.0
+    store["profile"]["black_ownership"] = 40.0
+    store["values"]["pct"]["ownership"] = {"2.1.1": 25.0}
+    sync_profile_keys(at)
+    at.session_state["step"] = 2
+    at.session_state["max_step"] = 2
+    at.run()
+    assert not at.exception
+    assert at.session_state["step"] == 2
+    btn = next(b for b in at.sidebar.button if "Ownership" in (b.label or ""))
+    btn.click().run()
+    assert at.session_state["step"] == 1
+    assert at.session_state["store"]["profile"]["black_ownership"] == 40.0
+    assert at.session_state["store"]["values"]["pct"]["ownership"]["2.1.1"] == 25.0
+
+
+def test_sidebar_cannot_jump_past_max_reached_or_without_consent():
+    """Cold start / no consent: unreached steps are not clickable nav buttons."""
+    at = boot()
+    assert at.session_state["step"] == 0
+    assert not any(
+        (b.label or "").endswith("Ownership") or "Ownership" in (b.label or "")
+        for b in at.sidebar.button
+        if (b.label or "") != "Start over"
+    )
+    # Consent + stay on profile: Ownership still locked (max_step 0).
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 100_000_000.0
+    sync_profile_keys(at)
+    at.session_state["step"] = 0
+    at.session_state["max_step"] = 0
+    at.run()
+    # Unreached steps stay markdown (○), not nav buttons.
+    assert not any("Ownership" in (b.label or "") for b in at.sidebar.button)
+    assert any("Ownership" in (m.value or "") for m in at.sidebar.markdown)
+
+
+def test_start_over_clears_scenario_and_returns_to_profile():
+    """Start over clears ownership/indicators/points/PDF unlock; keeps draft pref."""
+    at = boot(draft="1")
+    store = at.session_state["store"]
+    store["consent"] = True
+    store["profile"].update(
+        company="Bleed Co", revenue=100_000_000.0, black_ownership=55.0, opt_scored=True
+    )
+    store["fin"]["npat"] = 9_000_000.0
+    store["values"]["pct"]["ownership"] = {"2.1.1": 40.0}
+    store["points"]["skills"] = {"main": 10.0}
+    store["entry"]["ownership"] = "ind"
+    store["pdf_gate"] = {"email": "a@b.co", "marketing": True, "unlocked": True}
+    store["pdf_cache"] = {"key": "x", "bytes": b"%PDF"}
+    at.session_state["profile_black_ownership"] = 55.0
+    at.session_state["step"] = 3
+    at.session_state["max_step"] = 3
+    at.run()
+    assert at.session_state["draft"] is True
+    btn = next(b for b in at.sidebar.button if (b.label or "") == "Start over")
+    btn.click().run()
+    assert not at.exception
+    assert at.session_state["step"] == 0
+    assert at.session_state["max_step"] == 0
+    s = at.session_state["store"]
+    assert s["consent"] is False
+    assert s["profile"]["company"] == ""
+    assert s["profile"]["black_ownership"] == 0.0
+    assert s["profile"]["revenue"] == 0.0
+    assert s["values"] == {"rand": {}, "pct": {}}
+    assert s["points"] == {}
+    assert s["entry"] == {}
+    assert "pdf_gate" not in s
+    assert "pdf_cache" not in s
+    # bind() re-seeds profile_* from the fresh store (0.0), not the prior 55%.
+    assert at.session_state.get("profile_black_ownership") == 0.0
+    assert at.session_state["draft"] is True  # ruleset pref kept
