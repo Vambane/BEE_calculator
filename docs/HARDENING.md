@@ -51,9 +51,9 @@ Exit `0` = HTTP 200 after Cloud’s auth cookie redirect **and** body matches a 
 
 **Limitation:** Community Cloud serves a JS shell; page title / “Privacy notice” text are not in
 the first HTML response. Curl smoke proves the host is up, not full UI. Keep QA browser smoke
-(`/workspace/bee-team/qa/live-smoke.md`) for consent / PDF / sizing.
+(team QA live-smoke notes (internal)) for consent / PDF / sizing.
 
-Cron / Grok Bot routine: see `/workspace/bee-team/cto/live-smoke-automation.md` (parent creates the routine).
+Cron / Grok Bot routine: see team live-smoke automation notes (internal) (parent creates the routine).
 
 ## Error reporting
 

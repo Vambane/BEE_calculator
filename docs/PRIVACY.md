@@ -2,7 +2,7 @@
 
 **Privacy policy path (in-app):** `/privacy` (query: `?page=privacy`) until a public URL exists.
 
-**Source of truth:** `/workspace/bee-team/compliance/privacy-notice-v1.md` (Compliance Analyst; Security checklist fit, not legal approval). Dumisani approved this wording for production v1 (legal entity and Information Officer remain placeholders until launch).
+**Source of truth:** Compliance privacy notice v1 (internal team record; Security checklist fit, not legal approval). Dumisani approved this wording for production v1 (legal entity and Information Officer remain placeholders until launch).
 
 ---
 

@@ -13,6 +13,11 @@ from bee.sectors.base import SectorConfig, SectorExcludedError
 
 def calculate(inp: ScoreInput) -> ScoreResult:
     p = inp.profile
+    # F-EDGE-OVER100: ownership is % of voting rights / economic interest (GG 36928
+    # Statement 100). Values outside 0–100 must not score (Codes silent ≠ cap-and-score).
+    bo = p.black_ownership_pct
+    if bo is None or not (0.0 <= float(bo) <= 100.0):
+        raise ValueError("Black ownership must be between 0% and 100%.")
     cfg = get_sector(p.sector)
     if cfg.status == "excluded":
         raise SectorExcludedError(" ".join(cfg.warnings))

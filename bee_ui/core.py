@@ -72,16 +72,27 @@ def _base_value(fin: Financials, base: str) -> float | None:
 
 
 def validate(
-    card: Scorecard, profile: dict, fin: Financials, values: dict, modes: dict, points: dict
+    card: Scorecard | None, profile: dict, fin: Financials, values: dict, modes: dict, points: dict
 ) -> list[Problem]:
     """values: {element: {clause: number|bool}} as entered; modes: {element: 'rand'|'pct'}.
-    points: {element: {group: pts}} for element-level sector cards."""
+    points: {element: {group: pts}} for element-level sector cards.
+    card may be None (EME deemed / no scorecard) — profile and financials are still checked
+    so Continue cannot advance on out-of-range ownership or revenue (F-EDGE-OVER100)."""
     out: list[Problem] = []
     rev = profile.get("revenue")
-    if rev is None or rev < 0:
+    if (
+        rev is None
+        or (isinstance(rev, float) and (rev != rev or rev in (float("inf"), float("-inf"))))
+        or (isinstance(rev, (int, float)) and rev < 0)
+    ):
         out.append(Problem("revenue", "Total revenue must be zero or more."))
-    bo = profile.get("black_ownership", 0) or 0
-    if not 0 <= bo <= 100:
+    # F-EDGE-OVER100: fail-closed 0–100 only (GG 36928 Statement 100). Do not clamp.
+    bo = profile.get("black_ownership", 0)
+    if bo is None:
+        bo = 0
+    if isinstance(bo, float) and (bo != bo or bo in (float("inf"), float("-inf"))):
+        out.append(Problem("black_ownership", "Black ownership must be between 0% and 100%."))
+    elif not isinstance(bo, (int, float)) or isinstance(bo, bool) or not (0 <= float(bo) <= 100):
         out.append(Problem("black_ownership", "Black ownership must be between 0% and 100%."))
     for name, v in (
         ("leviable_amount", fin.leviable_amount),
@@ -90,6 +101,8 @@ def validate(
     ):
         if v is not None and v < 0:
             out.append(Problem(name, f"{name.replace('_', ' ').title()} cannot be negative."))
+    if card is None:
+        return out
     for el in card.elements:
         ev = values.get(el.key, {})
         mode = modes.get(el.key, "pct")

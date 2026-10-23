@@ -242,3 +242,50 @@ def test_classify_rejects_nan_inf_negative():
 def test_calculate_rejects_nan_revenue():
     with pytest.raises(ValueError, match="finite"):
         calculate(ScoreInput(CompanyProfile(float("nan"))))
+
+
+def test_calculate_rejects_bo_over_100():
+    """F-EDGE-OVER100: engine must not deem/score ownership >100%."""
+    from bee.engine import calculate
+
+    with pytest.raises(ValueError, match="Black ownership"):
+        calculate(make(5_000_000, bo=101.0))
+    with pytest.raises(ValueError, match="Black ownership"):
+        calculate(make(5_000_000, bo=150.0))
+    with pytest.raises(ValueError, match="Black ownership"):
+        calculate(make(5_000_000, bo=-1.0))
+
+
+def test_validate_rejects_bo_over_100():
+    from bee.models import Financials
+    from bee_ui.core import validate
+
+    fin = Financials()
+    # card=None covers EME deemed (no element steps) — profile BO still gated
+    probs = validate(
+        None,
+        {"revenue": 5_000_000.0, "black_ownership": 101.0},
+        fin,
+        {},
+        {},
+        {},
+    )
+    assert any(p.field == "black_ownership" for p in probs)
+    probs_ok = validate(
+        None,
+        {"revenue": 5_000_000.0, "black_ownership": 100.0},
+        fin,
+        {},
+        {},
+        {},
+    )
+    assert not any(p.field == "black_ownership" for p in probs_ok)
+    probs_neg_rev = validate(
+        None,
+        {"revenue": -1.0, "black_ownership": 30.0},
+        fin,
+        {},
+        {},
+        {},
+    )
+    assert any(p.field == "revenue" for p in probs_neg_rev)
