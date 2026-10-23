@@ -45,7 +45,6 @@ def sidebar_labels(at):
     return labels
 
 
-
 def click_continue(at):
     """Click the primary Continue footer button (not sidebar Start over / nav)."""
     btn = next(b for b in at.button if (b.label or "").startswith("Continue"))
