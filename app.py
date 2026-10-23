@@ -6,6 +6,8 @@ renders results. No inputs are logged. Run: ``streamlit run app.py``.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
@@ -40,6 +42,51 @@ MAX_PDF_UNLOCK_ATTEMPTS = 5
 MAX_PDF_BUILDS = 5
 MAX_CALCULATE_CALLS = 60  # per browser session
 
+_REPO_ROOT = Path(__file__).resolve().parent
+_PRIVACY_MD = _REPO_ROOT / "docs" / "PRIVACY.md"
+# GitHub blob for docs/PRIVACY.md on main (stable after this PR merges).
+PRIVACY_GITHUB = "https://github.com/Vambane/BEE_calculator/blob/main/docs/PRIVACY.md"
+CONSENT_LABEL = (
+    "I have read the privacy notice and agree to this processing for this session's scorecard."
+)
+# Compliance §1 short notice (privacy-notice-v1.md) — keep in sync with docs/PRIVACY.md.
+PRIVACY_SHORT = (
+    "**Privacy notice.** We use the company figures you enter only to calculate a B-BBEE "
+    "scorecard for this session. Aggregates that relate to race or gender are special "
+    "personal information under POPIA s26; we process them only for this scorecard. We do "
+    "not ask for ID numbers or individual names.\n\n"
+    "Your inputs are kept only for this interactive session on the app host and are "
+    "discarded when the session ends. They are not written to a database or other "
+    "long-term store. We do not put your inputs into analytics or error reports "
+    "(usage statistics are off).\n\n"
+    "[Privacy policy](?page=privacy) · [Full text on GitHub](" + PRIVACY_GITHUB + ")"
+)
+
+
+def load_privacy_md() -> str:
+    """Return docs/PRIVACY.md body, or a short fallback if the file is missing."""
+    try:
+        return _PRIVACY_MD.read_text(encoding="utf-8")
+    except OSError:
+        return f"Privacy policy file is unavailable in this build. See {PRIVACY_GITHUB}"
+
+
+def render_privacy_page() -> None:
+    """In-app privacy page (?page=privacy). Multipage pages/ would pollute wizard sidebar."""
+    st.title("Privacy policy")
+    st.caption(
+        "In-app path: `?page=privacy` (documented as `/privacy` until a public URL exists). "
+        f"Canonical copy: [docs/PRIVACY.md]({PRIVACY_GITHUB})."
+    )
+    st.markdown(load_privacy_md())
+    if st.button("Back to calculator", type="primary"):
+        try:
+            del st.query_params["page"]
+        except KeyError:
+            pass
+        st.rerun()
+
+
 st.set_page_config(page_title="BEE Check", layout="centered")
 st.markdown("<style>.block-container{max-width:960px}</style>", unsafe_allow_html=True)
 
@@ -71,6 +118,10 @@ S.setdefault(
     },
 )
 store = S.store
+# Dedicated privacy view: ?page=privacy (pages/ multipage would pollute the wizard sidebar).
+if str(Q.get("page", "")).lower() == "privacy":
+    render_privacy_page()
+    st.stop()
 if Q.get("demo") == "1" and not S.get("demo_seeded"):  # illustrative inputs for demos only
     S.demo_seeded = True
     # Do not auto-consent (M3): seed figures but require an explicit tick.
@@ -223,17 +274,11 @@ if S.draft:
 def profile_step():
     st.title("Tell us about your company")
     with st.container(border=True):
-        st.markdown(
-            "**Privacy notice.** We use the figures you enter only to calculate your "
-            "scorecard in this browser session. Nothing is stored on our servers after "
-            "you close the page. Aggregate black ownership and management-control "
-            "figures are race- and gender-related special personal information "
-            "(POPIA s26), used only for this session's calculation. This MVP is hosted "
-            "on Streamlit Community Cloud outside South Africa (POPIA s72 noted); "
-            "phase 2 moves hosting to SA. Do not enter ID numbers or individuals' names."
-        )
+        st.markdown(PRIVACY_SHORT)
+        with st.expander("Full privacy notice"):
+            st.markdown(load_privacy_md())
         store["consent"] = st.checkbox(
-            "I understand and consent to my company figures being processed for this calculation.",
+            CONSENT_LABEL,
             value=store["consent"],
         )
     consented = bool(store["consent"])
@@ -749,9 +794,11 @@ def results_step():
         rate = store.setdefault("pdf_rate", {"unlock_attempts": 0, "pdf_builds": 0})
         if not gate.get("unlocked"):
             st.markdown(
-                "Enter your work email to unlock the PDF download on this device. "
-                "Nothing is emailed from this app yet; the address stays in this browser "
-                "session only and is not stored on our servers (POPIA)."
+                "**If you leave an email to unlock the PDF download**  \n"
+                "Your email is kept only for this interactive session on the app host so "
+                "we can unlock the download. We do not email the report in v1. When the "
+                "session ends, the email is discarded; it is not written to a database or "
+                "other long-term store."
             )
             st.caption(
                 f"Up to {MAX_PDF_UNLOCK_ATTEMPTS} unlock attempts, "
@@ -767,9 +814,20 @@ def results_step():
             else:
                 gate["email"] = st.text_input("Work email", gate.get("email", ""), key="pdf_email")
                 gate["marketing"] = st.checkbox(
-                    "Send me occasional B-BBEE updates (optional)",
+                    "Marketing updates (optional) — does not add you to a mailing list in v1",
                     value=gate.get("marketing", False),
                     key="pdf_mkt",
+                    help=(
+                        "Ticking this does not add you to a mailing list in v1. We have no "
+                        "marketing email provider yet. When we do, we will ask again under "
+                        "POPIA s69 before sending any marketing."
+                    ),
+                )
+                st.caption(
+                    "Marketing updates (optional, unticked by default): ticking this does "
+                    "**not** add you to a mailing list in v1. We have no marketing email "
+                    "provider yet. When we do, we will ask again under POPIA s69 before "
+                    "sending any marketing."
                 )
                 if st.button(
                     "Continue with email", type="primary", width="stretch", key="pdf_unlock"
