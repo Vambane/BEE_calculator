@@ -176,7 +176,6 @@ def _parent_name(name: str, suffix: str) -> str:
     return low.replace(suffix, repl)
 
 
-
 def is_gender_indicator(ind: Indicator) -> bool:
     """True for Black women / Black female / black-women-owned scorecard lines."""
     low = ind.name.lower().replace("-", " ")
@@ -283,9 +282,7 @@ def _pair_labels(parent: Indicator, women: Indicator) -> tuple[str, str]:
     return left, right
 
 
-def indicator_render_units(
-    el: Element, draft: bool
-) -> list[dict]:
+def indicator_render_units(el: Element, draft: bool) -> list[dict]:
     """Ordered UI units for an element (excluding Net Value).
 
     Each unit is either:

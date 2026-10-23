@@ -359,9 +359,7 @@ def test_results_gender_contribution_positive_when_women_entered():
     at.session_state["step"] = 99
     at.run()
     assert not at.exception, at.exception
-    metric_text = " ".join(
-        f"{m.label or ''} {m.value or ''}" for m in at.metric
-    )
+    metric_text = " ".join(f"{m.label or ''} {m.value or ''}" for m in at.metric)
     assert "Black women / Black female contribution" in metric_text
     assert "of" in metric_text
     # X > 0
@@ -399,9 +397,7 @@ def test_eme_deemed_hides_gender_contribution_metric():
     at.session_state["step"] = 99
     at.run()
     assert not at.exception
-    assert not any(
-        m.label == "Black women / Black female contribution" for m in at.metric
-    )
+    assert not any(m.label == "Black women / Black female contribution" for m in at.metric)
 
 
 def test_tourism_ownership_women_help_shows_15():

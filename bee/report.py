@@ -116,9 +116,7 @@ def _report_context(
             e["explainer"] = (
                 e["explainer"]
                 + " Black women / Black female lines: "
-                + "; ".join(
-                    f"{g['name']} {g['achieved']:g}/{g['max']:g} pts" for g in rows
-                )
+                + "; ".join(f"{g['name']} {g['achieved']:g}/{g['max']:g} pts" for g in rows)
                 + "."
             )
     gaps = sorted(
@@ -175,9 +173,7 @@ def _report_context(
             gaps=gaps,
             next_level=f"{gap[0]:.1f} pts to Level {gap[1]}" if gap else None,
             gender_contribution=(
-                f"Black women / Black female contribution: {gx:g} of {gy:g} pts"
-                if gy > 0
-                else None
+                f"Black women / Black female contribution: {gx:g} of {gy:g} pts" if gy > 0 else None
             ),
             gender_rows=gender_rows,
         ),

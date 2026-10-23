@@ -544,15 +544,13 @@ def element_step(el):
                 "is applied by your verification agency."
             )
         with st.container(border=True):
+
             def _ind_help(i):
                 unit = "" if i.base == "bool" else "%"
-                return (
-                    f"Target {i.target:g}{unit} · {i.points:g} pts · cl. {i.clause}"
-                    + (
-                        " · separate points line (counted inside Black people for ownership rules)"
-                        if "women" in i.name.lower() or "female" in i.name.lower()
-                        else ""
-                    )
+                return f"Target {i.target:g}{unit} · {i.points:g} pts · cl. {i.clause}" + (
+                    " · separate points line (counted inside Black people for ownership rules)"
+                    if "women" in i.name.lower() or "female" in i.name.lower()
+                    else ""
                 )
 
             def _render_number(i, label):
