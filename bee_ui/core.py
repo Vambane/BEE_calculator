@@ -473,3 +473,45 @@ def to_rand(pct: float, base: float | None) -> float:
 
 def to_pct(amount: float, base: float | None) -> float:
     return 0.0 if not base or base <= 0 else amount / base * 100
+
+
+# --- Session reset helpers (UI only; no scoring) --------------------------------
+
+WIDGET_KEY_PREFIXES = (
+    "profile_",
+    "fin_",
+    "entry_",
+    "mode_",
+    "pt_",
+    "nv_",
+    "v_",
+    "_step_errs_",
+)
+WIDGET_KEY_EXACT = frozenset({"pdf_email", "pdf_mkt"})
+
+
+def fresh_store() -> dict:
+    """Empty canonical store for a new calculation run (consent re-required)."""
+    return {
+        "profile": {
+            "company": "",
+            "revenue": 0.0,
+            "black_ownership": 0.0,
+            "variant": None,
+            "yes_tier": "none",
+            "yes_prev_level": None,
+            "opt_scored": False,
+        },
+        "fin": {"npat": 0.0, "leviable_amount": 0.0, "tmps": 0.0, "employees": 0.0},
+        "values": {"rand": {}, "pct": {}},
+        "modes": {},
+        "entry": {},
+        "points": {},
+        "options": {},
+        "consent": False,
+    }
+
+
+def is_scenario_widget_key(key: str) -> bool:
+    """True for bind()/PDF widget keys that must drop on Start over."""
+    return key.startswith(WIDGET_KEY_PREFIXES) or key in WIDGET_KEY_EXACT
