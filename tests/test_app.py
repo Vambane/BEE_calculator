@@ -173,6 +173,7 @@ def test_pdf_email_gate_then_download():
     at.run()
     assert any("PDF" in (b.label or "") for b in at.download_button)
 
+
 def test_deemed_results_hide_pdf_gate_and_explain():
     """Deemed affidavit path: no PDF/email gate; caption points to full-scorecard option."""
     at = boot(sector="construction")
