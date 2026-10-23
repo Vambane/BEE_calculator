@@ -111,7 +111,9 @@ def render_privacy_page() -> None:
 
 
 st.set_page_config(page_title="BEE Check", layout="centered")
-st.markdown(
+# UX-C1: st.html injects CSS/DOM; st.markdown(..., unsafe_allow_html=True) can print
+# raw <style>/hex markup as visible text on Streamlit Cloud (Design mock UX-C1).
+st.html(
     """
 <style>
 /* Honey visual language — light CSS; Streamlit theme owns most colours */
@@ -151,9 +153,22 @@ div[data-testid="stVerticalBlockBorderWrapper"]:hover {
   border-color: rgba(212, 160, 23, 0.45) !important;
   box-shadow: 0 8px 24px rgba(26, 26, 26, 0.06);
 }
+/* UX-C3: custom theme fonts must not steal Material Symbols ligatures on expanders */
+[data-testid="stExpanderIcon"],
+[data-testid="stIconMaterial"],
+[data-testid="stExpanderStepChevron"],
+[data-testid="stExpanderStepIcon"] {
+  font-family: "Material Symbols Rounded" !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  font-synthesis: none !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+  -webkit-font-feature-settings: "liga" !important;
+  font-feature-settings: "liga" !important;
+}
 </style>
-""",
-    unsafe_allow_html=True,
+"""
 )
 
 Q = st.query_params
@@ -235,7 +250,10 @@ def context():
     if variant not in (cfg.variants or (None,)):
         variant = cfg.default_variant
     size = size_for(cfg, store["profile"]["revenue"], variant)
-    card = card_for(cfg, size, variant) if size.value != "EME" else None
+    # UX-C2: EME affidavit hides the element card, but opt_scored must surface the QSE
+    # scorecard steps (engine already remaps EME → QSE via SectorConfig.card).
+    opt_scored = bool(store["profile"].get("opt_scored"))
+    card = card_for(cfg, size, variant) if (size.value != "EME" or opt_scored) else None
     return cfg, variant, size, card
 
 
@@ -714,10 +732,7 @@ def current_input(esd_override: dict | None = None):
 def results_step():
     require_consent()
     st.title("Your scorecard")
-    st.markdown(
-        '<div class="bee-hex-divider" aria-hidden="true"></div>',
-        unsafe_allow_html=True,
-    )
+    st.html('<div class="bee-hex-divider" aria-hidden="true"></div>')
     badge_line()
     all_probs = []
     if card:

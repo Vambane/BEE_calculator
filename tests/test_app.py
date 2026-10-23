@@ -387,6 +387,60 @@ def test_demo_does_not_force_points_on_ownership():
     assert at.session_state["store"]["entry"].get("management") == "ind"
 
 
+def test_honey_theme_css_via_html_not_markdown():
+    """UX-C1: theme CSS + hex must go through st.html so tags are not visible markdown."""
+    at = boot()
+    assert not at.exception
+    md = "\n".join(m.value or "" for m in at.markdown)
+    assert "<style>" not in md
+    assert "bee-hex-divider" not in md
+    html = "\n".join(h.value or "" for h in at.html)
+    assert ".bee-hex-divider" in html or "Honey visual" in html
+    assert "Material Symbols Rounded" in html  # UX-C3 icon-font restore lives in same block
+    at = to_results(boot())
+    assert not at.exception
+    html = "\n".join(h.value or "" for h in at.html)
+    assert 'class="bee-hex-divider"' in html or "bee-hex-divider" in html
+    md = "\n".join(m.value or "" for m in at.markdown)
+    assert '<div class="bee-hex-divider"' not in md
+
+
+def test_eme_opt_scored_shows_ownership_and_mc_steps():
+    """UX-C2: EME + full-scorecard opt-in must expose QSE element steps."""
+    at = boot()
+    store = at.session_state["store"]
+    store["consent"] = True
+    store["profile"]["revenue"] = 5_000_000.0
+    store["profile"]["black_ownership"] = 51.0
+    store["profile"]["opt_scored"] = True
+    at.run()
+    assert not at.exception
+    side = " ".join(m.value or "" for m in at.sidebar.markdown)
+    assert "Ownership" in side
+    assert "Management Control" in side or "Management" in side
+    assert "Skills Development" in side or "Skills" in side
+    at.session_state["step"] = 1
+    at.run()
+    assert not at.exception
+    assert any((t.value or "") == "Ownership" for t in at.title)
+
+
+def test_eme_deemed_sidebar_is_profile_and_results_only():
+    """EME without opt_scored stays affidavit-only (no Ownership/MC steps)."""
+    at = boot()
+    store = at.session_state["store"]
+    store["consent"] = True
+    store["profile"]["revenue"] = 5_000_000.0
+    store["profile"]["black_ownership"] = 60.0
+    store["profile"]["opt_scored"] = False
+    at.run()
+    assert not at.exception
+    side = " ".join(m.value or "" for m in at.sidebar.markdown)
+    assert "Ownership" not in side
+    assert "Management" not in side
+    assert "Results" in side
+
+
 def test_eme_deemed_hides_gender_contribution_metric():
     at = boot()
     store = at.session_state["store"]
