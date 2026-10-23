@@ -31,3 +31,6 @@ git add app.py requirements.txt README.md
 git commit -m "Add Streamlit B-BBEE calculator with improved chart"
 git push origin main   # adjust branch/remote if needed
 ```
+
+## Secrets
+Never commit API keys, tokens, or `.streamlit/secrets.toml`. Use Streamlit Cloud’s Secrets UI (or a local gitignored `secrets.toml` / `.env`). See [docs/SECRETS.md](docs/SECRETS.md). Rotate any credential that may have leaked.

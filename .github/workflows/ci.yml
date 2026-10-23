@@ -15,7 +15,7 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: pip install -r requirements.lock
-      - run: pip install -e ".[dev]" pip-audit
+      - run: pip install -e ".[dev]" "pip-audit==2.10.1"
       - name: Lint
         run: ruff check bee bee_ui tests app.py
       - name: Format check

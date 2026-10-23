@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 
-from jinja2 import Environment, FileSystemLoader
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from bee.levels import LEVELS
 from bee.models import ScoreResult
@@ -14,6 +14,14 @@ from bee.sectors.base import SectorConfig
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = ROOT / "report"
+
+
+def _jinja_env() -> Environment:
+    """Jinja env with HTML/XML autoescape on (XSS-safe company/user fields in PDF HTML)."""
+    return Environment(
+        loader=FileSystemLoader(TEMPLATE_DIR),
+        autoescape=select_autoescape(["html", "xml"]),
+    )
 
 
 def _next_level_gap(points: float) -> tuple[float, int] | None:
@@ -76,9 +84,9 @@ def _notes(result: ScoreResult) -> list[dict]:
     return notes
 
 
-def render_pdf(
+def _report_context(
     result: ScoreResult,
-    card: Scorecard | None,
+    card: Scorecard,
     profile: dict,
     scorecard_label: str,
     cfg: SectorConfig,
@@ -86,12 +94,7 @@ def render_pdf(
     draft: bool = False,
     company_name: str = "Your company",
     example: bool = False,
-) -> bytes:
-    """Return PDF bytes for a scored result. Raises on WeasyPrint/template errors."""
-    from weasyprint import HTML  # lazy: keeps app import light when PDF unused
-
-    if card is None:
-        raise ValueError("PDF requires a scored (non-EME-affidavit) scorecard")
+) -> dict:
     els = _elements(card, result, draft)
     gaps = sorted(
         [
@@ -120,7 +123,7 @@ def render_pdf(
     else:
         discount_reason, discount_clause = None, ""
     gap = None if result.level_points is None else _next_level_gap(result.level_points)
-    ctx = dict(
+    return dict(
         example=example,
         prepared_date=date.today().strftime("%-d %b %Y"),
         scorecard_label=f"Scorecard: {scorecard_label}",
@@ -163,9 +166,57 @@ def render_pdf(
             "This report is a planning aid, not a SANAS verification certificate.",
         ],
     )
-    html = (
-        Environment(loader=FileSystemLoader(TEMPLATE_DIR))
-        .get_template("report_template.html")
-        .render(**ctx)
+
+
+def render_report_html(
+    result: ScoreResult,
+    card: Scorecard | None,
+    profile: dict,
+    scorecard_label: str,
+    cfg: SectorConfig,
+    *,
+    draft: bool = False,
+    company_name: str = "Your company",
+    example: bool = False,
+) -> str:
+    """Return the gap-report HTML string (autoescaped). Used by ``render_pdf`` and tests."""
+    if card is None:
+        raise ValueError("PDF requires a scored (non-EME-affidavit) scorecard")
+    ctx = _report_context(
+        result,
+        card,
+        profile,
+        scorecard_label,
+        cfg,
+        draft=draft,
+        company_name=company_name,
+        example=example,
+    )
+    return _jinja_env().get_template("report_template.html").render(**ctx)
+
+
+def render_pdf(
+    result: ScoreResult,
+    card: Scorecard | None,
+    profile: dict,
+    scorecard_label: str,
+    cfg: SectorConfig,
+    *,
+    draft: bool = False,
+    company_name: str = "Your company",
+    example: bool = False,
+) -> bytes:
+    """Return PDF bytes for a scored result. Raises on WeasyPrint/template errors."""
+    from weasyprint import HTML  # lazy: keeps app import light when PDF unused
+
+    html = render_report_html(
+        result,
+        card,
+        profile,
+        scorecard_label,
+        cfg,
+        draft=draft,
+        company_name=company_name,
+        example=example,
     )
     return HTML(string=html, base_url=str(TEMPLATE_DIR)).write_pdf()
