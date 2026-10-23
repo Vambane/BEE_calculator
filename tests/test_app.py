@@ -56,6 +56,23 @@ def test_continue_blocked_without_consent():
     assert at.session_state["step"] == 0
 
 
+def test_consent_error_clears_after_tick():
+    """UX-M1: stale 'Tick the privacy consent box' must clear once consent is ticked."""
+    at = boot()
+    at.button[-1].click().run()
+    assert any("consent" in (e.value or "").lower() for e in at.error)
+    for c in at.checkbox:
+        if "privacy" in (c.label or "").lower() or "agree" in (c.label or "").lower():
+            c.check()
+            break
+    else:
+        raise AssertionError("privacy consent checkbox not found")
+    at.run()
+    assert at.session_state["store"]["consent"] is True
+    assert not any("consent" in (e.value or "").lower() for e in at.error)
+    assert "_step_errs_0" not in at.session_state or not at.session_state.get("_step_errs_0")
+
+
 def test_step_query_without_consent_stays_on_profile():
     """H1: ?step= must not skip the POPIA consent gate."""
     at = boot(step="2")
@@ -270,11 +287,28 @@ def test_pdf_gate_marketing_is_honest_not_a_list():
     labels = " ".join((c.label or "") for c in at.checkbox)
     caps = " ".join((c.value or "") for c in at.caption)
     md = " ".join((m.value or "") for m in at.markdown)
-    blob = labels + " " + caps + " " + md
+    helps = " ".join((c.help or "") for c in at.checkbox)
+    blob = labels + " " + caps + " " + md + " " + helps
     low = blob.lower()
     assert "does not add you to a mailing list" in low or "mailing list in v1" in low
     assert "we do not email the report" in low or "do not email the report" in low
     assert any("Continue with email" in (b.label or "") for b in at.button)
+    # UX-M5: no developer stubs on the PDF gate
+    assert "deferred" not in low
+    assert "cloud-edge" not in low
+    assert "marketing email provider" not in low
+    assert "no marketing email" not in low
+
+
+def test_empty_results_no_level9_discount_punishment():
+    """UX-M7: 0 points entered must not say 'discounted from Level 9'."""
+    at = to_results(boot())
+    assert not at.exception
+    warnings = " ".join((w.value or "") for w in at.warning)
+    infos = " ".join((i.value or "") for i in at.info)
+    assert "discounted from Level 9" not in warnings
+    assert "Sub-minimum missed" not in warnings or "Level 9" not in warnings
+    assert "No points entered" in infos or "enter indicators or points" in infos.lower()
 
 
 def test_unexpected_calculate_shows_support_caption(monkeypatch):
