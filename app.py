@@ -514,10 +514,7 @@ def profile_step():
         val_card = card_
         if val_card is None and cfg_.cards:
             val_card = card_for(cfg_, size_, store["profile"].get("variant"))
-        out += [
-            p.message
-            for p in validate(val_card, store["profile"], fin_obj(), {}, {}, {})
-        ]
+        out += [p.message for p in validate(val_card, store["profile"], fin_obj(), {}, {}, {})]
         return out
 
     footer(problems)
@@ -758,9 +755,7 @@ def results_step():
     val_card = card
     if val_card is None and cfg.cards:
         val_card = card_for(cfg, size, variant)
-    all_probs = validate(
-        val_card, store["profile"], fin_obj(), ind_vals, store["modes"], pts_vals
-    )
+    all_probs = validate(val_card, store["profile"], fin_obj(), ind_vals, store["modes"], pts_vals)
     if all_probs:
         st.error("Some inputs need fixing:\n\n" + "\n".join(f"- {p.message}" for p in all_probs))
         st.button("Go to profile", on_click=go_to, args=(0,))

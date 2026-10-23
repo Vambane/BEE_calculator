@@ -80,9 +80,11 @@ def validate(
     so Continue cannot advance on out-of-range ownership or revenue (F-EDGE-OVER100)."""
     out: list[Problem] = []
     rev = profile.get("revenue")
-    if rev is None or (
-        isinstance(rev, float) and (rev != rev or rev in (float("inf"), float("-inf")))
-    ) or (isinstance(rev, (int, float)) and rev < 0):
+    if (
+        rev is None
+        or (isinstance(rev, float) and (rev != rev or rev in (float("inf"), float("-inf"))))
+        or (isinstance(rev, (int, float)) and rev < 0)
+    ):
         out.append(Problem("revenue", "Total revenue must be zero or more."))
     # F-EDGE-OVER100: fail-closed 0–100 only (GG 36928 Statement 100). Do not clamp.
     bo = profile.get("black_ownership", 0)
