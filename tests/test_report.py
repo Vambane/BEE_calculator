@@ -96,3 +96,38 @@ def test_company_name_html_is_escaped_in_report_html():
     assert "EvilCo" in html
     # Escaped text may still contain the letters "onerror="; it must not be a real tag.
     assert "<img src=x onerror=" not in html
+
+
+def test_report_html_includes_gender_contribution_line():
+    from bee import CompanyProfile, Financials, ScoreInput, calculate
+    from bee import EnterpriseSize as E
+    from bee.registry import get_sector
+    from bee.report import render_report_html
+
+    cfg = get_sector("generic")
+    card = cfg.card(E.GENERIC, None)
+    inds = {
+        "ownership": {"100 2.1.2": 10.0, "100 2.2.2": 10.0},
+        "management": {"200 2.1.2": 25.0},
+    }
+    r = calculate(
+        ScoreInput(
+            CompanyProfile(100_000_000, 40),
+            financials=Financials(),
+            indicators=inds,
+        )
+    )
+    html = render_report_html(
+        r,
+        card,
+        {},
+        "Generic Large",
+        cfg,
+        company_name="Gender Co",
+        indicators=inds,
+        financials=Financials(),
+    )
+    assert "Black women / Black female contribution:" in html
+    assert "of" in html and "pts" in html
+    assert "not a separate element" in html
+    assert "Voting rights: black women" in html or "100 2.1.2" in html

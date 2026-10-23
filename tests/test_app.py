@@ -281,3 +281,131 @@ def test_unexpected_calculate_shows_support_caption(monkeypatch):
     assert "contact support" in caps.lower()
     assert "synthetic failure" not in caps
     assert "qa@" not in caps.lower()
+
+
+# --- full-scorecard v1.1 gender visibility (Compliance acceptance) ---
+
+
+def test_ownership_defaults_to_indicators_and_shows_women_clauses():
+    at = boot()
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 100_000_000.0
+    at.session_state["step"] = 1  # Ownership
+    at.run()
+    assert not at.exception
+    assert at.session_state["store"]["entry"].get("ownership", "ind") == "ind"
+    labels = " ".join(n.label or "" for n in at.number_input)
+    # Paired short labels or full names — clause help still carries targets.
+    helps = " ".join((n.help or "") for n in at.number_input)
+    assert "100 2.1.2" in helps
+    assert "100 2.2.2" in helps
+    assert "Black women" in labels or "black women" in labels.lower()
+
+
+def test_management_shows_six_black_female_lines_by_default():
+    at = boot()
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 100_000_000.0
+    # Find management step index dynamically
+    at.session_state["step"] = 2
+    at.run()
+    assert not at.exception
+    # Ensure we're on Management (step order: Profile, Ownership, Management, ...)
+    assert at.session_state["store"]["entry"].get("management", "ind") == "ind"
+    helps = " ".join((n.help or "") for n in at.number_input)
+    for cl in (
+        "200 2.1.2",
+        "200 2.1.4",
+        "200 2.2.2",
+        "200 2.3.2",
+        "200 2.4.2",
+        "200 2.5.2",
+    ):
+        assert cl in helps, cl
+
+
+def test_qse_ownership_women_visible_by_default():
+    at = boot()
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 20_000_000.0  # QSE
+    at.session_state["step"] = 1
+    at.run()
+    assert not at.exception
+    helps = " ".join((n.help or "") for n in at.number_input)
+    assert "601 2.1.1.2" in helps
+    assert "601 2.1.2.2" in helps
+
+
+def test_results_gender_contribution_positive_when_women_entered():
+    at = boot()
+    store = at.session_state["store"]
+    store["consent"] = True
+    store["profile"]["revenue"] = 100_000_000.0
+    store["fin"].update(
+        npat=10_000_000.0, tmps=50_000_000.0, leviable_amount=20_000_000.0, employees=100.0
+    )
+    store["entry"]["ownership"] = "ind"
+    store["entry"]["management"] = "ind"
+    store["modes"]["ownership"] = "pct"
+    store["modes"]["management"] = "pct"
+    store["values"]["pct"]["ownership"] = {
+        "100 2.1.1": 25.0,
+        "100 2.1.2": 10.0,
+        "100 2.2.1": 25.0,
+        "100 2.2.2": 10.0,
+        "100 2.3.1": 50.0,
+    }
+    store["values"]["pct"]["management"] = {"200 2.1.2": 25.0}
+    at.session_state["step"] = 99
+    at.run()
+    assert not at.exception, at.exception
+    metric_text = " ".join(f"{m.label or ''} {m.value or ''}" for m in at.metric)
+    assert "Black women / Black female contribution" in metric_text
+    assert "of" in metric_text
+    # X > 0
+    assert any(
+        m.label == "Black women / Black female contribution"
+        and m.value
+        and not str(m.value).startswith("0")
+        for m in at.metric
+    )
+
+
+def test_profile_has_no_women_ownership_field():
+    at = boot()
+    labels = [n.label or "" for n in at.number_input]
+    assert any("Black ownership" in lab for lab in labels)
+    assert not any("women ownership" in lab.lower() for lab in labels)
+
+
+def test_demo_does_not_force_points_on_ownership():
+    at = boot(demo="1")
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 100_000_000.0
+    at.run()
+    assert at.session_state["store"]["entry"].get("ownership") == "ind"
+    assert at.session_state["store"]["entry"].get("management") == "ind"
+
+
+def test_eme_deemed_hides_gender_contribution_metric():
+    at = boot()
+    store = at.session_state["store"]
+    store["consent"] = True
+    store["profile"]["revenue"] = 5_000_000.0  # EME
+    store["profile"]["black_ownership"] = 60.0
+    store["profile"]["opt_scored"] = False
+    at.session_state["step"] = 99
+    at.run()
+    assert not at.exception
+    assert not any(m.label == "Black women / Black female contribution" for m in at.metric)
+
+
+def test_tourism_ownership_women_help_shows_15():
+    at = boot(sector="tourism")
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 50_000_000.0  # Large
+    at.session_state["step"] = 1
+    at.run()
+    assert not at.exception
+    helps = " ".join((n.help or "") for n in at.number_input)
+    assert "Target 15" in helps

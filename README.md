@@ -1,6 +1,7 @@
 # Streamlit B-BBEE Calculator
 
-Minimal Streamlit app to estimate a South African SME/QSE B-BBEE score and recognition level.
+Streamlit app to estimate a South African B-BBEE score and recognition level on the
+Generic (Amended Codes 2019), QSE (Code Series 600), and loaded sector scorecards.
 
 ## Run locally
 ```bash
@@ -11,26 +12,14 @@ streamlit run app.py
 ```
 
 ## What it does
-- Capture profile inputs: turnover, payroll, ownership %, women ownership %, management %, province.
-- Capture contribution inputs: skills development (% payroll), black-owned supplier spend, EME/QSE spend, enterprise & supplier development (% NPAT), socio-economic development (% NPAT).
-- Applies simplified SME/QSE weighting (100-point scale) with EME auto-levels and ownership discount for Generic <10%.
-- Shows total points, recognition level, and a readable bar chart with per-element points vs max.
+- **Profile:** company name, sector code, revenue (for EME/QSE/Generic sizing), Black ownership %, financial bases (NPAT, leviable payroll, TMPS, headcount), optional YES Initiative, and an opt-in to score on the full scorecard when a deemed (affidavit) level would otherwise apply.
+- **Element steps (Indicators by default on Ownership and Management Control):** enter each scorecard indicator — including Black women / Black female lines — or switch to pre-calculated points from a verification agency. Net Value stays agency-entered (Annexe 100(E) is not calculated here).
+- **Results:** recognition level, total points, distance to next level, and a **Black women / Black female contribution: X of Y pts** line (not a separate element). PDF gap report available after an email unlock for the session.
+- Planning tool only; confirm with your verification agency and sector code.
 
 ## Notes
-- Planning tool only; confirm with your verification agency and sector code.
-- Adjust targets/weighting in `app.py` if your sector uses different thresholds.
-
-## Updating the chart
-- The breakdown chart uses Altair layered bars: a light background for the max points and a green foreground for achieved points with labels (`points / max`). Tooltips include % of max.
-- If you want a different palette or scale, tweak the colors and `max_domain` in the "Score breakdown" section of `app.py`.
-
-## Git tips (manual)
-If you want this in GitHub:
-```bash
-git add app.py requirements.txt README.md
-git commit -m "Add Streamlit B-BBEE calculator with improved chart"
-git push origin main   # adjust branch/remote if needed
-```
+- Race- and gender-linked aggregates are processed only for the scorecard (see [docs/PRIVACY.md](docs/PRIVACY.md)).
+- Sector codes that are not loaded fall back to the Generic / QSE cards with a warning.
 
 ## Secrets
 Never commit API keys, tokens, or `.streamlit/secrets.toml`. Use Streamlit Cloud’s Secrets UI (or a local gitignored `secrets.toml` / `.env`). See [docs/SECRETS.md](docs/SECRETS.md). Rotate any credential that may have leaked.

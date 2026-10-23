@@ -8,6 +8,7 @@
  <p class="scorecard">{{ scorecard_label }}</p>{% if sector_note %}<p class="draft">{{ sector_note }}</p>{% endif %}
  <p class="ruleset">{{ ruleset.id }} v{{ ruleset.version }}</p>
  <div class="level"><b>{{ result.level_label }}</b><span class="num">{{ "%.1f"|format(result.total) }} out of {{ result.max_total }}</span></div>
+ {% if result.gender_contribution %}<p class="num"><b>{{ result.gender_contribution }}</b><br><span class="fn">Across Ownership, Management, Skills and Preferential Procurement · not a separate element</span></p>{% endif %}
  {% if result.discount_applied %}<p class="draft">Level discounted by one: {{ result.discount_reason }} ({{ result.discount_clause }})</p>{% endif %}
  <h2>Scorecard</h2>
  <table><tr><th>Element</th><th style="width:35%"></th><th class="r">Points</th><th class="r">Max</th><th class="r">Gap</th></tr>
@@ -15,7 +16,7 @@
  <td class="r">{{ "%.1f"|format(e.points) }}</td><td class="r">{{ e.max }}</td><td class="r">{{ "%.1f"|format(e.gap) }}</td></tr>{% endfor %}</table>
  <h2>Top 3 actions</h2><ol>{% for g in result.gaps[:3] %}<li><b>{{ g.name }}</b>: {{ g.tip }} (+{{ "%.1f"|format(g.points) }})</li>{% endfor %}</ol>
 </section>
-<section><h2>Element detail</h2>{% for e in result.elements %}<h3>{{ e.name }}</h3><p>{{ e.explainer }}</p><p class="num">Target: {{ e.target_text }} · Your value: {{ e.value_text }} · To close gap: {{ e.rand_to_target }}</p><p class="fn">{{ e.clause }}</p>{% endfor %}</section>
+<section><h2>Element detail</h2>{% for e in result.elements %}<h3>{{ e.name }}</h3><p>{{ e.explainer }}</p><p class="num">Target: {{ e.target_text }} · Your value: {{ e.value_text }} · To close gap: {{ e.rand_to_target }}</p><p class="fn">{{ e.clause }}</p>{% if e.gender_rows %}<table><tr><th>Black women / Black female line</th><th class="r">Achieved</th><th class="r">Max</th><th class="r">Open</th></tr>{% for g in e.gender_rows %}<tr><td>{{ g.name }} (cl. {{ g.clause }})</td><td class="r">{{ "%.1f"|format(g.achieved) }}</td><td class="r">{{ g.max }}</td><td class="r">{{ "%.1f"|format(g.open) }}</td></tr>{% endfor %}</table>{% endif %}{% endfor %}</section>
 {% if scenario %}<section><h2>Scenario: Transformation Fund vs ESD</h2><p class="draft">DRAFT, NOT IN FORCE ({{ scenario.ruleset_id }}). Illustrative only.</p>
 <table><tr><th></th><th class="r">Transformation Fund</th><th class="r">Direct ESD</th></tr>
 <tr><td>Budget</td><td class="r" colspan="2">{{ scenario.budget_rand }}</td></tr>
