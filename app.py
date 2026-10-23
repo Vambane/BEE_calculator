@@ -6,6 +6,8 @@ renders results. No inputs are logged. Run: ``streamlit run app.py``.
 
 from __future__ import annotations
 
+import logging
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -61,6 +63,18 @@ PRIVACY_SHORT = (
     "(usage statistics are off).\n\n"
     "[Privacy policy](?page=privacy) · [Full text on GitHub](" + PRIVACY_GITHUB + ")"
 )
+
+_log = logging.getLogger("bee_check")
+
+
+def report_unexpected(exc: BaseException, *, what: str) -> None:
+    """Support hint (time only, no PII) + log exception type to stderr for Cloud logs."""
+    when = datetime.now(UTC).astimezone().strftime("%Y-%m-%d %H:%M %Z")
+    _log.warning("%s failed: %s", what, type(exc).__name__)
+    st.caption(
+        f"If this keeps happening, contact support and mention: {what} · {when} "
+        "(no personal details needed)."
+    )
 
 
 def load_privacy_md() -> str:
@@ -627,8 +641,9 @@ def results_step():
     try:
         calc_rate["calls"] += 1
         r = calculate(current_input())
-    except Exception:  # noqa: BLE001 - shown generically; no details or inputs logged
+    except Exception as exc:  # noqa: BLE001 - shown generically; no details or inputs logged
         st.error("We could not calculate this scorecard. Please check your inputs and try again.")
+        report_unexpected(exc, what="score calculation")
         st.button("Try again", on_click=st.rerun)
         return
     c1, c2, c3 = st.columns(3)
@@ -913,6 +928,7 @@ def results_step():
                         f"Could not build the PDF ({type(exc).__name__}). "
                         "Please try again. If it keeps failing, contact support with the time of the attempt."
                     )
+                report_unexpected(exc, what="PDF build")
 
 
 def tf_planner(base):
@@ -951,8 +967,9 @@ def tf_planner(base):
     for col, (name, ov) in zip(cols, routes.items(), strict=True):
         try:
             res = calculate(current_input(ov))
-        except Exception:  # noqa: BLE001
+        except Exception as exc:  # noqa: BLE001
             col.error("Could not score this route.")
+            report_unexpected(exc, what="TF planner score")
             continue
         with col.container(border=True):
             st.subheader(name)
