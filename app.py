@@ -773,8 +773,31 @@ def results_step():
                     type="primary",
                     width="stretch",
                 )
-            except Exception:  # noqa: BLE001 — no details (showErrorDetails=false)
-                st.error("Could not build the PDF. Please try again.")
+            except Exception as exc:  # noqa: BLE001 — no traceback (showErrorDetails=false)
+                # Surface a clear, non-sensitive reason so Cloud/deps failures are actionable.
+                detail = str(exc).strip() or type(exc).__name__
+                low = detail.lower()
+                if any(
+                    s in low
+                    for s in (
+                        "pango",
+                        "cairo",
+                        "libgobject",
+                        "cannot load library",
+                        "weasyprint",
+                        "gobject",
+                    )
+                ):
+                    st.error(
+                        "Could not build the PDF: the PDF engine is missing system libraries "
+                        "on this host (WeasyPrint / Pango). This is a deploy configuration issue, "
+                        "not your inputs — please try again after the next app update."
+                    )
+                else:
+                    st.error(
+                        f"Could not build the PDF ({type(exc).__name__}). "
+                        "Please try again. If it keeps failing, contact support with the time of the attempt."
+                    )
 
 
 def tf_planner(base):
