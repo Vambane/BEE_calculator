@@ -57,8 +57,10 @@ MAX_CALCULATE_CALLS = 60  # per browser session
 
 _REPO_ROOT = Path(__file__).resolve().parent
 _PRIVACY_MD = _REPO_ROOT / "docs" / "PRIVACY.md"
+_HOWTO_MD = _REPO_ROOT / "docs" / "HOW_TO.md"
 # GitHub blob for docs/PRIVACY.md on main (stable after this PR merges).
 PRIVACY_GITHUB = "https://github.com/Vambane/BEE_calculator/blob/main/docs/PRIVACY.md"
+HOWTO_GITHUB = "https://github.com/Vambane/BEE_calculator/blob/main/docs/HOW_TO.md"
 CONSENT_LABEL = (
     "I have read the privacy notice and agree to this processing for this session's scorecard."
 )
@@ -96,6 +98,21 @@ def load_privacy_md() -> str:
         return f"Privacy policy file is unavailable in this build. See {PRIVACY_GITHUB}"
 
 
+def load_howto_md() -> str:
+    """Return docs/HOW_TO.md body, or a short fallback if the file is missing."""
+    try:
+        return _HOWTO_MD.read_text(encoding="utf-8")
+    except OSError:
+        return f"How to guide is unavailable in this build. See {HOWTO_GITHUB}"
+
+
+def _clear_page_query() -> None:
+    try:
+        del st.query_params["page"]
+    except KeyError:
+        pass
+
+
 def render_privacy_page() -> None:
     """In-app privacy page (?page=privacy). Multipage pages/ would pollute wizard sidebar."""
     st.title("Privacy policy")
@@ -104,11 +121,23 @@ def render_privacy_page() -> None:
         f"Canonical copy: [docs/PRIVACY.md]({PRIVACY_GITHUB})."
     )
     st.markdown(load_privacy_md())
+    st.markdown(f"[How to use](?page=howto) · [Full text on GitHub]({PRIVACY_GITHUB})")
     if st.button("Back to calculator", type="primary"):
-        try:
-            del st.query_params["page"]
-        except KeyError:
-            pass
+        _clear_page_query()
+        st.rerun()
+
+
+def render_howto_page() -> None:
+    """In-app how-to page (?page=howto). Multipage pages/ would pollute wizard sidebar."""
+    st.title("How to use")
+    st.caption(
+        "In-app path: `?page=howto` (documented as `/howto` until a public URL exists). "
+        f"Canonical copy: [docs/HOW_TO.md]({HOWTO_GITHUB})."
+    )
+    st.markdown(load_howto_md())
+    st.markdown(f"[Privacy policy](?page=privacy) · [Full text on GitHub]({HOWTO_GITHUB})")
+    if st.button("Back to calculator", type="primary"):
+        _clear_page_query()
         st.rerun()
 
 
@@ -182,9 +211,13 @@ S.setdefault("default_mode", "pct" if Q.get("mode") == "pct" else "rand")
 S.setdefault("store", fresh_store())
 S.setdefault("max_step", 0)
 store = S.store
-# Dedicated privacy view: ?page=privacy (pages/ multipage would pollute the wizard sidebar).
-if str(Q.get("page", "")).lower() == "privacy":
+# Dedicated info views: ?page=privacy / ?page=howto (pages/ multipage would pollute the wizard sidebar).
+_page = str(Q.get("page", "")).lower()
+if _page == "privacy":
     render_privacy_page()
+    st.stop()
+if _page == "howto":
+    render_howto_page()
     st.stop()
 if Q.get("demo") == "1" and not S.get("demo_seeded"):  # illustrative inputs for demos only
     S.demo_seeded = True
@@ -383,6 +416,7 @@ with st.sidebar:
         "Ruleset: Amended Codes 2019, QSE CS600 (2015) and gazetted sector codes. Planning "
         "tool, not a verification certificate."
     )
+    st.markdown("[How to use](?page=howto) · [Privacy policy](?page=privacy)")
 
 st.progress((S.step + 1) / len(steps), text=f"Step {S.step + 1} of {len(steps)} · {steps[S.step]}")
 if S.draft:
@@ -400,6 +434,7 @@ def profile_step():
         "B-BBEE scorecard, calmly estimated. Enter what you know — we'll show the level, "
         "the gaps, and what moves the needle."
     )
+    st.markdown("New here? [How to use this calculator](?page=howto).")
     with st.container(border=True):
         st.markdown(PRIVACY_SHORT)
         with st.expander("Full privacy notice"):
