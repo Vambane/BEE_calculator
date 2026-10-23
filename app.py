@@ -606,6 +606,11 @@ def results_step():
         st.info(
             "Deemed level from black ownership (affidavit route). Tick 'Score on the full scorecard' in the profile for a points breakdown."
         )
+        st.caption(
+            "PDF gap report and email unlock appear only on the full-scorecard path. "
+            "A deemed affidavit result has no element gaps to report — tick that option "
+            "in Profile if you want the downloadable report."
+        )
         return
     names = {e.key: e.name for e in elements}
     rows = []
