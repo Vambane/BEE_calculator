@@ -26,6 +26,18 @@ def to_results(at):
     return at.run()
 
 
+def sync_profile_keys(at):
+    """Keep bind()+key widgets aligned after programmatic store writes (step 0)."""
+    p = at.session_state["store"]["profile"]
+    f = at.session_state["store"]["fin"]
+    at.session_state["profile_revenue"] = float(p.get("revenue") or 0.0)
+    at.session_state["profile_black_ownership"] = float(p.get("black_ownership") or 0.0)
+    at.session_state["fin_npat"] = float(f.get("npat") or 0.0)
+    at.session_state["fin_leviable_amount"] = float(f.get("leviable_amount") or 0.0)
+    at.session_state["fin_tmps"] = float(f.get("tmps") or 0.0)
+    at.session_state["fin_employees"] = float(f.get("employees") or 0.0)
+
+
 def test_profile_renders_with_privacy_and_generic_default():
     at = boot()
     assert not at.exception
@@ -413,6 +425,7 @@ def test_eme_opt_scored_shows_ownership_and_mc_steps():
     store["profile"]["revenue"] = 5_000_000.0
     store["profile"]["black_ownership"] = 51.0
     store["profile"]["opt_scored"] = True
+    sync_profile_keys(at)
     at.run()
     assert not at.exception
     side = " ".join(m.value or "" for m in at.sidebar.markdown)
@@ -433,6 +446,7 @@ def test_eme_deemed_sidebar_is_profile_and_results_only():
     store["profile"]["revenue"] = 5_000_000.0
     store["profile"]["black_ownership"] = 60.0
     store["profile"]["opt_scored"] = False
+    sync_profile_keys(at)
     at.run()
     assert not at.exception
     side = " ".join(m.value or "" for m in at.sidebar.markdown)
@@ -472,6 +486,7 @@ def test_bo_over_100_blocks_continue():
     store["consent"] = True
     store["profile"]["revenue"] = 5_000_000.0  # EME deemed path
     store["profile"]["black_ownership"] = 101.0
+    sync_profile_keys(at)
     at.run()
     assert at.session_state["step"] == 0
     # Primary Continue is the last button on the profile footer
@@ -487,9 +502,11 @@ def test_bo_over_100_stale_prior_does_not_advance():
     store["consent"] = True
     store["profile"]["revenue"] = 5_000_000.0
     store["profile"]["black_ownership"] = 51.0
+    sync_profile_keys(at)
     at.run()
     # Simulate editing BO to 101 while still on Profile (stale session risk)
     at.session_state["store"]["profile"]["black_ownership"] = 101.0
+    sync_profile_keys(at)
     at.run()
     at.button[-1].click().run()
     assert at.session_state["step"] == 0
@@ -517,7 +534,54 @@ def test_negative_revenue_blocks_continue():
     store["consent"] = True
     store["profile"]["revenue"] = -1.0
     store["profile"]["black_ownership"] = 30.0
+    sync_profile_keys(at)
     at.run()
     at.button[-1].click().run()
     assert at.session_state["step"] == 0
     assert any("revenue" in (e.value or "").lower() for e in at.error)
+
+
+def test_revenue_number_input_commits_and_size_same_run():
+    """MBC-BUG-01: after setting revenue, store + Size badge match (no flap / lag)."""
+    at = boot()
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 5_000_000.0
+    at.session_state["profile_revenue"] = 5_000_000.0
+    at.run()
+    assert not at.exception
+    rev = next(n for n in at.number_input if "Total revenue" in (n.label or ""))
+    rev.set_value(10_000_000.0).run()
+    assert not at.exception
+    assert at.session_state["store"]["profile"]["revenue"] == 10_000_000.0
+    assert at.session_state.get("profile_revenue") == 10_000_000.0
+    caps = " ".join((c.value or "") for c in at.caption)
+    # Generic size_labels: EME → "EME" / Exempt Micro Enterprise style
+    assert "EME" in caps or "Exempt" in caps
+    # Cross EME→QSE boundary in one set_value; after optional size-rerun, badge is QSE.
+    rev = next(n for n in at.number_input if "Total revenue" in (n.label or ""))
+    rev.set_value(10_000_001.0).run()
+    assert at.session_state["store"]["profile"]["revenue"] == 10_000_001.0
+    caps = " ".join((c.value or "") for c in at.caption)
+    assert "QSE" in caps
+
+
+def test_pdf_invalid_email_shows_error_and_does_not_unlock():
+    """MBC-F02: not-an-email must show a clear error and must not unlock the PDF."""
+    at = to_results(boot())
+    assert not at.exception
+    assert any("Continue with email" in (b.label or "") for b in at.button)
+    email = next(t for t in at.text_input if "email" in (t.label or "").lower())
+    email.set_value("not-an-email").run()
+    btn = next(b for b in at.button if "Continue with email" in (b.label or ""))
+    btn.click().run()
+    assert not at.exception
+    gate = at.session_state["store"].get("pdf_gate") or {}
+    assert not gate.get("unlocked")
+    assert any("valid email" in (e.value or "").lower() for e in at.error)
+    # @@ also rejected
+    email = next(t for t in at.text_input if "email" in (t.label or "").lower())
+    email.set_value("@@").run()
+    btn = next(b for b in at.button if "Continue with email" in (b.label or ""))
+    btn.click().run()
+    assert not at.session_state["store"]["pdf_gate"].get("unlocked")
+    assert any("valid email" in (e.value or "").lower() for e in at.error)

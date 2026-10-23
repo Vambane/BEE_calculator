@@ -411,62 +411,83 @@ def profile_step():
                 format_func=lambda s: s.replace("_", " ").title(),
                 disabled=not consented,
             )
-        # No min/max on these widgets (F-EDGE-OVER100 / Security M3): Streamlit's range
+        # No min/max on BO/revenue (F-EDGE-OVER100 / Security M3): Streamlit's range
         # clamp keeps out-of-range keystrokes out of session_state, so Continue would
         # validate the *stale* prior value while the UI still shows a red range error.
         # Accept the typed value and fail-closed in validate() / footer(problems).
-        p["revenue"] = st.number_input(
-            "Total revenue, last financial year (R)",
-            value=float(p["revenue"]),
-            step=500_000.0,
-            format="%.0f",
-            disabled=not consented,
+        # MBC-BUG-01: use bind()+key (no value=) so Enter/blur commits into session_state
+        # and store in the same run — value= alone flaps / lags Size by one rerun.
+        rev_k = bind("profile_revenue", float(p["revenue"] or 0.0))
+        p["revenue"] = float(
+            st.number_input(
+                "Total revenue, last financial year (R)",
+                step=1.0,
+                format="%.0f",
+                key=rev_k,
+                disabled=not consented,
+            )
         )
-        p["black_ownership"] = st.number_input(
-            "Black ownership (%)",
-            value=float(p["black_ownership"]),
-            step=1.0,
-            disabled=not consented,
-            help="Voting rights / economic interest, 0–100% (GG 36928 Statement 100).",
+        bo_k = bind("profile_black_ownership", float(p["black_ownership"] or 0.0))
+        p["black_ownership"] = float(
+            st.number_input(
+                "Black ownership (%)",
+                step=1.0,
+                key=bo_k,
+                disabled=not consented,
+                help="Voting rights / economic interest, 0–100% (GG 36928 Statement 100).",
+            )
         )
         cfg2, _, size2, _ = context()
         st.caption(f":green-badge[Size: {cfg2.size_labels.get(size2, size2.value)}]")
         st.markdown(
             f"**Scorecard: {scorecard_label(cfg2, size2, p['variant'] if cfg2.variants else None)}**"
         )
+        # Size drives steps/sidebar from the top-of-script context(); if revenue just
+        # crossed a threshold, rerun once so badge/steps match the committed value.
+        if size2 != size:
+            st.rerun()
         f = store["fin"]
         a, b = st.columns(2)
-        f["leviable_amount"] = a.number_input(
-            "Leviable payroll (R)",
-            0.0,
-            value=float(f["leviable_amount"]),
-            step=100_000.0,
-            format="%.0f",
-            disabled=not consented,
+        lev_k = bind("fin_leviable_amount", float(f["leviable_amount"] or 0.0))
+        f["leviable_amount"] = float(
+            a.number_input(
+                "Leviable payroll (R)",
+                step=1.0,
+                format="%.0f",
+                key=lev_k,
+                disabled=not consented,
+            )
         )
-        f["npat"] = b.number_input(
-            "Net profit after tax (R)",
-            value=float(f["npat"]),
-            step=100_000.0,
-            format="%.0f",
-            disabled=not consented,
+        npat_k = bind("fin_npat", float(f["npat"] or 0.0))
+        f["npat"] = float(
+            b.number_input(
+                "Net profit after tax (R)",
+                step=1.0,
+                format="%.0f",
+                key=npat_k,
+                disabled=not consented,
+            )
         )
         a, b = st.columns(2)
-        f["tmps"] = a.number_input(
-            "Total measured procurement spend (R)",
-            0.0,
-            value=float(f["tmps"]),
-            step=100_000.0,
-            format="%.0f",
-            disabled=not consented,
+        tmps_k = bind("fin_tmps", float(f["tmps"] or 0.0))
+        f["tmps"] = float(
+            a.number_input(
+                "Total measured procurement spend (R)",
+                step=1.0,
+                format="%.0f",
+                key=tmps_k,
+                disabled=not consented,
+            )
         )
-        f["employees"] = b.number_input(
-            "Headcount (employees)",
-            0.0,
-            value=float(f["employees"]),
-            step=1.0,
-            format="%.0f",
-            disabled=not consented,
+        emp_k = bind("fin_employees", float(f["employees"] or 0.0))
+        f["employees"] = float(
+            b.number_input(
+                "Headcount (employees)",
+                step=1.0,
+                format="%.0f",
+                key=emp_k,
+                disabled=not consented,
+            )
         )
         st.caption("These bases are captured once and used when you enter rand amounts later.")
         p["opt_scored"] = st.checkbox(
@@ -992,10 +1013,12 @@ def results_step():
                     "Refresh the page to start a new session, or try again later."
                 )
             else:
-                gate["email"] = st.text_input("Work email", gate.get("email", ""), key="pdf_email")
+                # bind()+key only (no value=) — same B12 / MBC-BUG-01 pattern as profile.
+                bind("pdf_email", gate.get("email", "") or "")
+                gate["email"] = st.text_input("Work email", key="pdf_email")
+                bind("pdf_mkt", bool(gate.get("marketing", False)))
                 gate["marketing"] = st.checkbox(
                     "Marketing updates (optional) — does not add you to a mailing list in v1",
-                    value=gate.get("marketing", False),
                     key="pdf_mkt",
                     help=(
                         "Ticking this does not add you to a mailing list in v1. We have no "
@@ -1009,16 +1032,26 @@ def results_step():
                     "provider yet. When we do, we will ask again under POPIA s69 before "
                     "sending any marketing."
                 )
+                if S.get("_pdf_unlock_err"):
+                    st.error(S["_pdf_unlock_err"])
                 if st.button(
                     "Continue with email", type="primary", width="stretch", key="pdf_unlock"
                 ):
                     rate["unlock_attempts"] += 1
-                    em = (gate.get("email") or "").strip()
-                    if "@" in em and "." in em.split("@")[-1]:
+                    em = (S.get("pdf_email") or gate.get("email") or "").strip()
+                    gate["email"] = em
+                    # Require local@domain.tld shape; reject "not-an-email" / "@@" (MBC-F02).
+                    local, _, domain = em.partition("@")
+                    ok = bool(local) and "." in domain and " " not in em and em.count("@") == 1
+                    if ok:
+                        S.pop("_pdf_unlock_err", None)
                         gate["unlocked"] = True
                         st.rerun()
                     else:
-                        st.error("Please fix:\n\n- Enter a valid email address to continue.")
+                        S["_pdf_unlock_err"] = (
+                            "Please fix:\n\n- Enter a valid email address to continue."
+                        )
+                        st.rerun()
         else:
             st.caption(
                 f"Email on file for this session: {gate['email']}. Marketing preference: "
