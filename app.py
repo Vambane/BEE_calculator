@@ -39,7 +39,12 @@ from bee_ui.core import (
     visible_indicators,
 )
 
-GREEN, OCHRE, OCHRE_TINT, LINE, INK = "#1F5C4F", "#C8892B", "#F7ECD9", "#DDD8CC", "#14302B"
+# Honey visual language (v1.3) — theme/CSS/Plotly only; no scoring changes.
+INK, INK_MUTED = "#1A1A1A", "#4A4A4A"
+PAPER_2, LINE = "#F3EDE0", "rgba(26,26,26,0.10)"
+GOLD, GOLD_TINT = "#D4A017", "#F7ECD9"  # primary + gap / points-available
+# Back-compat aliases used by the chart block
+GREEN, OCHRE, OCHRE_TINT = INK, GOLD, GOLD_TINT  # achieved=charcoal; gap=gold
 MODES = {"rand": "Rand amounts", "pct": "Percentages"}
 ENTRY = {"ind": "Indicators", "pts": "Points (pre-calculated)"}
 DRAFT_LABEL = "Draft 2026 rules (Transformation Fund)"
@@ -106,7 +111,50 @@ def render_privacy_page() -> None:
 
 
 st.set_page_config(page_title="BEE Check", layout="centered")
-st.markdown("<style>.block-container{max-width:960px}</style>", unsafe_allow_html=True)
+st.markdown(
+    """
+<style>
+/* Honey visual language — light CSS; Streamlit theme owns most colours */
+h1, h2, h3, .stMarkdown h1, .stMarkdown h2, .stMarkdown h3 {
+  font-family: SourceSerif4, Georgia, serif !important;
+  letter-spacing: -0.02em;
+  font-weight: 500;
+}
+.block-container {
+  padding-top: 1.5rem;
+  padding-bottom: 4rem;
+  max-width: 920px;
+}
+.stButton > button[kind="primary"],
+.stDownloadButton > button {
+  background: #D4A017 !important;
+  color: #1A1A1A !important;
+  border: none !important;
+  border-radius: 999px !important;
+  min-height: 48px;
+  font-weight: 500;
+}
+.stButton > button[kind="primary"]:hover,
+.stDownloadButton > button:hover {
+  background: #B8860B !important;
+  color: #1A1A1A !important;
+}
+.bee-hex-divider {
+  height: 28px;
+  margin: 1.5rem auto;
+  width: 28px;
+  background: #D4A017;
+  opacity: 0.85;
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+}
+div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+  border-color: rgba(212, 160, 23, 0.45) !important;
+  box-shadow: 0 8px 24px rgba(26, 26, 26, 0.06);
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
 
 Q = st.query_params
 S = st.session_state
@@ -301,6 +349,10 @@ if S.draft:
 # ------------------------------------------------------------------ step 0: profile
 def profile_step():
     st.title("Tell us about your company")
+    st.caption(
+        "B-BBEE scorecard, calmly estimated. Enter what you know — we'll show the level, "
+        "the gaps, and what moves the needle."
+    )
     with st.container(border=True):
         st.markdown(PRIVACY_SHORT)
         with st.expander("Full privacy notice"):
@@ -662,6 +714,10 @@ def current_input(esd_override: dict | None = None):
 def results_step():
     require_consent()
     st.title("Your scorecard")
+    st.markdown(
+        '<div class="bee-hex-divider" aria-hidden="true"></div>',
+        unsafe_allow_html=True,
+    )
     badge_line()
     all_probs = []
     if card:
@@ -801,7 +857,7 @@ def results_step():
                 plot_bgcolor="rgba(0,0,0,0)",
                 paper_bgcolor="rgba(0,0,0,0)",
                 yaxis=dict(autorange="reversed"),
-                xaxis=dict(gridcolor=LINE),
+                xaxis=dict(gridcolor=LINE, zerolinecolor=LINE),
             )
             st.plotly_chart(fig, width="stretch", config={"displayModeBar": False})
         if not df.empty and "Element" in df.columns:

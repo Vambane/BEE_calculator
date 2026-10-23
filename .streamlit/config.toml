@@ -1,5 +1,5 @@
-# v1 theme. Values from ../tokens.json. Fonts are SELF-HOSTED under static/fonts/ (no Google CDN, POPIA).
-# Requires Streamlit >= 1.45 (theme.fontFaces). Files served at app/static/...
+# v1.3 honey visual language. See ../../honey-visual-pass-bee-calculator.md
+# Fonts SELF-HOSTED (no Google CDN, POPIA). Heading family name SourceSerif4 required on Streamlit 1.66.
 [server]
 enableStaticServing = true
 
@@ -8,12 +8,12 @@ showErrorDetails = false
 
 [theme]
 base = "light"
-primaryColor = "#1F5C4F"
-backgroundColor = "#FAF8F3"
-secondaryBackgroundColor = "#F0ECE2"
-textColor = "#14302B"
-borderColor = "#DDD8CC"
-font = "IBM Plex Sans, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+primaryColor = "#D4A017"
+backgroundColor = "#FAF7F0"
+secondaryBackgroundColor = "#F3EDE0"
+textColor = "#1A1A1A"
+borderColor = "#E0D9C8"
+font = "Inter, IBM Plex Sans, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
 headingFont = "SourceSerif4, Georgia, Times New Roman, serif"
 codeFont = "IBM Plex Mono, ui-monospace, Menlo, Consolas, monospace"
 
@@ -36,7 +36,7 @@ weight = "500"
 style = "normal"
 
 [theme.sidebar]
-backgroundColor = "#F0ECE2"
+backgroundColor = "#F3EDE0"
 
 [browser]
 gatherUsageStats = false
