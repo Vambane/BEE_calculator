@@ -263,3 +263,21 @@ def test_pdf_gate_marketing_is_honest_not_a_list():
     assert "does not add you to a mailing list" in low or "mailing list in v1" in low
     assert "we do not email the report" in low or "do not email the report" in low
     assert any("Continue with email" in (b.label or "") for b in at.button)
+
+
+def test_unexpected_calculate_shows_support_caption(monkeypatch):
+    """Unexpected engine failures: generic error + time-only support caption (no PII)."""
+    import bee
+
+    def boom(*_a, **_k):
+        raise RuntimeError("synthetic failure")
+
+    monkeypatch.setattr(bee, "calculate", boom)
+    at = to_results(boot())
+    assert not at.exception
+    assert any("could not calculate" in (e.value or "").lower() for e in at.error)
+    caps = " ".join(c.value or "" for c in at.caption)
+    assert "score calculation" in caps
+    assert "contact support" in caps.lower()
+    assert "synthetic failure" not in caps
+    assert "qa@" not in caps.lower()
