@@ -385,6 +385,16 @@ def profile_step():
             value=store["consent"],
         )
     consented = bool(store["consent"])
+    # UX-M1: clear stale "Tick the privacy consent box" once consent is ticked.
+    if consented:
+        err_key = f"_step_errs_{S.step}"
+        errs = list(S.get(err_key) or [])
+        cleaned = [e for e in errs if "consent" not in e.lower()]
+        if cleaned != errs:
+            if cleaned:
+                S[err_key] = cleaned
+            else:
+                S.pop(err_key, None)
     p = store["profile"]
     with st.container(border=True):
         if not consented:
@@ -826,7 +836,13 @@ def results_step():
                 "Across Ownership, Management, Skills and Preferential Procurement · "
                 "not a separate element"
             )
-    if r.discounted:
+    if r.discounted and (r.total_points or 0) < 1e-9:
+        # UX-M7: 0 pts is an empty state, not a "discounted from Level 9" punishment.
+        st.info(
+            "No points entered yet. Enter indicators or points on the earlier steps to "
+            "see your recognition level and any sub-minimum effects."
+        )
+    elif r.discounted:
         st.warning(
             f"Sub-minimum missed: discounted from Level {r.level_before_discount} by one level."
         )
@@ -1004,8 +1020,7 @@ def results_step():
             st.caption(
                 f"Up to {MAX_PDF_UNLOCK_ATTEMPTS} unlock attempts, "
                 f"{MAX_PDF_BUILDS} PDF builds, and {MAX_CALCULATE_CALLS} score calculations "
-                "are allowed per browser session "
-                "(Cloud-edge / IP rate limiting is not configured yet — DEFERRED)."
+                "are allowed per browser session."
             )
             if rate["unlock_attempts"] >= MAX_PDF_UNLOCK_ATTEMPTS:
                 st.error(
@@ -1021,16 +1036,14 @@ def results_step():
                     "Marketing updates (optional) — does not add you to a mailing list in v1",
                     key="pdf_mkt",
                     help=(
-                        "Ticking this does not add you to a mailing list in v1. We have no "
-                        "marketing email provider yet. When we do, we will ask again under "
-                        "POPIA s69 before sending any marketing."
+                        "Ticking this does not add you to a mailing list in v1. We will ask "
+                        "again under POPIA s69 before sending any marketing."
                     ),
                 )
                 st.caption(
                     "Marketing updates (optional, unticked by default): ticking this does "
-                    "**not** add you to a mailing list in v1. We have no marketing email "
-                    "provider yet. When we do, we will ask again under POPIA s69 before "
-                    "sending any marketing."
+                    "**not** add you to a mailing list in v1. We will ask again under "
+                    "POPIA s69 before sending any marketing."
                 )
                 if S.get("_pdf_unlock_err"):
                     st.error(S["_pdf_unlock_err"])
