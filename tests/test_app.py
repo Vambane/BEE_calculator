@@ -291,6 +291,32 @@ def test_privacy_page_query_renders_policy():
     assert "s72" in body
     assert "[Legal entity name" in body or "Legal entity name" in body
     assert any("Back to calculator" in (b.label or "") for b in at.button)
+    assert "How to use" in body
+
+
+def test_howto_page_query_renders_guide():
+    """?page=howto shows docs/HOW_TO.md (in-app /howto stand-in); no wizard chrome needed."""
+    at = boot(page="howto")
+    assert not at.exception
+    assert any("How to use" in (t.value or "") for t in at.title)
+    body = " ".join(m.value or "" for m in at.markdown)
+    assert "planning estimate" in body.lower() or "Planning estimate" in body
+    assert "Start over" in body
+    assert "Privacy policy" in body or "?page=privacy" in body
+    assert any("Back to calculator" in (b.label or "") for b in at.button)
+
+
+def test_profile_shows_howto_oneliner():
+    """Profile always shows New here? How to use this calculator link."""
+    at = boot()
+    assert not at.exception
+    body = " ".join(m.value or "" for m in at.markdown)
+    assert "How to use this calculator" in body
+    assert "?page=howto" in body
+    side = " ".join(m.value or "" for m in at.sidebar.markdown)
+    assert "How to use" in side
+    assert "?page=howto" in side
+    assert "Privacy policy" in side
 
 
 def test_pdf_gate_marketing_is_honest_not_a_list():
