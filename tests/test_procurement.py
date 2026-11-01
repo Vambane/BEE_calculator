@@ -188,7 +188,7 @@ def test_parse_accepts_spreadsheet_formats():
             "spend": "1,000",
             "level": "NC",
             "size": "",
-            "exclusion": "Taxes, levies and duties",
+            "exclusion": "Taxes, levies and municipal rates",
         },
         {"supplier": "Gamma", "spend": 10, "level": 8.0, "size": "generic"},
         {"supplier": "", "spend": "", "level": ""},  # blank row skipped
@@ -290,3 +290,61 @@ def test_editor_records_round_trip():
 def test_docs_mention_the_calculator():
     howto = (Path(__file__).resolve().parent.parent / "docs" / "HOW_TO.md").read_text()
     assert "supplier list" in howto.lower()
+
+
+# ------------------------------------------------------------------ GG 42496 corrections
+def test_emes_are_automatically_empowering():
+    """cl. 3.3.4: an EME counts even if the 'empowering' flag is off."""
+    eme = Supplier("x", 1000, 1, "EME", empowering=False)
+    assert eme.is_empowering and eme.recognised_spend == pytest.approx(1350)
+    assert "eme" in eme.metrics()
+    s = summarise([eme])
+    assert s.non_empowering_spend == 0
+
+
+def test_multiplier_applies_1_2_to_recognised_spend_on_every_measure():
+    """cl. 3.5: R1m at Level 2 (125%) x 1.2 = R1.5m."""
+    s = Supplier("x", 1_000_000, 2, "QSE", 100, 100, multiplier=True)
+    assert s.recognised_spend == pytest.approx(1_500_000)
+    summ = summarise([s])
+    assert summ.recognised["all"] == summ.recognised["qse"] == pytest.approx(1_500_000)
+    assert Supplier("x", 1000, 9, multiplier=True).recognised_spend == 0  # 0% x 1.2
+
+
+def test_exclusion_categories_match_the_gazette():
+    from bee.procurement import EXCLUSIONS
+
+    assert set(EXCLUSIONS) == {
+        "",
+        "tax",
+        "payroll",
+        "pass_through",
+        "associated",
+        "contribution",
+        "import",
+        "state_monopoly",
+        "other",
+    }
+    # Pension and medical aid are included in TMPS (cl. 5.8), so not in the payroll label.
+    assert "pension" not in EXCLUSIONS["payroll"].lower()
+
+
+@pytest.mark.parametrize(
+    "label, key",
+    [
+        ("Taxes, levies and duties", "tax"),  # v1 export label still uploads
+        ("Organ of state / public entity monopoly", "state_monopoly"),
+        ("Pass-through third-party procurement", "pass_through"),
+        ("pass_through", "pass_through"),
+    ],
+)
+def test_exclusion_labels_old_new_and_short(label, key):
+    sup, errs = parse_rows([{"supplier": "A", "spend": 1, "level": 1, "exclusion": label}])
+    assert errs == [] and sup[0].exclusion == key
+
+
+def test_multiplier_column_parses_and_rejects_junk():
+    ok, errs = parse_rows([{"supplier": "A", "spend": 1, "level": 1, "multiplier": "yes"}])
+    assert errs == [] and ok[0].multiplier
+    _, errs = parse_rows([{"supplier": "A", "spend": 1, "level": 1, "multiplier": "maybe"}])
+    assert errs[0].column == "1.2x multiplier"

@@ -15,6 +15,8 @@ streamlit run app.py
 - **Profile:** company name, sector code, revenue (for EME/QSE/Generic sizing), Black ownership %, financial bases (NPAT, leviable payroll, TMPS, headcount), optional YES Initiative, and an opt-in to score on the full scorecard when a deemed (affidavit) level would otherwise apply.
 - **Element steps (Indicators by default on Ownership and Management Control):** enter each scorecard indicator — including Black women / Black female lines — or switch to pre-calculated points from a verification agency. Net Value stays agency-entered (Annexe 100(E) is not calculated here).
 - **Procurement calculator:** upload or type a supplier list (CSV template provided) and the app works out TMPS, recognition-weighted B-BBEE spend for every procurement indicator on the selected scorecard, and fills the Preferential Procurement inputs. Logic in `bee/procurement.py`.
+- **Contributions at benefit factors:** ED, SD and SED lines valued at the Annexe 400(B) / 500(A) factors (e.g. interest-free loan 70%, guarantee 50%, staff time 60%). Logic in `bee/contributions.py`.
+- **Loss or low profit:** Statement 400 cl. 3.2.1 Turnover basis (deemed NPAT = Indicative Profit Margin x Turnover) when NPAT or the 5-year average is not positive, or the margin is below a quarter of the industry norm. Logic in `bee/npat.py`.
 - **Results:** recognition level, total points, distance to next level, and a **Black women / Black female contribution: X of Y pts** line (not a separate element). PDF gap report available after an email unlock for the session.
 - Planning tool only; confirm with your verification agency and sector code.
 

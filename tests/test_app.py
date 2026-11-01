@@ -813,3 +813,81 @@ def test_start_over_clears_supplier_list():
 
     assert fresh_store()["procurement"] == {"records": [], "version": 0}
     assert is_scenario_widget_key("proc_editor_3")
+
+
+# ------------------------------------------------------------------ cl. 3.2.1 and benefit factors
+def test_profile_low_profit_inputs_show_turnover_basis():
+    at = boot()
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 200_000_000.0
+    at.session_state["profile_revenue"] = 200_000_000.0
+    at.session_state["fin_npat"] = -5_000_000.0
+    at.session_state["fin_industry_norm"] = 8.0
+    at.session_state["fin_qualifying_margin"] = 4.0
+    at.run()
+    assert not at.exception
+    assert any("cl. 3.2.1" in (e.label or "") for e in at.expander)
+    assert any("R8 000 000" in i.value for i in at.info)
+
+
+def test_profile_rejects_qualifying_margin_below_quarter_of_norm():
+    at = boot()
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 200_000_000.0
+    at.session_state["profile_revenue"] = 200_000_000.0
+    at.session_state["fin_npat"] = -5_000_000.0
+    at.session_state["fin_industry_norm"] = 8.0
+    at.session_state["fin_qualifying_margin"] = 1.0
+    at.run()
+    assert any("at least a quarter" in e.value for e in at.error)
+
+
+def _contrib_step(step, el, records, mode="rand"):
+    at = boot()
+    s = at.session_state["store"]
+    s["consent"] = True
+    s["profile"]["revenue"] = 200_000_000.0
+    s["fin"]["npat"] = 10_000_000.0
+    s["modes"][el] = mode
+    s["contributions"] = {el: {"records": records, "version": 0, "current": None}}
+    at.session_state["step"] = step
+    return at.run()
+
+
+_LOAN = {
+    "Beneficiary": "Kopano",
+    "Counts towards": "Supplier Development",
+    "Contribution type": "Interest-free loan, no security",
+    "Amount (R)": 200_000.0,
+    "Prime / ordinary rate %": None,
+    "Actual rate %": None,
+}
+
+
+@pytest.mark.parametrize("mode, expected", [("rand", 140_000.0), ("pct", 1.4)])
+def test_contribution_panel_applies_recognised_value(mode, expected):
+    at = _contrib_step(4, "esd", [_LOAN], mode)
+    assert not at.exception
+    assert any("benefit factors" in (e.label or "") for e in at.expander)
+    next(b for b in at.button if b.label == "Use these values").click().run()
+    assert at.session_state["store"]["values"][mode]["esd"]["400 2.2.1"] == pytest.approx(expected)
+
+
+def test_sed_panel_rejects_loans():
+    loan = _LOAN | {"Counts towards": "SED contributions"}
+    at = _contrib_step(5, "sed", [loan])
+    assert not at.exception
+    assert any("not an SED contribution" in w.value for w in at.warning)
+
+
+def test_results_note_turnover_basis():
+    at = boot()
+    s = at.session_state["store"]
+    s["consent"] = True
+    s["profile"]["revenue"] = 200_000_000.0
+    s["fin"].update(npat=-5_000_000.0, industry_norm_margin_pct=8.0, qualifying_margin_pct=4.0)
+    at.session_state["step"] = 99
+    at.run()
+    assert not at.exception
+    texts = " ".join(str(m.value) for m in at.markdown) + " ".join(c.value for c in at.caption)
+    assert "Turnover basis" in texts
