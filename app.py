@@ -7,6 +7,7 @@ renders results. No inputs are logged. Run: ``streamlit run app.py``.
 from __future__ import annotations
 
 import logging
+from dataclasses import replace as dc_replace
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -15,7 +16,13 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from bee import EnterpriseSize, Financials, Rand, calculate
+from bee.contributions import COLUMNS as CONTRIB_COLUMNS
+from bee.contributions import TYPES as CONTRIB_TYPES
+from bee.contributions import parse_rows as parse_contributions
+from bee.contributions import summarise as summarise_contributions
+from bee.contributions import targets as contrib_targets
 from bee.indicators import indicator_points
+from bee.npat import resolve as resolve_npat
 from bee.procurement import COLUMNS as PROC_COLUMNS
 from bee.procurement import EXCLUSIONS as PROC_EXCLUSIONS
 from bee.procurement import (
@@ -264,14 +271,40 @@ def bind(key: str, current):
     return key
 
 
-def fin_obj() -> Financials:
+def fin_obj(effective: bool = True) -> Financials:
+    """Profile financials. ``effective`` swaps in the deemed NPAT when Statement 400
+    cl. 3.2.1 applies (for validation, rand/% conversion and planners); the engine gets the
+    raw figures (``effective=False``) and applies the rule itself, with a results note."""
     f = store["fin"]
-    return Financials(
+    fin = Financials(
         npat=f["npat"] or None,
         leviable_amount=f["leviable_amount"] or None,
         tmps=f["tmps"] or None,
         employees=f["employees"] or None,
+        npat_avg_5y=f.get("npat_avg_5y"),
+        industry_norm_margin_pct=f.get("industry_norm_margin_pct") or None,
+        qualifying_margin_pct=f.get("qualifying_margin_pct") or None,
     )
+    if not effective:
+        return fin
+    basis = npat_basis_for(fin)
+    if basis is None or not basis.deemed:
+        return fin
+    return dc_replace(fin, npat=basis.npat)
+
+
+def npat_basis_for(fin: Financials):
+    """cl. 3.2.1 basis for the profile, or None if the inputs are invalid."""
+    try:
+        return resolve_npat(
+            float(store["profile"].get("revenue") or 0.0),
+            fin.npat,
+            fin.npat_avg_5y,
+            fin.industry_norm_margin_pct,
+            fin.qualifying_margin_pct,
+        )
+    except ValueError:
+        return None
 
 
 def context():
@@ -551,6 +584,7 @@ def profile_step():
                 disabled=not consented,
             )
         )
+        low_profit_inputs(f, consented)
         a, b = st.columns(2)
         tmps_k = bind("fin_tmps", float(f["tmps"] or 0.0))
         f["tmps"] = float(
@@ -624,6 +658,194 @@ def profile_step():
     footer(problems)
 
 
+# ------------------------------------------------------------------ low profit (cl. 3.2.1)
+def low_profit_inputs(f: dict, consented: bool) -> None:
+    """Statement 400 cl. 3.2.1: Turnover basis for NPAT-linked targets on a loss or low margin."""
+    given = any(f.get(k) for k in ("industry_norm_margin_pct", "qualifying_margin_pct")) or (
+        f.get("npat_avg_5y") is not None
+    )
+    with st.expander(
+        "Loss or low profit? NPAT targets on a Turnover basis (cl. 3.2.1)",
+        expanded=bool(given or (f["npat"] or 0) < 0),
+    ):
+        st.caption(
+            "SD, ED and SED targets are a % of NPAT. If there was no profit last year or on "
+            "average over five years, or the margin is below a quarter of the industry norm, "
+            "they are set on Turnover x an Indicative Profit Margin instead. Industry norms "
+            "are published by Stats SA."
+        )
+        a, b, c = st.columns(3)
+        k = bind("fin_npat_avg_5y", f.get("npat_avg_5y"))
+        f["npat_avg_5y"] = a.number_input(
+            "5-year average NPAT (R)",
+            value=None,
+            step=1.0,
+            format="%.0f",
+            key=k,
+            disabled=not consented,
+            help="Optional. Leave blank if you only have last year's NPAT.",
+        )
+        k = bind("fin_industry_norm", f.get("industry_norm_margin_pct"))
+        f["industry_norm_margin_pct"] = b.number_input(
+            "Industry norm margin (%)",
+            value=None,
+            min_value=0.0,
+            max_value=100.0,
+            step=0.1,
+            key=k,
+            disabled=not consented,
+            help="The industry's net profit margin norm (Stats SA).",
+        )
+        k = bind("fin_qualifying_margin", f.get("qualifying_margin_pct"))
+        f["qualifying_margin_pct"] = c.number_input(
+            "Qualifying year margin (%)",
+            value=None,
+            min_value=0.0,
+            max_value=100.0,
+            step=0.1,
+            key=k,
+            disabled=not consented,
+            help="NPAT / Turnover of the most recent year in which the margin was at least a "
+            "quarter of the industry norm.",
+        )
+        raw = fin_obj(effective=False)
+        try:
+            basis = resolve_npat(
+                float(store["profile"].get("revenue") or 0.0),
+                raw.npat,
+                raw.npat_avg_5y,
+                raw.industry_norm_margin_pct,
+                raw.qualifying_margin_pct,
+            )
+        except ValueError as exc:
+            st.error(str(exc))
+            return
+        if not basis.deemed:
+            st.caption("NPAT basis applies: targets use last year's NPAT.")
+        elif basis.npat is None:
+            st.warning(f"Turnover basis applies ({'; '.join(basis.reasons)}). {basis.problem}")
+        else:
+            st.info(basis.note(float(store["profile"].get("revenue") or 0.0)))
+
+
+# ------------------------------------------------------------------ benefit factors
+def contributions_panel(el, mode: str, vals: dict) -> None:
+    """ED / SD / SED contribution lines valued at Annexe 400(B) / 500(A) benefit factors."""
+    tg = contrib_targets(card, el.key)
+    if not tg:
+        return
+    box = store.setdefault("contributions", {}).setdefault(
+        el.key, {"records": [], "version": 0, "current": None}
+    )
+    with st.expander(
+        "Value contributions with benefit factors", expanded=bool(box["current"] or box["records"])
+    ):
+        st.caption(
+            "List each contribution at face value and pick its type. The app applies the "
+            "gazetted benefit factor (e.g. an interest-free loan counts at 70%, a guarantee at "
+            "50%, staff time at 60%) and totals the recognised value per indicator."
+        )
+        ek = f"contrib_editor_{el.key}_{box['version']}"
+        if ek not in S and box.get("current") is not None:
+            box["records"] = box["current"]
+        cols = [label for _, label in CONTRIB_COLUMNS]
+        frame = pd.DataFrame(box["records"], columns=cols)
+        for c in ("Amount (R)", "Prime / ordinary rate %", "Actual rate %"):
+            frame[c] = pd.to_numeric(frame[c], errors="coerce").astype("float64")
+        for c in ("Beneficiary", "Counts towards", "Contribution type"):
+            frame[c] = frame[c].astype("object")
+        allowed = [
+            label
+            for k, (label, _e, sed, rate) in CONTRIB_TYPES.items()
+            if el.key != "sed" or (sed is not None and not rate)
+        ]
+        edited = st.data_editor(
+            frame,
+            key=ek,
+            num_rows="dynamic",
+            hide_index=True,
+            width="stretch",
+            column_config={
+                "Beneficiary": st.column_config.TextColumn(),
+                "Counts towards": st.column_config.SelectboxColumn(
+                    options=[t.label for t in tg], required=True
+                ),
+                "Contribution type": st.column_config.SelectboxColumn(
+                    options=allowed, required=True
+                ),
+                "Amount (R)": st.column_config.NumberColumn(min_value=0.0, format="%.2f"),
+                "Prime / ordinary rate %": st.column_config.NumberColumn(
+                    min_value=0.0,
+                    max_value=100.0,
+                    help="Lower-interest loans: prime rate. Lower-dividend investments: the "
+                    "ordinary shareholders' dividend rate.",
+                ),
+                "Actual rate %": st.column_config.NumberColumn(
+                    min_value=0.0, max_value=100.0, help="The rate actually charged or paid"
+                ),
+            },
+        )
+        box["current"] = edited.to_dict("records")
+        lines, errs = parse_contributions(box["current"], card, el.key)
+        if errs:
+            st.warning(
+                "Fix these lines to include them:\n\n"
+                + "\n".join(f"- {e}" for e in errs[:20])
+                + ("\n- ..." if len(errs) > 20 else "")
+            )
+        if not lines:
+            st.caption("Add contribution lines above to see their recognised value.")
+            return
+        summary = summarise_contributions(lines, card)
+        base = fin_obj().npat
+        rows = []
+        for t in tg:
+            if t.indicator.clause not in summary.by_clause:
+                continue
+            rec = summary.by_clause[t.indicator.clause]
+            pct = summary.percent_of(t.indicator.clause, base)
+            rows.append(
+                {
+                    "Indicator": t.label,
+                    "Face value": _rand(summary.gross_by_clause[t.indicator.clause]),
+                    "Recognised": _rand(rec),
+                    "% of NPAT": "enter NPAT" if pct is None else f"{pct:.2f}%",
+                    "Target": f"{t.indicator.target:g}%",
+                    "Points": "-"
+                    if pct is None
+                    else f"{indicator_points(t.indicator, pct, Financials(), S.draft):.2f} "
+                    f"of {t.indicator.points:g}",
+                }
+            )
+        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+        for n in summary.notes:
+            st.caption(n)
+        st.caption(
+            "Shorter payment periods to SD beneficiaries use a separate formula: add them to "
+            "the Supplier Development figure by hand."
+        )
+        can_apply = mode == "rand" or bool(base and base > 0)
+        if not can_apply:
+            st.caption("Enter a positive NPAT (or the Turnover basis) in the Profile to apply.")
+        if st.button(
+            "Use these values",
+            type="primary",
+            key=f"contrib_apply_{el.key}",
+            disabled=not can_apply,
+        ):
+            for clause, rec in summary.by_clause.items():
+                vals[clause] = rec if mode == "rand" else rec / base * 100
+                S.pop(f"v_{mode}_{clause}", None)
+            S[f"contrib_applied_{el.key}"] = True
+            st.rerun()
+        if S.pop(f"contrib_applied_{el.key}", None):
+            st.success("Applied: recognised contribution values filled in below.")
+
+
+def _rand(x: float) -> str:
+    return f"R{x:,.0f}".replace(",", " ")
+
+
 # ------------------------------------------------------------------ procurement calculator
 MAX_SUPPLIER_CSV_BYTES = 2_000_000
 
@@ -644,6 +866,7 @@ _PROC_DTYPES = {
     "Black women ownership %": "float64",
     "Designated group": "bool",
     "Empowering supplier": "bool",
+    "1.2x multiplier": "bool",
     "TMPS exclusion": "object",
 }
 
@@ -652,7 +875,7 @@ def _supplier_frame(records: list[dict]) -> pd.DataFrame:
     """Editor frame with fixed column types (an empty list would otherwise be all-float)."""
     cols = [label for _, label in PROC_COLUMNS]
     frame = pd.DataFrame(records, columns=cols)
-    for col in ("Designated group", "Empowering supplier"):
+    for col in ("Designated group", "Empowering supplier", "1.2x multiplier"):
         frame[col] = [v is True or (isinstance(v, bool) and v) for v in frame[col]]
     for col in ("Spend (R)", "Black ownership %", "Black women ownership %"):
         frame[col] = pd.to_numeric(frame[col], errors="coerce")
@@ -738,7 +961,13 @@ def procurement_panel(el, mode: str, vals: dict) -> None:
                     "disabilities, unemployed, rural, military veterans)"
                 ),
                 "Empowering supplier": st.column_config.CheckboxColumn(
-                    help="As stated on the supplier's certificate or affidavit"
+                    help="As stated on the supplier's certificate or affidavit. EMEs are "
+                    "always Empowering Suppliers (cl. 3.3.4)."
+                ),
+                "1.2x multiplier": st.column_config.CheckboxColumn(
+                    help="Statement 400 cl. 3.5: a Supplier Development beneficiary or "
+                    "black-owned QSE/EME with a 3-year contract, or a supplier at least 51% "
+                    "black owned or black women owned (flow-through)"
                 ),
                 "TMPS exclusion": st.column_config.SelectboxColumn(
                     options=list(PROC_EXCLUSIONS.values()),
@@ -788,8 +1017,8 @@ def procurement_panel(el, mode: str, vals: dict) -> None:
             )
         st.caption(
             "Recognised spend = spend x the supplier's recognition % (Level 1 135% ... "
-            "Level 8 10%). Planning estimate: confirm exclusions and supplier evidence with "
-            "your verification agency."
+            "Level 8 10%), x 1.2 where ticked (cl. 3.5). Planning estimate: confirm "
+            "exclusions, multipliers and supplier evidence with your verification agency."
         )
         b1, b2 = st.columns(2)
         b2.download_button(
@@ -900,6 +1129,7 @@ def element_step(el):
         store["modes"][el.key] = mode
         vals = store["values"][mode].setdefault(el.key, {})
         procurement_panel(el, mode, vals)
+        contributions_panel(el, mode, vals)
         nv = next((i for i in el.indicators if i.group == "net_value"), None)
         if nv is not None:
             with st.container(border=True):
@@ -1025,7 +1255,7 @@ def current_input(esd_override: dict | None = None):
         S.sector,
         variant,
         store["profile"],
-        fin_obj(),
+        fin_obj(effective=False),
         values,
         store["modes"],
         store["points"],
@@ -1422,7 +1652,7 @@ def tf_planner(base):
     sd = [i for i in esd.indicators if i.group == "sd" and not i.bonus and i.base == "npat"]
     ed = [i for i in esd.indicators if i.group == "ed" and not i.bonus and i.base == "npat"]
     st.warning("DRAFT, NOT IN FORCE. Draft 2026 rules (GG 54032). Planning only.")
-    npat = store["fin"]["npat"]
+    npat = fin_obj().npat
     if not npat or npat <= 0:
         st.error("Enter a positive NPAT in the profile to compare the routes.")
         st.button("Go to profile", on_click=go_to, args=(0,), key="tf_prof")

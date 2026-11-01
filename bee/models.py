@@ -37,6 +37,10 @@ class Financials:
     leviable_amount: float | None = None
     tmps: float | None = None  # total measured procurement spend
     employees: float | None = None
+    # Statement 400 cl. 3.2.1 (low or no profit -> Turnover basis). See bee/npat.py.
+    npat_avg_5y: float | None = None  # average NPAT over the last five years
+    industry_norm_margin_pct: float | None = None  # industry net profit margin norm (%)
+    qualifying_margin_pct: float | None = None  # margin of the latest year >= norm / 4 (%)
 
 
 @dataclass(frozen=True)

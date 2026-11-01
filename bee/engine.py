@@ -3,7 +3,9 @@
 
 from __future__ import annotations
 
-from bee import levels, submin, yes
+from dataclasses import replace
+
+from bee import levels, npat, submin, yes
 from bee.indicators import element_group_points
 from bee.models import EnterpriseSize, ScoreInput, ScoreResult, YesTier
 from bee.registry import get_sector
@@ -25,6 +27,7 @@ def calculate(inp: ScoreInput) -> ScoreResult:
     size = cfg.threshold(variant).classify(p.total_revenue)
     warnings = list(cfg.warnings)
     notes: list[str] = []
+    inp = apply_npat_basis(inp, notes)
 
     deemed = None
     if size == EnterpriseSize.EME and not p.opt_scored:
@@ -42,6 +45,28 @@ def calculate(inp: ScoreInput) -> ScoreResult:
         res = _scored(size, cfg.card(size, variant), inp, notes)
     res.sector, res.variant, res.warnings = cfg.key, variant, warnings
     return res
+
+
+def npat_basis(inp: ScoreInput) -> npat.NpatBasis:
+    f = inp.financials
+    return npat.resolve(
+        inp.profile.total_revenue,
+        f.npat,
+        f.npat_avg_5y,
+        f.industry_norm_margin_pct,
+        f.qualifying_margin_pct,
+    )
+
+
+def apply_npat_basis(inp: ScoreInput, notes: list[str]) -> ScoreInput:
+    """Swap in the deemed NPAT when cl. 3.2.1 requires the Turnover basis."""
+    basis = npat_basis(inp)
+    if not basis.deemed:
+        return inp
+    note = basis.note(inp.profile.total_revenue)
+    if note:
+        notes.append(note)
+    return replace(inp, financials=replace(inp.financials, npat=basis.npat))
 
 
 def _deemed(cfg: SectorConfig, size, level, inp: ScoreInput, notes) -> ScoreResult:

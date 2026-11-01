@@ -10,14 +10,22 @@ B-BBEE level, size and ownership. From the list this module derives
 - the **% of TMPS** each scorecard indicator needs, matched to the indicator by what it
   measures, so one list feeds the Generic, QSE and every loaded sector scorecard.
 
+Rules from Statement 400 (GG 42496):
+- TMPS exclusions are cl. 6.1-6.5 plus the statutory-monopoly carve-out in cl. 5.4.2.
+  Pension and medical aid contributions and imports are INCLUDED (cl. 5.8, 5.11) unless an
+  import meets cl. 6.5.
+- EMEs (and start-ups) are automatically Empowering Suppliers (cl. 3.3.4).
+- Spend on a supplier meeting cl. 3.5 is multiplied by 1.2 (a per-line tick: an SD
+  beneficiary or black-owned QSE/EME with a 3-year contract, or a supplier at least 51%
+  black owned or black women owned on flow-through).
+
 Interpretations (flagged in the UI and docs; confirm with the verification agency):
 - Every measure is recognition-weighted and counts Empowering Suppliers only, including the
-  QSE/EME, black-owned, black-women-owned and designated-group measures.
+  QSE/EME, black-owned, black-women-owned and designated-group measures (cl. 7.1-7.3).
 - "Designated group" means at least 51% owned by black people from designated groups; the
   supplier must also be at least 51% black owned to count.
-- The exclusion categories are the common TMPS exclusions; the user tags each line and
-  remains responsible for applying the exclusions correctly.
-- Enhanced recognition multipliers (if any apply to a sector) are not modelled.
+- The user tags each excluded line and ticks the 1.2 multiplier, and remains responsible
+  for the evidence behind both.
 
 Pure Python: no pandas or Streamlit, so the engine and tests stay light.
 """
@@ -38,13 +46,16 @@ from bee.rules import Element, Indicator
 
 EXCLUSIONS: dict[str, str] = {
     "": "Included in TMPS",
-    "tax": "Taxes, levies and duties",
-    "payroll": "Salaries, wages, pension and medical aid",
-    "import": "Imports with no local supplier",
-    "state_monopoly": "Organ of state / public entity monopoly",
-    "contribution": "ED, SD or SED contribution (scored elsewhere)",
+    "tax": "Taxes, levies and municipal rates (cl. 6.1)",
+    "payroll": "Salaries, wages and director emoluments (cl. 6.2)",
+    "pass_through": "Pass-through third-party procurement (cl. 6.3)",
+    "associated": "Investment in or loan to an Associated Enterprise (cl. 6.4.1)",
+    "contribution": "ED, SD or SED contribution (cl. 6.4.2)",
+    "import": "Import meeting cl. 6.5 (no local production)",
+    "state_monopoly": "Organ of state with a statutory monopoly (cl. 5.4.2)",
     "other": "Other exclusion agreed with the verifier",
 }
+MULTIPLIER = 1.2  # Statement 400 cl. 3.5
 
 SIZES: tuple[str, ...] = ("EME", "QSE", "Large", "Unknown")
 
@@ -69,14 +80,15 @@ COLUMNS: tuple[tuple[str, str], ...] = (
     ("black_women_ownership_pct", "Black women ownership %"),
     ("designated_group", "Designated group"),
     ("empowering", "Empowering supplier"),
+    ("multiplier", "1.2x multiplier"),
     ("exclusion", "TMPS exclusion"),
 )
 HEADER_TO_FIELD = {label.lower(): key for key, label in COLUMNS} | {k: k for k, _ in COLUMNS}
 
 TEMPLATE_ROWS: tuple[tuple[str, ...], ...] = (
-    ("Example Logistics (Pty) Ltd", "1250000", "1", "QSE", "100", "60", "no", "yes", ""),
-    ("Example Office Supplies CC", "320000", "4", "EME", "30", "0", "no", "yes", ""),
-    ("SARS", "900000", "", "Unknown", "0", "0", "no", "no", "tax"),
+    ("Example Logistics (Pty) Ltd", "1250000", "1", "QSE", "100", "60", "no", "yes", "yes", ""),
+    ("Example Office Supplies CC", "320000", "4", "EME", "30", "0", "no", "yes", "no", ""),
+    ("SARS", "900000", "", "Unknown", "0", "0", "no", "no", "no", "tax"),
 )
 
 MAX_ROWS = 5000  # guard against runaway uploads
@@ -99,10 +111,16 @@ class Supplier:
     designated_group: bool = False
     empowering: bool = True
     exclusion: str = ""
+    multiplier: bool = False  # cl. 3.5: recognised spend x 1.2
 
     @property
     def excluded(self) -> bool:
         return bool(self.exclusion)
+
+    @property
+    def is_empowering(self) -> bool:
+        """EMEs are automatically Empowering Suppliers (cl. 3.3.4)."""
+        return self.empowering or self.size == "EME"
 
     @property
     def recognition_pct(self) -> int:
@@ -111,13 +129,13 @@ class Supplier:
     @property
     def recognised_spend(self) -> float:
         """Spend counted towards the procurement measures (0 if excluded or not empowering)."""
-        if self.excluded or not self.empowering:
+        if self.excluded or not self.is_empowering:
             return 0.0
-        return self.spend * self.recognition_pct / 100
+        return self.spend * self.recognition_pct / 100 * (MULTIPLIER if self.multiplier else 1)
 
     def metrics(self) -> tuple[str, ...]:
         """Procurement measures this supplier's recognised spend counts towards."""
-        if self.excluded or not self.empowering:
+        if self.excluded or not self.is_empowering:
             return ()
         out = ["all"]
         if self.size == "QSE":
@@ -297,9 +315,20 @@ def _exclusion(raw: object) -> str | None:
     if s in ("", "no", "none", "included", "n", EXCLUSIONS[""].lower()):
         return ""
     for key, label in EXCLUSIONS.items():
-        if key and (s == key or s == label.lower()):
+        short = label.lower().split(" (cl.")[0]
+        if key and s in (key, label.lower(), short):
             return key
-    return None
+    return _LEGACY_EXCLUSIONS.get(s)
+
+
+# Labels exported by v1 of the calculator, so saved lists still upload.
+_LEGACY_EXCLUSIONS = {
+    "taxes, levies and duties": "tax",
+    "salaries, wages, pension and medical aid": "payroll",
+    "imports with no local supplier": "import",
+    "organ of state / public entity monopoly": "state_monopoly",
+    "ed, sd or sed contribution (scored elsewhere)": "contribution",
+}
 
 
 def _pct_or_zero(raw: object) -> float | None:
@@ -359,6 +388,9 @@ def parse_rows(rows: Iterable[Mapping[str, object]]) -> tuple[list[Supplier], li
         empowering = True if blank_emp else _bool(emp_raw)  # blank = yes (certificate default)
         if empowering is None:
             bad("Empowering supplier", "use yes or no")
+        multiplier = _bool(row.get("multiplier"))
+        if multiplier is None:
+            bad("1.2x multiplier", "use yes or no")
         exclusion = _exclusion(row.get("exclusion"))
         if exclusion is None:
             keys = ", ".join(k for k in EXCLUSIONS if k)
@@ -376,6 +408,7 @@ def parse_rows(rows: Iterable[Mapping[str, object]]) -> tuple[list[Supplier], li
                 black_women_ownership_pct=float(bwo),  # type: ignore[arg-type]
                 designated_group=bool(designated),
                 empowering=bool(empowering),
+                multiplier=bool(multiplier),
                 exclusion=str(exclusion),
             )
         )
@@ -416,6 +449,7 @@ def to_record(s: Supplier) -> dict[str, object]:
         "Black women ownership %": s.black_women_ownership_pct,
         "Designated group": s.designated_group,
         "Empowering supplier": s.empowering,
+        "1.2x multiplier": s.multiplier,
         "TMPS exclusion": EXCLUSIONS[s.exclusion],
     }
 
@@ -437,6 +471,7 @@ def to_csv(suppliers: Iterable[Supplier]) -> str:
                 f"{s.black_women_ownership_pct:g}",
                 "yes" if s.designated_group else "no",
                 "yes" if s.empowering else "no",
+                "yes" if s.multiplier else "no",
                 s.exclusion,
             ]
         )
@@ -470,7 +505,7 @@ def summarise(suppliers: Iterable[Supplier]) -> ProcurementSummary:
         if s.excluded:
             excluded[s.exclusion] = excluded.get(s.exclusion, 0.0) + s.spend
             continue
-        if not s.empowering:
+        if not s.is_empowering:
             non_emp += s.spend
             continue
         if s.level == NON_COMPLIANT:

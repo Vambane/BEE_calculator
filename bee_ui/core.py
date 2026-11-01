@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from bee import CompanyProfile, Financials, Rand, ScoreInput, YesInput, YesTier
 from bee.levels import LEVELS
+from bee.npat import resolve as resolve_npat
 from bee.registry import get_sector, sectors
 from bee.rules import Element, Indicator, Scorecard
 from bee.sectors.base import SectorConfig
@@ -101,6 +102,16 @@ def validate(
     ):
         if v is not None and v < 0:
             out.append(Problem(name, f"{name.replace('_', ' ').title()} cannot be negative."))
+    try:
+        resolve_npat(
+            float(rev or 0.0) if isinstance(rev, (int, float)) else 0.0,
+            fin.npat,
+            fin.npat_avg_5y,
+            fin.industry_norm_margin_pct,
+            fin.qualifying_margin_pct,
+        )
+    except ValueError as exc:
+        out.append(Problem("npat_basis", str(exc)))
     if card is None:
         return out
     for el in card.elements:
@@ -487,6 +498,7 @@ WIDGET_KEY_PREFIXES = (
     "v_",
     "_step_errs_",
     "proc_",
+    "contrib_",
 )
 WIDGET_KEY_EXACT = frozenset({"pdf_email", "pdf_mkt"})
 
@@ -503,7 +515,16 @@ def fresh_store() -> dict:
             "yes_prev_level": None,
             "opt_scored": False,
         },
-        "fin": {"npat": 0.0, "leviable_amount": 0.0, "tmps": 0.0, "employees": 0.0},
+        "fin": {
+            "npat": 0.0,
+            "leviable_amount": 0.0,
+            "tmps": 0.0,
+            "employees": 0.0,
+            # Statement 400 cl. 3.2.1 inputs (None = not given)
+            "npat_avg_5y": None,
+            "industry_norm_margin_pct": None,
+            "qualifying_margin_pct": None,
+        },
         "values": {"rand": {}, "pct": {}},
         "modes": {},
         "entry": {},
@@ -511,6 +532,8 @@ def fresh_store() -> dict:
         "options": {},
         # Supplier list for the procurement calculator: label-keyed rows + editor version.
         "procurement": {"records": [], "version": 0},
+        # Contribution lines per element (ESD, SED) for the benefit-factor calculator.
+        "contributions": {},
         "consent": False,
     }
 

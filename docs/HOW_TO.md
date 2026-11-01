@@ -20,6 +20,16 @@ Enter what you know:
 - **Black ownership %**
 - Optional bases (payroll, NPAT, procurement spend, headcount) if you will enter **rand** amounts later
 
+### Loss or low profit
+
+Supplier Development, Enterprise Development and SED targets are a % of NPAT. Statement 400 cl. 3.2.1 switches them to a **Turnover basis** when:
+
+- there was **no profit last year** (enter a negative NPAT), or
+- **no profit on average over five years** (enter the 5-year average), or
+- the margin is **below a quarter of the industry norm** (enter the norm, from Stats SA)
+
+Open **Loss or low profit?** under NPAT and enter what applies, plus the **qualifying year margin**: NPAT / Turnover of the most recent year in which the margin was at least a quarter of the norm. The app then scores those targets against a deemed NPAT of that margin x Turnover, and says so on Results. Without a qualifying year it uses a quarter of the industry norm, flagged as an interpretation to confirm with your verification agency.
+
 Then use **Continue** at the bottom of the page.
 
 ---
@@ -52,18 +62,53 @@ On **Enterprise & Supplier Development** (or **Preferential Procurement** on sec
 | **Size** | EME, QSE, Large, or Unknown |
 | **Black ownership %** / **Black women ownership %** | From the certificate (women cannot exceed black ownership) |
 | **Designated group** | Yes if at least 51% owned by black people from designated groups (youth, people with disabilities, unemployed, rural, military veterans) |
-| **Empowering supplier** | As stated on the certificate; blank means yes |
-| **TMPS exclusion** | Blank to include. Otherwise one of: `tax`, `payroll`, `import`, `state_monopoly`, `contribution`, `other` |
+| **Empowering supplier** | As stated on the certificate; blank means yes. EMEs always count as empowering (cl. 3.3.4) |
+| **1.2x multiplier** | Yes if Statement 400 cl. 3.5 applies: a Supplier Development beneficiary, or a black-owned QSE/EME, with a 3-year contract; or a supplier at least 51% black owned or black women owned on flow-through |
+| **TMPS exclusion** | Blank to include. Otherwise one of the codes below |
 
-3. The app shows **TMPS** (total spend less exclusions), the **recognised spend** for each procurement indicator (spend x the supplier's recognition %: Level 1 135%, Level 2 125%, Level 3 110%, Level 4 100%, Level 5 80%, Level 6 60%, Level 7 50%, Level 8 10%, no certificate 0%), the **% of TMPS** and the points.
+TMPS exclusions (Statement 400 cl. 5.4.2 and 6):
+
+| Code | Exclude |
+|------|---------|
+| `tax` | Taxes, levies and municipal rates |
+| `payroll` | Salaries, wages and director emoluments (pension and medical aid stay **in** TMPS) |
+| `pass_through` | Third-party procurement your client records as its expense, not yours |
+| `associated` | Investments in or loans to an Associated Enterprise |
+| `contribution` | ED, SD or SED contributions (they score elsewhere) |
+| `import` | Imports meeting cl. 6.5: no local production (capital goods for local value-add, or other imports backed by an ESD plan) |
+| `state_monopoly` | An organ of state or public entity with a statutory or regulated monopoly |
+| `other` | Anything else your verifier agrees to exclude |
+
+3. The app shows **TMPS** (total spend less exclusions), the **recognised spend** for each procurement indicator (spend x the supplier's recognition %: Level 1 135%, Level 2 125%, Level 3 110%, Level 4 100%, Level 5 80%, Level 6 60%, Level 7 50%, Level 8 10%, no certificate 0%; x 1.2 where the multiplier is ticked), the **% of TMPS** and the points.
 4. **Use these figures** sets TMPS in your Profile and fills the procurement indicators. Supplier and Enterprise Development stay as you entered them.
 5. **Download this list (CSV)** saves your working so you can upload it next time. The list is kept for this session only.
 
-How it counts: only Empowering Suppliers count, on every procurement measure; a designated-group supplier must also be at least 51% black owned. The same list works on every loaded scorecard (Generic, QSE and sector codes). Enhanced recognition multipliers are not applied, and you are responsible for tagging exclusions correctly: confirm both with your verification agency.
+How it counts: only Empowering Suppliers count, on every procurement measure; a designated-group supplier must also be at least 51% black owned. The same list works on every loaded scorecard (Generic, QSE and sector codes). You are responsible for the evidence behind exclusions and multipliers: confirm both with your verification agency.
 
 ---
 
-## 5. Moving around
+## 5. Contributions at benefit factors
+
+On **Enterprise & Supplier Development** and **Socio-Economic Development**, open **Value contributions with benefit factors**. Add one line per contribution at its face value, choose what it counts towards (e.g. Supplier Development) and its type. The app applies the gazetted factor:
+
+| Type | ESD (Annexe 400(B)) | SED (Annexe 500(A)) |
+|------|---------------------|---------------------|
+| Grant, direct costs, discount beyond normal | 100% | 100% |
+| Overhead costs (incl. dedicated staff) | 70% | 80% |
+| Interest-free loan, no security | 70% of the outstanding amount | not SED |
+| Standard loan | 50% of the outstanding amount | not SED |
+| Guarantee | 50% (Generic, 2019); 3% on cards that follow the 2013 Codes | not SED |
+| Minority equity investment | 70% | not SED |
+| Loan at a lower interest rate | prime minus the actual rate, of the outstanding amount | not SED |
+| Investment at a lower dividend | ordinary dividend rate minus the actual rate | not SED |
+| Professional services free or at a discount | 60% | 80% |
+| Employee time (monthly salary / 160 x hours) | 60% | 80% |
+
+**Use these values** fills the indicators with the recognised totals (as rand, or as % of NPAT, which respects the Turnover basis above). Shorter payment periods to Supplier Development beneficiaries use their own formula: add them by hand. Sector codes may set their own factors; the app uses the generic ones and says so.
+
+---
+
+## 6. Moving around
 
 | Control | What it does |
 |---------|----------------|
@@ -75,7 +120,7 @@ Consent still applies: without the privacy tick, you cannot leave Profile.
 
 ---
 
-## 6. Results and the PDF
+## 7. Results and the PDF
 
 **Results** shows your recognition level, points, and gaps (when you are on a scored path). Empty steps count as zero until you enter indicators or points.
 
@@ -88,7 +133,7 @@ We do **not** email the report in v1. An optional marketing tick does **not** ad
 
 ---
 
-## 7. Privacy and starting again
+## 8. Privacy and starting again
 
 - [Privacy policy](?page=privacy) — what we collect for this session  
 - **Start over** in the sidebar — clear the session and begin a new company  
