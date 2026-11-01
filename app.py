@@ -15,6 +15,20 @@ import plotly.graph_objects as go
 import streamlit as st
 
 from bee import EnterpriseSize, Financials, Rand, calculate
+from bee.indicators import indicator_points
+from bee.procurement import COLUMNS as PROC_COLUMNS
+from bee.procurement import EXCLUSIONS as PROC_EXCLUSIONS
+from bee.procurement import (
+    LEVEL_OPTIONS,
+    parse_csv,
+    parse_rows,
+    procurement_indicators,
+    summarise,
+    template_csv,
+    to_record,
+)
+from bee.procurement import SIZES as PROC_SIZES
+from bee.procurement import to_csv as to_proc_csv
 from bee.registry import get_sector
 from bee_ui.core import (
     BASE_FIN,
@@ -610,6 +624,203 @@ def profile_step():
     footer(problems)
 
 
+# ------------------------------------------------------------------ procurement calculator
+MAX_SUPPLIER_CSV_BYTES = 2_000_000
+
+
+def _decode_csv(raw: bytes) -> str:
+    try:
+        return raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        return raw.decode("cp1252", errors="replace")  # Excel "CSV" on Windows
+
+
+_PROC_DTYPES = {
+    "Supplier": "object",
+    "Spend (R)": "float64",
+    "B-BBEE level": "object",
+    "Size": "object",
+    "Black ownership %": "float64",
+    "Black women ownership %": "float64",
+    "Designated group": "bool",
+    "Empowering supplier": "bool",
+    "TMPS exclusion": "object",
+}
+
+
+def _supplier_frame(records: list[dict]) -> pd.DataFrame:
+    """Editor frame with fixed column types (an empty list would otherwise be all-float)."""
+    cols = [label for _, label in PROC_COLUMNS]
+    frame = pd.DataFrame(records, columns=cols)
+    for col in ("Designated group", "Empowering supplier"):
+        frame[col] = [v is True or (isinstance(v, bool) and v) for v in frame[col]]
+    for col in ("Spend (R)", "Black ownership %", "Black women ownership %"):
+        frame[col] = pd.to_numeric(frame[col], errors="coerce")
+    return frame.astype(_PROC_DTYPES)
+
+
+def procurement_panel(el, mode: str, vals: dict) -> None:
+    """Supplier list -> TMPS and the % of TMPS for each procurement indicator (Statement 400).
+
+    The list lives in ``store['procurement']`` (session only). "Use these figures" writes the
+    matched indicator values and sets TMPS in the profile; nothing is applied silently.
+    """
+    inds = procurement_indicators(el)
+    if not inds:
+        return
+    proc = store.setdefault("procurement", {"records": [], "version": 0})
+    with st.expander("Calculate procurement from a supplier list", expanded=bool(proc["records"])):
+        st.caption(
+            "List every supplier you paid in the measurement year with their B-BBEE level, "
+            "size and ownership from their certificate or affidavit. The app works out TMPS "
+            "and the recognised spend for each procurement indicator below. Only Empowering "
+            "Suppliers count; suppliers with no certificate count at 0%."
+        )
+        c1, c2 = st.columns(2)
+        c1.download_button(
+            "Download template (CSV)",
+            template_csv(),
+            file_name="supplier-list-template.csv",
+            mime="text/csv",
+            key="proc_template",
+            width="stretch",
+        )
+        up = c2.file_uploader(
+            "Upload supplier list (CSV)",
+            type=["csv"],
+            key=f"proc_upload_{proc['version']}",
+            label_visibility="collapsed",
+            help="CSV in the template's format, up to 2 MB",
+        )
+        c2.caption("CSV in the template's format, up to 2 MB.")
+        if up is not None:
+            raw = up.getvalue()
+            if len(raw) > MAX_SUPPLIER_CSV_BYTES:
+                st.error("That file is over 2 MB. Split the supplier list or remove extra columns.")
+            else:
+                suppliers, errs = parse_csv(_decode_csv(raw))
+                if errs:
+                    st.error(
+                        f"{len(errs)} problem(s) in the file. Fix them and upload again:\n\n"
+                        + "\n".join(f"- {e}" for e in errs[:20])
+                        + ("\n- ..." if len(errs) > 20 else "")
+                    )
+                else:
+                    proc["records"] = [to_record(s) for s in suppliers]
+                    proc["current"] = None
+                    proc["version"] += 1  # fresh editor + uploader
+                    st.rerun()
+
+        ek = f"proc_editor_{proc['version']}"
+        if ek not in S and proc.get("current") is not None:
+            # Widget state is dropped when the step is left: rebuild from the last edits.
+            proc["records"] = proc["current"]
+        frame = _supplier_frame(proc["records"])
+        edited = st.data_editor(
+            frame,
+            key=ek,
+            num_rows="dynamic",
+            hide_index=True,
+            width="stretch",
+            column_config={
+                "Supplier": st.column_config.TextColumn(required=True),
+                "Spend (R)": st.column_config.NumberColumn(min_value=0.0, format="%.2f"),
+                "B-BBEE level": st.column_config.SelectboxColumn(
+                    options=list(LEVEL_OPTIONS), help="1 to 8, or NC for no certificate"
+                ),
+                "Size": st.column_config.SelectboxColumn(options=list(PROC_SIZES)),
+                "Black ownership %": st.column_config.NumberColumn(min_value=0.0, max_value=100.0),
+                "Black women ownership %": st.column_config.NumberColumn(
+                    min_value=0.0, max_value=100.0
+                ),
+                "Designated group": st.column_config.CheckboxColumn(
+                    help="At least 51% owned by black designated groups (youth, people with "
+                    "disabilities, unemployed, rural, military veterans)"
+                ),
+                "Empowering supplier": st.column_config.CheckboxColumn(
+                    help="As stated on the supplier's certificate or affidavit"
+                ),
+                "TMPS exclusion": st.column_config.SelectboxColumn(
+                    options=list(PROC_EXCLUSIONS.values()),
+                    help="Leave as 'Included in TMPS' unless the spend is excluded",
+                ),
+            },
+        )
+        proc["current"] = edited.to_dict("records")
+        suppliers, errs = parse_rows(proc["current"])
+        if errs:
+            st.warning(
+                "Fix these rows to include them:\n\n"
+                + "\n".join(f"- {e}" for e in errs[:20])
+                + ("\n- ..." if len(errs) > 20 else "")
+            )
+        if not suppliers:
+            st.caption("Add suppliers above or upload the template to see the calculation.")
+            return
+        summary = summarise(suppliers)
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Total spend", f"R{summary.total_spend:,.0f}".replace(",", " "))
+        m2.metric("Excluded", f"R{summary.excluded_total:,.0f}".replace(",", " "))
+        m3.metric("TMPS", f"R{summary.tmps:,.0f}".replace(",", " "))
+        values, unmatched = summary.indicator_values(el)
+        rows = []
+        for ind in inds:
+            if ind.clause not in values:
+                continue
+            pct = values[ind.clause]
+            rows.append(
+                {
+                    "Indicator": ind.name,
+                    "Recognised spend": f"R{pct * summary.tmps / 100:,.0f}".replace(",", " "),
+                    "% of TMPS": f"{pct:.2f}%",
+                    "Target": f"{ind.target:g}%",
+                    "Points": f"{indicator_points(ind, pct, Financials(), S.draft):.2f} "
+                    f"of {ind.points:g}",
+                }
+            )
+        st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+        for n in summary.notes:
+            st.caption(n)
+        if unmatched:
+            st.caption(
+                "Enter by hand (not measurable from the list): "
+                + "; ".join(i.name for i in unmatched)
+            )
+        st.caption(
+            "Recognised spend = spend x the supplier's recognition % (Level 1 135% ... "
+            "Level 8 10%). Planning estimate: confirm exclusions and supplier evidence with "
+            "your verification agency."
+        )
+        b1, b2 = st.columns(2)
+        b2.download_button(
+            "Download this list (CSV)",
+            to_proc_csv(suppliers),
+            file_name="supplier-list.csv",
+            mime="text/csv",
+            key="proc_export",
+            width="stretch",
+        )
+        if b1.button(
+            "Use these figures",
+            type="primary",
+            key="proc_apply",
+            disabled=summary.tmps <= 0,
+            width="stretch",
+        ):
+            store["fin"]["tmps"] = float(summary.tmps)
+            S["fin_tmps"] = float(summary.tmps)
+            for clause, pct in values.items():
+                vals[clause] = pct * summary.tmps / 100 if mode == "rand" else pct
+                S.pop(f"v_{mode}_{clause}", None)
+            S["proc_applied"] = len(values)
+            st.rerun()
+        if S.pop("proc_applied", None):
+            st.success(
+                "Applied: TMPS set in your profile and the procurement indicators below "
+                "filled from the supplier list."
+            )
+
+
 # ------------------------------------------------------------------ element steps
 def element_step(el):
     require_consent()
@@ -688,6 +899,7 @@ def element_step(el):
             mode = "pct"
         store["modes"][el.key] = mode
         vals = store["values"][mode].setdefault(el.key, {})
+        procurement_panel(el, mode, vals)
         nv = next((i for i in el.indicators if i.group == "net_value"), None)
         if nv is not None:
             with st.container(border=True):

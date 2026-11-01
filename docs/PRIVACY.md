@@ -13,7 +13,7 @@
 
 ## What we collect
 
-Company-level figures you type in to score a B-BBEE scorecard (for example turnover, ownership and management percentages, spend figures). Optional work email if you use the PDF unlock. We do not collect ID numbers or names of individuals.
+Company-level figures you type in to score a B-BBEE scorecard (for example turnover, ownership and management percentages, spend figures). If you use the procurement calculator, the supplier list you upload or type in: supplier names, spend, B-BBEE level, size and ownership percentages. Optional work email if you use the PDF unlock. We do not collect ID numbers or names of individuals; if a supplier is a sole proprietor, use a reference instead of the person's name.
 
 ## Why
 
@@ -30,6 +30,7 @@ Inputs and any unlock email are kept only for this interactive session on the ap
 | Data | Where it lives | How long | Notes |
 |---|---|---|---|
 | Scorecard inputs (turnover, ownership %, etc.) | App-host session state for this interactive session | Until the session ends | Not written to a database or other long-term store |
+| Supplier list (procurement calculator) | App-host session state for this interactive session | Until the session ends or Start over | Not written to a database; download it as CSV to keep it |
 | Work email (PDF unlock) | App-host session state (`pdf_gate`) | Until the session ends | Not emailed; not persisted beyond the session |
 | Marketing preference tick | App-host session state | Until the session ends | Does **not** create a list or subscribe anyone |
 | Generated PDF | Rendered on the app host (WeasyPrint) for your download | Not retained after the response | You keep the file you download; we do not keep a copy |

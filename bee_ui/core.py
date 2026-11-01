@@ -486,6 +486,7 @@ WIDGET_KEY_PREFIXES = (
     "nv_",
     "v_",
     "_step_errs_",
+    "proc_",
 )
 WIDGET_KEY_EXACT = frozenset({"pdf_email", "pdf_mkt"})
 
@@ -508,6 +509,8 @@ def fresh_store() -> dict:
         "entry": {},
         "points": {},
         "options": {},
+        # Supplier list for the procurement calculator: label-keyed rows + editor version.
+        "procurement": {"records": [], "version": 0},
         "consent": False,
     }
 

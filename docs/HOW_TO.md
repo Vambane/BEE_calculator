@@ -38,7 +38,32 @@ Whether a deemed route applies to *your* facts is a verification question — th
 
 ---
 
-## 4. Moving around
+## 4. Procurement from a supplier list
+
+On **Enterprise & Supplier Development** (or **Preferential Procurement** on sector cards), open **Calculate procurement from a supplier list** instead of typing procurement percentages:
+
+1. **Download template (CSV)**, fill it in Excel or Google Sheets (one row per supplier for the measurement year), save as CSV and upload it. You can also type or edit rows directly in the table.
+2. Per supplier, take these from their certificate or affidavit:
+
+| Column | What to enter |
+|--------|---------------|
+| **Spend (R)** | Total paid in the measurement year, net of credit notes |
+| **B-BBEE level** | 1 to 8, or **NC** (or blank) if there is no valid certificate or affidavit |
+| **Size** | EME, QSE, Large, or Unknown |
+| **Black ownership %** / **Black women ownership %** | From the certificate (women cannot exceed black ownership) |
+| **Designated group** | Yes if at least 51% owned by black people from designated groups (youth, people with disabilities, unemployed, rural, military veterans) |
+| **Empowering supplier** | As stated on the certificate; blank means yes |
+| **TMPS exclusion** | Blank to include. Otherwise one of: `tax`, `payroll`, `import`, `state_monopoly`, `contribution`, `other` |
+
+3. The app shows **TMPS** (total spend less exclusions), the **recognised spend** for each procurement indicator (spend x the supplier's recognition %: Level 1 135%, Level 2 125%, Level 3 110%, Level 4 100%, Level 5 80%, Level 6 60%, Level 7 50%, Level 8 10%, no certificate 0%), the **% of TMPS** and the points.
+4. **Use these figures** sets TMPS in your Profile and fills the procurement indicators. Supplier and Enterprise Development stay as you entered them.
+5. **Download this list (CSV)** saves your working so you can upload it next time. The list is kept for this session only.
+
+How it counts: only Empowering Suppliers count, on every procurement measure; a designated-group supplier must also be at least 51% black owned. The same list works on every loaded scorecard (Generic, QSE and sector codes). Enhanced recognition multipliers are not applied, and you are responsible for tagging exclusions correctly: confirm both with your verification agency.
+
+---
+
+## 5. Moving around
 
 | Control | What it does |
 |---------|----------------|
@@ -50,7 +75,7 @@ Consent still applies: without the privacy tick, you cannot leave Profile.
 
 ---
 
-## 5. Results and the PDF
+## 6. Results and the PDF
 
 **Results** shows your recognition level, points, and gaps (when you are on a scored path). Empty steps count as zero until you enter indicators or points.
 
@@ -63,7 +88,7 @@ We do **not** email the report in v1. An optional marketing tick does **not** ad
 
 ---
 
-## 6. Privacy and starting again
+## 7. Privacy and starting again
 
 - [Privacy policy](?page=privacy) — what we collect for this session  
 - **Start over** in the sidebar — clear the session and begin a new company  
