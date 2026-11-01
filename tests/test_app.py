@@ -739,3 +739,77 @@ def test_start_over_clears_scenario_and_returns_to_profile():
     # bind() re-seeds profile_* from the fresh store (0.0), not the prior 55%.
     assert at.session_state.get("profile_black_ownership") == 0.0
     assert at.session_state["draft"] is True  # ruleset pref kept
+
+
+# ------------------------------------------------------------------ procurement calculator
+def _esd_step(records=None, mode="pct"):
+    at = boot()
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 100_000_000.0
+    at.session_state["store"]["modes"]["esd"] = mode
+    if records is not None:
+        at.session_state["store"]["procurement"] = {"records": records, "version": 0}
+    at.session_state["step"] = 4  # Generic: Ownership, MC, Skills, ESD
+    return at.run()
+
+
+_REC = {
+    "Supplier": "Acme",
+    "Spend (R)": 1_000_000.0,
+    "B-BBEE level": "1",
+    "Size": "QSE",
+    "Black ownership %": 100.0,
+    "Black women ownership %": 60.0,
+    "Designated group": False,
+    "Empowering supplier": True,
+    "TMPS exclusion": "Included in TMPS",
+}
+_TAX = _REC | {
+    "Supplier": "SARS",
+    "Spend (R)": 250_000.0,
+    "B-BBEE level": "NC",
+    "Size": "Unknown",
+    "Black ownership %": 0.0,
+    "Black women ownership %": 0.0,
+    "TMPS exclusion": "Taxes, levies and duties",
+}
+
+
+def test_esd_step_offers_supplier_list_calculator():
+    at = _esd_step()
+    assert not at.exception
+    assert any("supplier list" in (e.label or "") for e in at.expander)
+
+
+@pytest.mark.parametrize("mode", ["pct", "rand"])
+def test_supplier_list_sets_tmps_and_fills_indicators(mode):
+    at = _esd_step([_REC, _TAX], mode)
+    assert not at.exception
+    tmps = next(m for m in at.metric if m.label == "TMPS")
+    assert tmps.value == "R1 000 000"
+    next(b for b in at.button if b.label == "Use these figures").click().run()
+    assert not at.exception
+    store = at.session_state["store"]
+    assert store["fin"]["tmps"] == 1_000_000.0
+    esd = store["values"][mode]["esd"]
+    # Level 1 supplier: recognised 135% of TMPS on the all-suppliers measure.
+    expected = 135.0 if mode == "pct" else 1_350_000.0
+    assert esd["400 2.1.1"] == pytest.approx(expected)
+    assert any("Applied" in s.value for s in at.success)
+
+
+def test_supplier_list_not_shown_on_points_entry_or_cards_without_pp_table():
+    at = boot(sector="ict")
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 100_000_000.0  # ICT Large: points only
+    at.session_state["step"] = 4
+    at.run()
+    assert not at.exception
+    assert not any("supplier list" in (e.label or "") for e in at.expander)
+
+
+def test_start_over_clears_supplier_list():
+    from bee_ui.core import fresh_store, is_scenario_widget_key
+
+    assert fresh_store()["procurement"] == {"records": [], "version": 0}
+    assert is_scenario_widget_key("proc_editor_3")
