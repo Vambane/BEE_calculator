@@ -253,8 +253,11 @@ def _scored(size, card: Scorecard, inp: ScoreInput, notes) -> ScoreResult:
         for i in (card.element("ownership").indicators if card.has("ownership") else ())
     ):
         notes.append(
-            "Net Value is not calculated by the app: enter the verifier's or consultant's "
-            "figure, calculated per Annexe 100 (graduation and flow-through included)."
+            "Net Value is the lower of Annexe 100(E) Formula A (equity less acquisition "
+            "debt, against the graduated target) and Formula B (economic interest against "
+            "the target), from the Ownership step calculator or the verifier's figure. "
+            "Flow-through and modified flow-through are not modelled: use the verifier's "
+            "figure for multi-tier structures."
         )
     for c in checks:
         if c.option_used:

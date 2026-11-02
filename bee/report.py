@@ -185,8 +185,9 @@ def _report_context(
             "Statement 000 cl. 8.2.1 (or the sector's absolute table)."
         ),
         assumptions=[
-            "Net Value is the figure from your verification agency; this tool does not "
-            "calculate Annexe 100(E).",
+            "Net Value is the lower of Annexe 100(E) Formulas A and B, calculated from the "
+            "share values, acquisition debt and graduation factor entered (or the verifier's "
+            "figure); flow-through structures are not modelled.",
             "QSE priority-element sub-minimums use 40% of the QSE weightings (interpretation).",
             "Draft Transformation Fund (when enabled) scores on the indicator sum "
             "(ESD 45 Fund / 40 ED+SD), not scaled to 55 — DRAFT, NOT IN FORCE.",
