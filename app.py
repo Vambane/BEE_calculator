@@ -40,6 +40,7 @@ from bee.procurement import (
 from bee.procurement import SIZES as PROC_SIZES
 from bee.procurement import to_csv as to_proc_csv
 from bee.registry import get_sector
+from bee_ui import client_file
 from bee_ui.core import (
     BASE_FIN,
     BASE_LABEL,
@@ -407,6 +408,21 @@ def start_over():
             del S[k]
 
 
+def open_client_file(new_store: dict, app_meta: dict) -> None:
+    """Replace the calculation with one read from a client file (consent stays as is)."""
+    for k in list(S.keys()):
+        if is_scenario_widget_key(k):
+            del S[k]
+    new_store["consent"] = bool(S.store.get("consent"))
+    S.store = new_store
+    if app_meta.get("sector") in dict(sector_choices()):
+        S.sector = app_meta["sector"]
+    S.draft = bool(app_meta.get("draft"))
+    S.pop("demo_seeded", None)
+    S.step = 0
+    S.max_step = 99 if new_store["consent"] else 0  # every step reachable once consented
+
+
 def footer(problems_fn=None):
     err_key = f"_step_errs_{S.step}"
     if S.get(err_key):
@@ -455,6 +471,42 @@ with st.sidebar:
         width="stretch",
         help="Clear company inputs and PDF unlock, then return to Profile.",
     )
+    with st.expander("Client file", expanded=bool(S.get("client_msg"))):
+        st.caption(
+            "Nothing is kept after you close this page. Save a file per client and open it "
+            "next time to carry on or update for the new year."
+        )
+        st.download_button(
+            "Save client file",
+            client_file.dump(store, S.sector, S.draft),
+            file_name=client_file.filename(store["profile"]["company"]),
+            mime="application/json",
+            key="client_save",
+            width="stretch",
+            disabled=not consented,
+            help="Agree to the privacy notice on Profile first." if not consented else None,
+        )
+        upl_v = S.setdefault("client_upl_v", 0)
+        up = st.file_uploader("Open client file", type=["json"], key=f"client_open_{upl_v}")
+        if up is not None:
+            try:
+                new_store, meta, fixes = client_file.parse(up.getvalue())
+            except client_file.ClientFileError as exc:
+                st.error("Could not open it:\n\n" + "\n".join(f"- {m}" for m in exc.problems))
+            else:
+                open_client_file(new_store, meta)
+                S.client_upl_v = upl_v + 1
+                name = new_store["profile"]["company"] or "the client"
+                when = f" (saved {meta['saved_at'][:10]})" if meta.get("saved_at") else ""
+                S.client_msg = (f"Opened {name}{when}.", fixes)
+                st.rerun()
+        if S.get("client_msg"):
+            msg, fixes = S.pop("client_msg")
+            st.success(msg)
+            for f in fixes[:10]:
+                st.caption(f)
+            if not consented:
+                st.caption("Agree to the privacy notice on Profile to continue.")
     st.divider()
     S.draft = st.toggle(
         DRAFT_LABEL,

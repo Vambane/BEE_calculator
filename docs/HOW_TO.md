@@ -140,6 +140,10 @@ On **Enterprise & Supplier Development** and **Socio-Economic Development**, ope
 
 Consent still applies: without the privacy tick, you cannot leave Profile.
 
+
+### Client files
+
+The app keeps nothing after you close the page. In the sidebar, open **Client file** and click **Save client file** to download everything you have entered as a `.json` file (name and date in the file name). Next time, choose it under **Open client file** to carry on, or open last year's file and update the figures for the new measurement year. Opening a file replaces what is on screen. The file stays on your device; keep it as safely as any client working paper. You still need to agree to the privacy notice in each session.
 ---
 
 ## 8. Results and the PDF

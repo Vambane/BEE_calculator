@@ -32,6 +32,7 @@ Inputs and any unlock email are kept only for this interactive session on the ap
 | Scorecard inputs (turnover, ownership %, etc.) | App-host session state for this interactive session | Until the session ends | Not written to a database or other long-term store |
 | Supplier list (procurement calculator) | App-host session state for this interactive session | Until the session ends or Start over | Not written to a database; download it as CSV to keep it |
 | Net Value inputs (share values, debt, dates) | App-host session state for this interactive session | Until the session ends or Start over | Not written to a database |
+| Client file (save / open) | Downloaded to your own device; read once when you open it | As long as you keep the file | We do not keep a copy; consent is not stored in the file |
 | Contribution lines (benefit-factor calculator) | App-host session state for this interactive session | Until the session ends or Start over | Not written to a database |
 | Work email (PDF unlock) | App-host session state (`pdf_gate`) | Until the session ends | Not emailed; not persisted beyond the session |
 | Marketing preference tick | App-host session state | Until the session ends | Does **not** create a list or subscribe anyone |
