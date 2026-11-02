@@ -958,3 +958,46 @@ def test_start_over_clears_net_value_inputs():
 
     assert fresh_store()["net_value"] == {}
     assert is_scenario_widget_key("nv_D_ownership")
+
+
+# ------------------------------------------------------------------ client files
+def test_save_open_client_file_end_to_end():
+    from bee_ui import client_file
+
+    at = to_results(boot())
+    at.session_state["store"]["profile"]["company"] = "Acme (Pty) Ltd"
+    at.session_state["store"]["values"]["pct"]["ownership"] = {"100 2.2.1": 30.0}
+    at.run()
+    assert not at.exception
+    saved = client_file.dump(at.session_state["store"], at.session_state["sector"], False)
+    labels = [b.proto.label for b in at.get("download_button")]
+    assert "Save client file" in labels
+
+    nxt = next(b for b in at.button if b.label == "Start over").click().run()
+    assert nxt.session_state["store"]["profile"]["company"] == ""
+    nxt.session_state["store"]["consent"] = True
+    nxt.run()
+    nxt.file_uploader[0].upload("acme.json", saved, "application/json").run()
+    assert not nxt.exception
+    store = nxt.session_state["store"]
+    assert store["profile"]["company"] == "Acme (Pty) Ltd"
+    assert store["values"]["pct"]["ownership"]["100 2.2.1"] == 30.0
+    assert store["consent"] is True  # kept from this session, not the file
+    assert nxt.session_state["max_step"] > 0  # every step reachable again
+    assert any("Opened Acme (Pty) Ltd" in s.value for s in nxt.sidebar.success)
+
+
+def test_open_bad_client_file_shows_error_and_keeps_data():
+    at = to_results(boot())
+    at.session_state["store"]["profile"]["company"] = "Keep Me"
+    at.run()
+    at.file_uploader[0].upload("x.json", b"{}", "application/json").run()
+    assert not at.exception
+    assert any("Could not open it" in e.value for e in at.sidebar.error)
+    assert at.session_state["store"]["profile"]["company"] == "Keep Me"
+
+
+def test_save_disabled_before_consent():
+    at = boot()
+    btn = next(b for b in at.get("download_button") if b.proto.label == "Save client file")
+    assert btn.proto.disabled
