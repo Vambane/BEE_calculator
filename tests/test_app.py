@@ -891,3 +891,70 @@ def test_results_note_turnover_basis():
     assert not at.exception
     texts = " ".join(str(m.value) for m in at.markdown) + " ".join(c.value for c in at.caption)
     assert "Turnover basis" in texts
+
+
+# ------------------------------------------------------------------ Net Value (Annexe 100(E))
+def _ownership_step(net_value=None, ei=None):
+    at = boot()
+    at.session_state["store"]["consent"] = True
+    at.session_state["store"]["profile"]["revenue"] = 100_000_000.0
+    if ei is not None:
+        at.session_state["store"]["values"]["pct"]["ownership"] = {"100 2.2.1": ei}
+    if net_value is not None:
+        at.session_state["store"]["net_value"] = {"ownership": net_value}
+    at.session_state["step"] = 1
+    return at.run()
+
+
+_NV = {
+    "black_equity_value": 200_000.0,
+    "acquisition_debt": 50_000.0,
+    "entity_value": 1_000_000.0,
+    "economic_interest_pct": 20.0,
+    "equity_date": __import__("datetime").date(2023, 1, 1),
+    "measurement_date": __import__("datetime").date(2025, 6, 30),
+    "target_pct": 25.0,
+}
+
+
+def test_ownership_offers_net_value_calculator():
+    at = _ownership_step()
+    assert not at.exception
+    assert any("Calculate Net Value" in (e.label or "") for e in at.expander)
+    assert not any(b.label == "Use this figure" for b in at.button)  # nothing until valued
+
+
+def test_net_value_calculator_applies_lower_formula():
+    at = _ownership_step(_NV)
+    assert not at.exception
+    table = at.dataframe[0].value
+    assert "6.40 of 8" in table["Value"].tolist()
+    next(b for b in at.button if b.label == "Use this figure").click().run()
+    assert not at.exception
+    assert any("Applied" in s.value for s in at.success)
+    assert at.session_state["store"]["values"]["pct"]["ownership"]["100 2.3.1"] == pytest.approx(80)
+
+
+def test_net_value_calculator_prefills_economic_interest():
+    at = _ownership_step(ei=22.5)
+    ei = next(n for n in at.number_input if n.label.startswith("Black economic interest"))
+    assert ei.value == 22.5
+
+
+def test_net_value_below_sub_minimum_warns():
+    at = _ownership_step(_NV | {"black_equity_value": 60_000.0, "economic_interest_pct": 6.0})
+    assert not at.exception
+    assert any("sub-minimum" in w.value for w in at.warning)
+
+
+def test_net_value_invalid_inputs_warn_not_crash():
+    at = _ownership_step(_NV | {"black_equity_value": 2_000_000.0})
+    assert not at.exception
+    assert any("more than the whole entity" in w.value for w in at.warning)
+
+
+def test_start_over_clears_net_value_inputs():
+    from bee_ui.core import fresh_store, is_scenario_widget_key
+
+    assert fresh_store()["net_value"] == {}
+    assert is_scenario_widget_key("nv_D_ownership")

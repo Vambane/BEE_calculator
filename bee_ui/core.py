@@ -534,6 +534,8 @@ def fresh_store() -> dict:
         "procurement": {"records": [], "version": 0},
         # Contribution lines per element (ESD, SED) for the benefit-factor calculator.
         "contributions": {},
+        # Annexe 100(E) Net Value calculator inputs per element (Ownership).
+        "net_value": {},
         "consent": False,
     }
 

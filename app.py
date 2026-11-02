@@ -22,6 +22,9 @@ from bee.contributions import parse_rows as parse_contributions
 from bee.contributions import summarise as summarise_contributions
 from bee.contributions import targets as contrib_targets
 from bee.indicators import indicator_points
+from bee.net_value import DEFAULT_TARGET as NV_TARGET
+from bee.net_value import NetValueInput, graduation_factor, measurement_year
+from bee.net_value import calculate as calculate_net_value
 from bee.npat import resolve as resolve_npat
 from bee.procurement import COLUMNS as PROC_COLUMNS
 from bee.procurement import EXCLUSIONS as PROC_EXCLUSIONS
@@ -1050,6 +1053,163 @@ def procurement_panel(el, mode: str, vals: dict) -> None:
             )
 
 
+def _economic_interest_pct(el, vals: dict) -> float | None:
+    """Black economic interest % already entered on this element (percentage mode only)."""
+    for i in el.indicators:
+        low = i.name.lower()
+        if (
+            "economic interest" in low
+            and "black" in low
+            and not any(w in low for w in ("women", "female", "designated"))
+        ):
+            v = vals.get(i.clause)
+            return float(v) if isinstance(v, int | float) and not isinstance(v, bool) else None
+    return None
+
+
+def net_value_panel(el, nv, nvk: str, vals: dict, mode: str) -> None:
+    """Annexe 100(E) Net Value from share values, debt and the graduation factor.
+
+    Inputs live in ``store['net_value'][el.key]`` (session only). "Use this figure" sets the
+    Net Value points field; nothing is applied silently.
+    """
+    box = store.setdefault("net_value", {}).setdefault(
+        el.key,
+        {
+            "black_equity_value": 0.0,
+            "acquisition_debt": 0.0,
+            "entity_value": 0.0,
+            "economic_interest_pct": None,
+            "equity_date": None,
+            "measurement_date": None,
+            "target_pct": NV_TARGET,
+        },
+    )
+    with st.expander(
+        "Calculate Net Value from share values (Annexe 100(E))",
+        expanded=bool(box["entity_value"]),
+    ):
+        st.caption(
+            "Net Value is the lower of two formulas. **A** takes the black shareholders' equity "
+            "less the debt still owed on it, as a share of the company's value, against the "
+            "target scaled by how long they have held it. **B** takes their economic interest "
+            "against the target. Use values on the measurement date; for an unlisted company, "
+            "from a competent person's valuation."
+        )
+        c1, c2 = st.columns(2)
+        box["entity_value"] = c1.number_input(
+            "Value of the company (R)",
+            min_value=0.0,
+            step=100_000.0,
+            format="%.2f",
+            key=bind(f"nv_D_{el.key}", float(box["entity_value"])),
+        )
+        box["black_equity_value"] = c2.number_input(
+            "Value of black-held shares (R)",
+            min_value=0.0,
+            step=100_000.0,
+            format="%.2f",
+            key=bind(f"nv_B_{el.key}", float(box["black_equity_value"])),
+        )
+        box["acquisition_debt"] = c1.number_input(
+            "Acquisition debt still owed (R)",
+            min_value=0.0,
+            step=100_000.0,
+            format="%.2f",
+            key=bind(f"nv_C_{el.key}", float(box["acquisition_debt"])),
+            help="Outstanding balance of loans and vendor finance used to buy those shares, "
+            "including unpaid notional (deemed) funding in a scheme or trust.",
+        )
+        entered = _economic_interest_pct(el, vals) if mode == "pct" else None
+        ei_default = (
+            box["economic_interest_pct"]
+            if box["economic_interest_pct"] is not None
+            else (entered or 0.0)
+        )
+        box["economic_interest_pct"] = c2.number_input(
+            "Black economic interest (%)",
+            min_value=0.0,
+            max_value=100.0,
+            step=0.5,
+            key=bind(f"nv_E_{el.key}", float(ei_default)),
+            help="Usually the same figure as the economic interest indicator above.",
+        )
+        today = datetime.now(UTC).date()
+        box["equity_date"] = c1.date_input(
+            "Current equity interest date",
+            key=bind(f"nv_dt0_{el.key}", box["equity_date"] or today),
+            max_value=today,
+            help="When the black shareholding became effective and unconditional (or when "
+            "the 2013 Codes took effect, if later). Year 1 is the first 12 months.",
+        )
+        box["measurement_date"] = c2.date_input(
+            "Measurement date",
+            key=bind(f"nv_dt1_{el.key}", box["measurement_date"] or today),
+            help="End of the measurement period your verification covers.",
+        )
+        box["target_pct"] = c1.number_input(
+            "Net Value target (%)",
+            min_value=0.5,
+            max_value=100.0,
+            step=0.5,
+            key=bind(f"nv_T_{el.key}", float(box["target_pct"])),
+            help=f"{NV_TARGET:g}% on the Generic and QSE scorecards. Check your sector code.",
+        )
+        if not box["entity_value"]:
+            st.caption("Enter the company's value to see the calculation.")
+            return
+        try:
+            year = measurement_year(box["equity_date"], box["measurement_date"])
+            res = calculate_net_value(
+                NetValueInput(
+                    black_equity_value=box["black_equity_value"],
+                    acquisition_debt=box["acquisition_debt"],
+                    entity_value=box["entity_value"],
+                    economic_interest_pct=box["economic_interest_pct"],
+                    year=year,
+                    weighting=nv.points,
+                    target_pct=box["target_pct"],
+                )
+            )
+        except ValueError as exc:
+            st.warning(f"Check these inputs: {exc}")
+            return
+        st.dataframe(
+            pd.DataFrame(
+                [
+                    ["Year since equity interest date", f"{year}"],
+                    ["Graduation factor", f"{graduation_factor(year):.0%}"],
+                    ["Deemed value (shares less debt / company)", f"{res.deemed_value_pct:.2f}%"],
+                    ["Required this year (target × factor)", f"{res.required_pct:.2f}%"],
+                    ["Formula A points", f"{res.points_a:.2f}"],
+                    ["Formula B points", f"{res.points_b:.2f}"],
+                    ["Net Value points (lower of A and B)", f"{res.points:.2f} of {nv.points:g}"],
+                ],
+                columns=["", "Value"],
+            ),
+            hide_index=True,
+            width="stretch",
+        )
+        for n in res.notes:
+            st.caption(n)
+        nvs = next((s for s in card.submins if s.group == "net_value"), None)
+        if nvs and res.points < nvs.required:
+            st.warning(
+                f"Below the {nvs.required:g}-point sub-minimum: the overall level drops by one."
+            )
+        if entered is not None and abs(entered - box["economic_interest_pct"]) > 1e-9:
+            st.caption(
+                f"The economic interest indicator above is {entered:g}%, not "
+                f"{box['economic_interest_pct']:g}%. Check which is right."
+            )
+        if st.button("Use this figure", type="primary", key=f"nv_apply_{el.key}"):
+            S[nvk] = round(res.points, 2)
+            S["nv_applied"] = True
+            st.rerun()
+        if S.pop("nv_applied", None):
+            st.success("Applied: Net Value points set from this calculation.")
+
+
 # ------------------------------------------------------------------ element steps
 def element_step(el):
     require_consent()
@@ -1137,14 +1297,15 @@ def element_step(el):
                 cur = float(vals.get(nv.clause, 0.0) or 0.0) * nv.points / 100
                 nvk = f"nv_{mode}_{el.key}"
                 bind(nvk, cur)
+                net_value_panel(el, nv, nvk, vals, mode)
                 got = st.number_input(
-                    f"Net Value points (0 to {nv.points:g}), from your verification agency",
+                    f"Net Value points (0 to {nv.points:g})",
                     min_value=0.0,
                     max_value=float(nv.points),
                     step=0.1,
                     key=nvk,
-                    help="Net Value uses the Annexe 100(E) formula on share values and debt. "
-                    "This version does not calculate it; use your verification agency's figure.",
+                    help="Calculate it above from share values and debt, or enter your "
+                    "verification agency's figure (needed for flow-through structures).",
                 )
                 vals[nv.clause] = got / nv.points * 100  # engine input: % of target achieved
                 nvs = next((s for s in card.submins if s.group == "net_value"), None)

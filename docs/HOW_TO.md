@@ -48,7 +48,29 @@ Whether a deemed route applies to *your* facts is a verification question — th
 
 ---
 
-## 4. Procurement from a supplier list
+## 4. Net Value (Ownership)
+
+Net Value carries 8 points on the Generic card (5 or 6 on some sector cards) and has a 40% sub-minimum, so missing it drops your level by one. On **Ownership**, open **Calculate Net Value from share values (Annexe 100(E))** and enter, on the measurement date:
+
+- **Value of the company** and **value of black-held shares** (a competent person's valuation for an unlisted company; the market price for a listed one with unrestricted shares)
+- **Acquisition debt still owed** on those shares, including vendor finance and unpaid notional funding
+- **Black economic interest %** (filled from the economic interest indicator when you have entered it)
+- **Current equity interest date** and **measurement date**: the app counts the year (year 1 is the first 12 months)
+
+The app works out two results and uses the lower:
+
+| Formula | Points |
+|---------|--------|
+| A | (black-held shares − debt) ÷ company value, ÷ (target × graduation factor), × weighting |
+| B | economic interest ÷ target × weighting |
+
+Both are capped at the weighting. The target is 25% on the Generic and QSE cards; check your sector code. The graduation factor rises with time: year 1 10%, year 2 20%, years 3 to 4 40%, years 5 to 6 60%, years 7 to 8 80%, year 9 onwards 100%.
+
+**Use this figure** sets the Net Value points. For flow-through or modified flow-through structures (trusts, holding companies, ESOPs several levels up), use your verification agency's figure instead.
+
+---
+
+## 5. Procurement from a supplier list
 
 On **Enterprise & Supplier Development** (or **Preferential Procurement** on sector cards), open **Calculate procurement from a supplier list** instead of typing procurement percentages:
 
@@ -87,7 +109,7 @@ How it counts: only Empowering Suppliers count, on every procurement measure; a 
 
 ---
 
-## 5. Contributions at benefit factors
+## 6. Contributions at benefit factors
 
 On **Enterprise & Supplier Development** and **Socio-Economic Development**, open **Value contributions with benefit factors**. Add one line per contribution at its face value, choose what it counts towards (e.g. Supplier Development) and its type. The app applies the gazetted factor:
 
@@ -108,7 +130,7 @@ On **Enterprise & Supplier Development** and **Socio-Economic Development**, ope
 
 ---
 
-## 6. Moving around
+## 7. Moving around
 
 | Control | What it does |
 |---------|----------------|
@@ -120,7 +142,7 @@ Consent still applies: without the privacy tick, you cannot leave Profile.
 
 ---
 
-## 7. Results and the PDF
+## 8. Results and the PDF
 
 **Results** shows your recognition level, points, and gaps (when you are on a scored path). Empty steps count as zero until you enter indicators or points.
 
@@ -133,7 +155,7 @@ We do **not** email the report in v1. An optional marketing tick does **not** ad
 
 ---
 
-## 8. Privacy and starting again
+## 9. Privacy and starting again
 
 - [Privacy policy](?page=privacy) — what we collect for this session  
 - **Start over** in the sidebar — clear the session and begin a new company  
