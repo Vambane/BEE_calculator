@@ -17,8 +17,10 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - run: pip install -r requirements.lock
-      - run: pip install -e ".[dev]" "pip-audit==2.10.1"
+          cache-dependency-path: requirements-dev.lock
+      # Every package (runtime, pytest, ruff, pip-audit, setuptools) is hash-checked.
+      - run: pip install --require-hashes -r requirements-dev.lock
+      - run: pip install --no-deps --no-build-isolation -e .
       - name: Lint
         run: ruff check bee bee_ui tests app.py
       - name: Format check
