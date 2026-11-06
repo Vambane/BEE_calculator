@@ -37,7 +37,7 @@
     margin: 0 auto;
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: calc(var(--radius) + 2px);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-1);
     padding: 1.5rem 2rem 2.25rem;
   }
@@ -94,7 +94,7 @@
     background: var(--warning-tint);
     border: 1px solid var(--warning-line);
     border-radius: var(--radius);
-    color: #6b4100;
+    color: #713f12;
   }
   .prose :global(blockquote p) {
     margin: 0;

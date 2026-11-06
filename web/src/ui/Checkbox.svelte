@@ -46,7 +46,7 @@
     pointer-events: none;
     display: grid;
     place-items: center;
-    border: 1.5px solid #9aa6b2;
+    border: 1.5px solid #a1a1aa;
     border-radius: 5px;
     background: var(--surface);
     color: transparent;

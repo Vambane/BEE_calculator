@@ -20,12 +20,12 @@
 </script>
 
 <header class="top">
-  <a class="brand" href="#/" aria-label="BEE Check, back to the calculator">
+  <a class="brand" href="#/" aria-label="Klim, back to the calculator">
     <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
       <rect x="1" y="1" width="20" height="20" rx="5" fill="var(--primary)" />
       <path d="M6.2 11.4l3.1 3.1 6.5-7" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" />
     </svg>
-    <span>BEE Check</span>
+    <span>Klim</span>
   </a>
   {#if app.ready && app.view === "app"}
     <div class="client" title={app.ctx?.label}>

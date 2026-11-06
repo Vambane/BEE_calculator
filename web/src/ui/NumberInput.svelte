@@ -74,26 +74,28 @@
   .num {
     display: flex;
     align-items: center;
-    height: 40px;
-    background: var(--surface);
-    border: 1px solid var(--line-strong);
+    height: 48px;
+    background: var(--glass);
+    border: 1px solid var(--line);
     border-radius: var(--radius);
     transition:
       border-color 150ms var(--ease),
+      background-color 150ms var(--ease),
       box-shadow 150ms var(--ease);
   }
   .num:hover:not(.disabled) {
-    border-color: #aeb8c3;
+    border-color: #a1a1aa;
   }
   .num:focus-within {
-    border-color: var(--primary);
+    border-color: rgb(167 139 250 / 0.7);
+    background: var(--glass-focus);
     box-shadow: var(--focus);
   }
   .invalid {
     border-color: var(--danger);
   }
   .invalid:focus-within {
-    box-shadow: 0 0 0 3px rgb(180 35 27 / 0.2);
+    box-shadow: 0 0 0 3px rgb(185 28 28 / 0.2);
   }
   .disabled {
     background: var(--rail);
@@ -110,7 +112,7 @@
     height: 100%;
     border: 0;
     background: transparent;
-    padding: 0 0.75rem;
+    padding: 0 1rem;
     font-size: var(--t-md);
     font-variant-numeric: tabular-nums;
     text-align: right;

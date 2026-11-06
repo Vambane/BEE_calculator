@@ -1,4 +1,4 @@
-# How to use BEE Check
+# How to use Klim
 
 A short guide for a first pass on the calculator. This is a **planning estimate**, not a verification certificate — confirm figures with your B-BBEE verification agency.
 

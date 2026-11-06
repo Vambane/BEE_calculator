@@ -123,9 +123,9 @@ def dump(store: dict, sector: str, draft: bool, saved_at: datetime | None = None
 
 
 def filename(company: str, when: date | None = None) -> str:
-    """``bee-check_<company>_<yyyy-mm-dd>.json`` with a safe company slug."""
+    """``klim_<company>_<yyyy-mm-dd>.json`` with a safe company slug."""
     slug = _SLUG.sub("-", company or "").strip("-").lower()[:60] or "client"
-    return f"bee-check_{slug}_{(when or datetime.now(UTC).date()).isoformat()}.json"
+    return f"klim_{slug}_{(when or datetime.now(UTC).date()).isoformat()}.json"
 
 
 # ------------------------------------------------------------------ load
@@ -265,11 +265,9 @@ def parse(raw: bytes) -> tuple[dict, dict, list[str]]:
         doc = json.loads(raw.decode("utf-8-sig"))
     # RecursionError: very deep nesting. ValueError: integers past Python's digit limit.
     except (UnicodeDecodeError, json.JSONDecodeError, RecursionError, ValueError):
-        raise ClientFileError(
-            ["This is not a BEE Check client file (it is not valid JSON)."]
-        ) from None
+        raise ClientFileError(["This is not a Klim client file (it is not valid JSON)."]) from None
     if not isinstance(doc, dict) or doc.get("format") != FORMAT:
-        raise ClientFileError(["This is not a BEE Check client file."])
+        raise ClientFileError(["This is not a Klim client file."])
     ver = doc.get("version")
     if not isinstance(ver, int) or isinstance(ver, bool) or ver < 1:
         raise ClientFileError(["The file has no valid format version."])

@@ -35,7 +35,7 @@
   .card {
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: calc(var(--radius) + 2px);
+    border-radius: var(--radius-lg);
     padding: 1.25rem;
     display: grid;
     gap: 1rem;
@@ -48,7 +48,7 @@
   }
   .sk {
     border-radius: 6px;
-    background: linear-gradient(90deg, #e9edf1 0%, #f3f5f7 50%, #e9edf1 100%);
+    background: linear-gradient(90deg, #f4f4f5 0%, #fafafa 50%, #f4f4f5 100%);
     background-size: 200% 100%;
     animation: shimmer 1.4s linear infinite;
   }

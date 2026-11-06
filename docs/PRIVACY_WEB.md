@@ -1,6 +1,6 @@
-# BEE Check: Privacy policy (web version, draft)
+# Klim: Privacy policy (web version, draft)
 
-> **Draft for owner approval.** This adapts the approved v1 policy (`docs/PRIVACY.md`) to the browser version of BEE Check, where the calculator runs on your own device. The legal entity and Information Officer remain placeholders until launch. Do not publish the browser version until this text is approved.
+> **Draft for owner approval.** This adapts the approved v1 policy (`docs/PRIVACY.md`) to the browser version of Klim, where the calculator runs on your own device. The legal entity and Information Officer remain placeholders until launch. Do not publish the browser version until this text is approved.
 
 ---
 

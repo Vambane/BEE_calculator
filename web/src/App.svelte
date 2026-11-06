@@ -1,5 +1,5 @@
 <script>
-  import { onMount } from "svelte";
+  import { onMount, untrack } from "svelte";
   import { app, start, refresh, steps, currentStep } from "./lib/state.svelte.js";
   import TopBar from "./shell/TopBar.svelte";
   import StepRail from "./shell/StepRail.svelte";
@@ -42,7 +42,13 @@
     if (key === lastKey) return;
     const first = lastKey === "";
     lastKey = key;
-    if (!first) app.dirty = true;
+    if (!first) {
+      app.dirty = true;
+      // Errors describe the figures at the last Continue; an edit makes them stale.
+      untrack(() => {
+        if (Object.keys(app.stepErrors).length) app.stepErrors = {};
+      });
+    }
     const t = setTimeout(refresh, 60);
     return () => clearTimeout(t);
   });
@@ -67,7 +73,7 @@
             <Notice tone="danger" title="The calculator could not start">
               <p>
                 Your browser could not load the scoring engine ({app.failed}). Reload the page to try
-                again. BEE Check needs a recent version of Chrome, Edge, Firefox or Safari.
+                again. Klim needs a recent version of Chrome, Edge, Firefox or Safari.
               </p>
             </Notice>
           </div>

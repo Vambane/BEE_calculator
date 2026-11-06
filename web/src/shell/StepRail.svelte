@@ -100,7 +100,7 @@
       color 150ms var(--ease);
   }
   .step:hover:not(:disabled):not(.current) {
-    background: rgb(18 28 38 / 0.05);
+    background: rgb(9 9 11 / 0.05);
     color: var(--ink);
   }
   .step:focus-visible {
@@ -109,7 +109,7 @@
   }
   .step:disabled {
     cursor: default;
-    color: #7d8894;
+    color: #8e8e96;
   }
   .current {
     background: var(--surface);
@@ -147,7 +147,7 @@
   }
   .step:disabled .dot {
     background: transparent;
-    color: #8a95a1;
+    color: #8e8e96;
   }
   .name {
     min-width: 0;
@@ -189,7 +189,7 @@
   .links a:hover,
   .link:hover {
     color: var(--ink);
-    background: rgb(18 28 38 / 0.05);
+    background: rgb(9 9 11 / 0.05);
   }
   .links a:focus-visible,
   .link:focus-visible {

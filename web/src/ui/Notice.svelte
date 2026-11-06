@@ -53,15 +53,15 @@
   .info {
     background: var(--info-tint);
     border-color: var(--info-line);
-    color: #163f86;
+    color: #1e3a8a;
   }
   .info > :global(svg) {
     color: var(--info);
   }
   .success {
     background: var(--success-tint);
-    border-color: #bfe5cf;
-    color: #0b4f30;
+    border-color: #bbf7d0;
+    color: #14532d;
   }
   .success > :global(svg) {
     color: var(--success);
@@ -69,7 +69,7 @@
   .warning {
     background: var(--warning-tint);
     border-color: var(--warning-line);
-    color: #6b4100;
+    color: #713f12;
   }
   .warning > :global(svg) {
     color: var(--warning);
@@ -77,7 +77,7 @@
   .danger {
     background: var(--danger-tint);
     border-color: var(--danger-line);
-    color: #8c1c15;
+    color: #7f1d1d;
   }
   .danger > :global(svg) {
     color: var(--danger);

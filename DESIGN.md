@@ -1,61 +1,60 @@
 ---
-name: BEE Check
-description: A calm, exact B-BBEE scorecard estimator for accountants and consultants.
+name: Klim
+description: A calm, exact B-BBEE scorecard estimator for accountants and consultants, in a light shadcn-style glass theme.
 colors:
-  primary: "#0f6e5b"
-  primary-hover: "#0b5a4a"
-  primary-active: "#084a3d"
-  primary-tint: "#e5f2ee"
-  primary-tint-2: "#cfe7df"
-  canvas: "#f3f5f7"
-  rail: "#eceff3"
+  primary: "#18181b"
+  primary-hover: "#27272a"
+  primary-active: "#09090b"
+  accent: "#7c3aed"
+  accent-hover: "#6d28d9"
+  accent-soft: "#a78bfa"
+  accent-tint: "#f5f3ff"
+  accent-tint-2: "#ddd6fe"
+  canvas: "#fafafa"
+  rail: "#f4f4f5"
   surface: "#ffffff"
-  surface-2: "#f8f9fb"
-  line: "#e0e5ea"
-  line-strong: "#c9d1d9"
-  ink: "#121c26"
-  ink-2: "#44515e"
-  ink-3: "#5f6b78"
-  success: "#08703f"
-  success-tint: "#e8f6ee"
-  warning: "#8a5400"
-  warning-tint: "#fff4e0"
-  danger: "#b4231b"
-  danger-tint: "#fdf0ef"
-  info: "#1a56b8"
-  info-tint: "#edf4fe"
+  line: "#e4e4e7"
+  line-strong: "#d4d4d8"
+  ink: "#09090b"
+  ink-2: "#3f3f46"
+  ink-3: "#71717a"
+  success: "#15803d"
+  warning: "#a16207"
+  danger: "#b91c1c"
+  info: "#1d4ed8"
 typography:
   display:
-    fontFamily: "Figtree Variable, Figtree, system-ui, sans-serif"
-    fontSize: "2.5rem"
-    fontWeight: 750
+    fontFamily: "Geist Variable, Geist, system-ui, sans-serif"
+    fontSize: "3rem"
+    fontWeight: 600
     lineHeight: 1.05
     letterSpacing: "-0.02em"
   headline:
-    fontFamily: "Figtree Variable, Figtree, system-ui, sans-serif"
-    fontSize: "1.75rem"
-    fontWeight: 700
+    fontFamily: "Geist Variable, Geist, system-ui, sans-serif"
+    fontSize: "2rem"
+    fontWeight: 600
+    letterSpacing: "-0.035em"
     lineHeight: 1.2
   title:
-    fontFamily: "Figtree Variable, Figtree, system-ui, sans-serif"
+    fontFamily: "Geist Variable, Geist, system-ui, sans-serif"
     fontSize: "1.125rem"
     fontWeight: 650
     lineHeight: 1.3
   body:
-    fontFamily: "Figtree Variable, Figtree, system-ui, sans-serif"
+    fontFamily: "Geist Variable, Geist, system-ui, sans-serif"
     fontSize: "0.9375rem"
     fontWeight: 400
     lineHeight: 1.5
     fontFeature: "\"tnum\" 1"
   label:
-    fontFamily: "Figtree Variable, Figtree, system-ui, sans-serif"
+    fontFamily: "Geist Variable, Geist, system-ui, sans-serif"
     fontSize: "0.8125rem"
     fontWeight: 600
     lineHeight: 1.4
 rounded:
-  sm: "6px"
-  md: "8px"
-  lg: "10px"
+  sm: "10px"
+  md: "16px"
+  lg: "24px"
 spacing:
   xs: "4px"
   sm: "8px"
@@ -67,8 +66,8 @@ components:
     backgroundColor: "{colors.primary}"
     textColor: "{colors.surface}"
     rounded: "{rounded.md}"
-    height: "40px"
-    padding: "0 16px"
+    height: "44px"
+    padding: "0 18px"
   button-primary-hover:
     backgroundColor: "{colors.primary-hover}"
   button-secondary:
@@ -82,11 +81,10 @@ components:
     rounded: "{rounded.md}"
     height: "40px"
   input:
-    backgroundColor: "{colors.surface}"
     textColor: "{colors.ink}"
     rounded: "{rounded.md}"
-    height: "40px"
-    padding: "0 12px"
+    height: "48px"
+    padding: "0 16px"
   card:
     backgroundColor: "{colors.surface}"
     rounded: "{rounded.lg}"
@@ -101,116 +99,100 @@ components:
     rounded: "{rounded.md}"
 ---
 
-# Design System: BEE Check
+# Design System: Klim
 
 ## Overview
 
-**Creative North Star: "The Working Ledger"**
+**Creative North Star: "The Quiet Glass Desk"**
 
-BEE Check is a working tool for accountants and consultants who score clients' B-BBEE certificates. It sits in the same category as Xero: white working surfaces on a cool grey canvas, one deep green for action, and figures that line up. The interface stays quiet so the numbers, targets and clause references can be read at a glance and checked against the codes.
+Klim is a working tool for accountants and consultants who score clients' B-BBEE certificates. Its look follows a shadcn-style sign-in theme the owner chose: near-white ground, a near-black primary button, a violet accent for links, focus and fills, soft glass-tinted inputs, generous 16 to 24px radii, and a staggered fade-in as each step opens. The numbers stay the point: Geist with tabular figures, right-aligned in fields and tables.
 
-Density is moderate: a left rail of seven steps, one main column up to 880px wide, and cards that each hold one job. Every figure uses tabular numerals. Colour carries meaning only: green for the next action and progress, amber for sub-minimum risk, red for non-compliance, blue for information. There is no themed world, no illustration and no gradient. The owner rejected a dark, gold-accented look; this system is light-only.
+Light only. The owner rejected a dark, gold-accented look.
 
 **Key Characteristics:**
-- Cool neutral canvas, white surfaces, one green action colour.
-- One sans family (Figtree) with tabular figures everywhere.
-- 8px radius, hairline borders, soft one-step shadows.
-- States always carry a word or icon, never colour alone.
-- The printed gap report uses the same tokens on A4.
+- Zinc neutrals, white cards, near-black primary, violet accent.
+- Geist throughout with tabular figures; tight negative tracking on headings.
+- Glass inputs: a 4% ink tint that turns violet on focus.
+- 16px controls, 24px cards, hairline borders.
+- Each step's title, intro, cards and footer rise in sequence (fade, 12px slide, blur to sharp).
 
 ## Colors
 
-A restrained cool-neutral palette with a single deep green voice and four state colours.
-
 ### Primary
-- **Ledger Green** (#0f6e5b): primary buttons, the current-step number, checkmarks on completed steps, the level-ladder marker and progress fills. Hover deepens to #0b5a4a, pressed to #084a3d.
-- **Green Wash** (#e5f2ee, #cfe7df): selected and filled backgrounds, such as the achieved band on the level ladder.
+- **Ink Button** (#18181b): primary buttons, the current-step disc, checkmarks, the ladder marker, tab underline. Hover #27272a, pressed #09090b.
+
+### Accent
+- **Violet** (#7c3aed, hover #6d28d9): links.
+- **Soft Violet** (#a78bfa): focus borders (at 70%) and the focus outline; the focus ring is rgb(139 92 246 / 0.25).
+- **Violet Wash** (#f5f3ff, #ddd6fe): selection, the achieved band on the level ladder, selected rows.
 
 ### Neutral
-- **Cool Canvas** (#f3f5f7): the app background behind cards.
-- **Rail Grey** (#eceff3): the step rail and the segmented-control track.
-- **Paper White** (#ffffff) and **Surface Tint** (#f8f9fb): cards, inputs, table headers, card footers.
-- **Hairline** (#e0e5ea) and **Strong Hairline** (#c9d1d9): dividers and input borders.
-- **Ink** (#121c26), **Ink 2** (#44515e), **Ink 3** (#5f6b78): headings and figures, body text, secondary text and labels.
+- **Canvas** (#fafafa), **Rail** (#f4f4f5), **Card** (#ffffff), **Hairline** (#e4e4e7 / #d4d4d8).
+- **Ink** (#09090b), **Ink 2** (#3f3f46), **Ink 3** (#71717a).
 
 ### State
-- **Success** (#08703f on #e8f6ee), **Warning** (#8a5400 on #fff4e0), **Danger** (#b4231b on #fdf0ef), **Info** (#1a56b8 on #edf4fe). Each is used with a matching icon and a written title.
+- Success #15803d, Warning #a16207, Danger #b91c1c, Info #1d4ed8, each on its pale tint with an icon and a written title.
 
 ### Named Rules
-**The One Voice Rule.** Ledger Green is the only colour that means "do this next". It never decorates.
+**The Two Voices Rule.** Near-black says "do this next"; violet says "you can go here" or "you are here". Neither decorates.
 
-**The Meaning-Only Rule.** Amber, red and blue appear only for a state the user must understand: sub-minimum risk, non-compliance, information.
+**The Meaning-Only Rule.** Amber, red and blue appear only for a state the user must understand.
 
 ## Typography
 
-**Body and display font:** Figtree Variable (fallback system-ui).
-
-**Character:** A friendly, geometric working sans. One family keeps the tool calm; weight and size carry the hierarchy.
+**Font:** Geist Variable (fallback system-ui), one family.
 
 ### Hierarchy
-- **Display** (750, 40px, 1.05): the recognition level on Results.
-- **Headline** (700, 28px): the step title at the top of each page (22px under 640px).
-- **Title** (650, 18px): card headings.
-- **Body** (400, 15px, 1.5): instructions and notes, kept to about 68ch.
-- **Label** (600, 13–14px): field labels, table headers, buttons.
+- **Display** (600, 48px): reserved for a single headline figure.
+- **Headline** (600, 32px, -0.035em): step titles (22px under 640px).
+- **Title** (600, 18px): card headings.
+- **Body** (400, 15px, 1.5): instructions, about 68ch.
+- **Label** (500 to 600, 13 to 14px): field labels, table headers, buttons.
 
-### Named Rules
-**The Tabular Rule.** `font-variant-numeric: tabular-nums` is set on the body. Figures in tables and summary tiles must line up.
+**The Tabular Rule.** Body sets tabular numerals; figures line up.
 
 ## Layout
 
-A top bar (60px) holds the brand, client name, scorecard chip, unsaved state and Open/Save. Below it, a 264px left rail lists the seven steps and stays sticky; the main column is centred with a maximum width of 880px and 28–32px padding. Under 900px the rail is replaced by a step dropdown with a progress bar, and padding drops to 16px. Under 640px the Continue button shortens to "Continue". Grid and flex children use `minmax(0, 1fr)` so wide tables scroll inside their card rather than widening the page.
+A 60px top bar (brand, client, scorecard chip, unsaved state, Open/Save), a 264px sticky step rail, and a centred main column up to 880px. Under 900px the rail becomes a step dropdown with a progress bar; under 640px Continue shortens to "Continue". Grid children use `minmax(0, 1fr)` so wide tables scroll inside their card, with a swipe hint on phones.
 
 ## Elevation & Depth
 
-Mostly flat with tonal layering: canvas, rail and surface are three steps of the same cool neutral. Cards add one soft shadow; popovers use a larger one.
-
-### Shadow Vocabulary
-- **Rest** (`0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.08)`): cards and the current step.
-- **Raised** (`0 4px 8px -2px rgb(16 24 40 / 0.08), 0 2px 4px -2px rgb(16 24 40 / 0.05)`): hovered interactive surfaces.
-- **Pop** (`0 12px 24px -6px rgb(16 24 40 / 0.16), 0 4px 8px -4px rgb(16 24 40 / 0.08)`): menus and the mobile step list.
-- **Focus** (`0 0 0 3px rgb(15 110 91 / 0.28)`): every focusable control.
+Flat with faint lift. Cards carry `0 1px 2px rgb(9 9 11 / 0.04), 0 1px 3px rgb(9 9 11 / 0.05)`; hover lift `0 4px 12px -2px rgb(9 9 11 / 0.06)`; menus `0 16px 32px -8px rgb(9 9 11 / 0.14)`.
 
 ## Shapes
 
-8px is the house radius for buttons, inputs and the current step; cards use 10px; small chips and segment buttons use 6px. Borders are 1px hairlines. No coloured side stripes, no pill-shaped buttons.
+Controls 16px, cards 24px, chips and segments 10px, switches and badges fully round. 1px hairlines; no coloured side stripes.
 
 ## Components
 
 ### Buttons
-- **Shape:** 8px radius, 40px tall (32px small).
-- **Primary:** Ledger Green, white label, 600 weight.
-- **Secondary:** white with a strong hairline border.
-- **Ghost:** no fill; a faint ink wash on hover.
-- **Focus:** the green focus ring; never remove it.
+44px tall (36px small), 16px radius. Primary: near-black with white text. Secondary: white with a hairline. Ghost: no fill, faint ink wash on hover. Focus shows the violet ring.
 
-### Inputs / Fields
-- **Style:** 40px, white, strong hairline, 8px radius. Numbers are right-aligned, with "R" as a prefix and "%" or "people" as a suffix.
-- **Focus:** the border turns green and the focus ring shows.
-- **Error:** red border, with the message written below.
+### Inputs
+48px, glass fill rgb(9 9 11 / 0.04), hairline border, 16px radius, 16px side padding. Focus: border violet at 70%, fill rgb(139 92 246 / 0.08), violet ring. Numbers right-aligned with R, %, or "people" affixes. Disabled: rail grey, muted text, not-allowed cursor.
 
 ### Cards
-- White, 10px radius, hairline border, rest shadow, 18–20px padding. A card footer uses Surface Tint.
+White, 24px radius, hairline, rest shadow.
 
-### Segmented control
-- A Rail Grey track with white selected segments. Used for "Indicators / Points" and "Rand amounts / Percentages".
-
-### Navigation (step rail)
-- Each step shows a status mark: green check for done, green numbered disc for current, lock for not yet reachable. The current step sits on a white chip with the rest shadow.
+### Step rail
+Done steps show a check, the current step a near-black disc on a white chip, locked steps a lock in muted text.
 
 ### Level ladder (signature)
-- A horizontal band from Non-compliant to Level 1, with each level's width set by its points threshold. A green wash fills up to the score, and a green marker carries the points. Tick labels thin out on narrow widths.
+Bands from Non-compliant to Level 1 sized by their thresholds; a violet wash fills to the score and a near-black marker carries the points.
+
+### Motion
+`fadeSlideIn`: opacity 0, blur 4px, translateY 12px to rest, 0.6s cubic-bezier(0.16, 1, 0.3, 1). Delays: title 0.05s, intro 0.12s, cards 0.2s / 0.28s / 0.36s / 0.44s, footer 0.5s. Off under prefers-reduced-motion.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** use Ledger Green (#0f6e5b) for the one next action on each screen.
-- **Do** give every state notice an icon and a written title.
-- **Do** show the clause reference beside each target ("cl. 400 2.1.1").
-- **Do** keep figures tabular and right-aligned in tables.
+- **Do** keep one near-black primary action per screen.
+- **Do** use violet only for links, focus, selection and progress fills.
+- **Do** give every state notice an icon and a title.
+- **Do** show the clause beside each target.
 
 ### Don't:
-- **Don't** use a dark theme or gold accents; the owner rejected that look.
-- **Don't** add gradients, gradient text, eyebrows or kicker labels above headings, or emoji icons.
+- **Don't** use a dark theme or gold accents.
+- **Don't** add gradient text, eyebrows, emoji icons, or invented testimonials.
 - **Don't** use colour as the only signal of a state.
-- **Don't** add a coloured left-border stripe thicker than 1px to cards or notices.
+- **Don't** add coloured left stripes thicker than 1px.

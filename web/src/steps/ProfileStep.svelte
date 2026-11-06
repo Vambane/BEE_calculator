@@ -52,7 +52,7 @@
 >
   <Card
     title="Privacy and consent"
-    description="BEE Check runs entirely in your browser. Nothing you enter is sent to a server."
+    description="Klim runs entirely in your browser. Nothing you enter is sent to a server."
   >
     <div class="privacy">
       <p>
@@ -240,23 +240,24 @@
     grid-column: span 2;
   }
   input.text {
-    height: 40px;
+    height: 48px;
     width: 100%;
-    padding: 0 0.75rem;
-    border: 1px solid var(--line-strong);
+    padding: 0 1rem;
+    border: 1px solid var(--line);
     border-radius: var(--radius);
-    background: var(--surface);
+    background: var(--glass);
     font-size: var(--t-md);
     transition:
       border-color 150ms var(--ease),
       box-shadow 150ms var(--ease);
   }
   input.text:hover:not(:disabled) {
-    border-color: #aeb8c3;
+    border-color: #a1a1aa;
   }
   input.text:focus-visible {
     outline: none;
-    border-color: var(--primary);
+    border-color: rgb(167 139 250 / 0.7);
+    background: var(--glass-focus);
     box-shadow: var(--focus);
   }
   input.text:disabled {

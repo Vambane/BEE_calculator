@@ -391,12 +391,12 @@
     padding: 0.65rem 0.8rem;
     border-radius: var(--radius);
     background: var(--success-tint);
-    color: #0b4f30;
+    color: #14532d;
     font-size: var(--t-sm);
   }
   .submins li.fail {
     background: var(--warning-tint);
-    color: #6b4100;
+    color: #713f12;
   }
   .submins li > :global(svg) {
     flex: none;
