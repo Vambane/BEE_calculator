@@ -6,8 +6,6 @@ from datetime import date
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
-from jinja2 import Environment, FileSystemLoader, select_autoescape
-
 from bee.levels import LEVELS
 from bee.models import ScoreResult
 from bee.rules import Scorecard
@@ -17,6 +15,30 @@ ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = ROOT / "report"
 # The only places the PDF may load files from (template CSS and self-hosted fonts).
 ASSET_DIRS = (TEMPLATE_DIR, ROOT / "static" / "fonts")
+
+# Plain names for sub-minimum groups (engine keys are short codes).
+SUBMIN_GROUP_LABELS = {
+    "pp": "Preferential Procurement",
+    "sd": "Supplier Development",
+    "ed": "Enterprise Development",
+    "net_value": "Net Value",
+}
+
+
+def num(x: float) -> str:
+    """A target or weighting without float noise: 25.0001 -> '25', 2.5 -> '2.5'."""
+    return f"{round(x, 2):g}"
+
+
+def submin_label(card: Scorecard, element: str, group: str | None) -> str:
+    """'Ownership: Net Value' style label for a sub-minimum check."""
+    try:
+        name = card.element(element).name
+    except (KeyError, ValueError, StopIteration):
+        name = element
+    if not group:
+        return name
+    return f"{name}: {SUBMIN_GROUP_LABELS.get(group, group.replace('_', ' '))}"
 
 
 def allowed_asset(url: str) -> bool:
@@ -45,8 +67,14 @@ def _asset_fetcher():
     return AssetFetcher(allowed_protocols=("file",), allow_redirects=False)
 
 
-def _jinja_env() -> Environment:
-    """Jinja env with HTML/XML autoescape on (XSS-safe company/user fields in PDF HTML)."""
+def _jinja_env():
+    """Jinja env with HTML/XML autoescape on (XSS-safe company/user fields in PDF HTML).
+
+    Imported lazily so the report context (``_report_context``) also works where Jinja is not
+    installed, such as the browser build, which renders the report itself.
+    """
+    from jinja2 import Environment, FileSystemLoader, select_autoescape
+
     return Environment(
         loader=FileSystemLoader(TEMPLATE_DIR),
         autoescape=select_autoescape(["html", "xml"]),
@@ -84,12 +112,12 @@ def _elements(card: Scorecard, result: ScoreResult, draft: bool) -> list[dict]:
                 gap=max(mx - pts, 0.0),
                 submin_failed=e.key in failed,
                 explainer=(
-                    f"{len(inds)} indicator(s) on this scorecard."
+                    f"{len(inds)} indicator{'' if len(inds) == 1 else 's'} on this scorecard."
                     if inds
                     else "Points entered against the element weighting."
                 ),
                 target_text="; ".join(
-                    f"{i.name} (target {i.target:g}, {i.points:g} pts)" for i in tips
+                    f"{i.name} (target {num(i.target)}, {num(i.points)} pts)" for i in tips
                 )
                 or e.name,
                 value_text=f"{pts:.1f} pts",
@@ -166,7 +194,7 @@ def _report_context(
         failed = [c for c in result.submin_checks if not c.passed]
         discount_reason = (
             "; ".join(
-                f"{c.element}{('/' + c.group) if c.group else ''} {c.achieved:.1f}/{c.required:g}"
+                f"{submin_label(card, c.element, c.group)} {num(c.achieved)} of {num(c.required)}"
                 for c in failed
             )
             or "priority-element sub-minimum missed"
@@ -177,7 +205,7 @@ def _report_context(
     gap = None if result.level_points is None else _next_level_gap(result.level_points)
     return dict(
         example=example,
-        prepared_date=date.today().strftime("%-d %b %Y"),
+        prepared_date=f"{date.today().day} {date.today():%b %Y}",
         scorecard_label=f"Scorecard: {scorecard_label}",
         sector_note=sector_note,
         company=dict(
@@ -192,7 +220,11 @@ def _report_context(
         ),
         result=dict(
             level_label=result.level_label
-            + (f" (was {result.level_before_discount})" if result.discounted else ""),
+            + (
+                f" (was Level {result.level_before_discount})"
+                if result.discounted and (result.level_before_discount or 9) < 9
+                else ""
+            ),
             total=result.total_points or 0.0,
             max_total=out_of,
             discount_applied=result.discounted,
@@ -219,8 +251,7 @@ def _report_context(
             "figure); flow-through structures are not modelled.",
             "QSE priority-element sub-minimums use 40% of the QSE weightings (interpretation).",
             "Draft Transformation Fund (when enabled) scores on the indicator sum "
-            "(ESD 45 Fund / 40 ED+SD), not scaled to 55 — DRAFT, NOT IN FORCE.",
-            "This report is a planning aid, not a SANAS verification certificate.",
+            "(ESD 45 Fund / 40 ED+SD), not scaled to 55. DRAFT, NOT IN FORCE.",
         ],
     )
 

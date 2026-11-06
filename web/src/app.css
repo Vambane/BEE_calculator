@@ -1,0 +1,196 @@
+@import "@fontsource-variable/figtree/wght.css";
+
+:root {
+  /* Neutrals: cool, never warm cream. Canvas < rail < surface. */
+  --canvas: #f3f5f7;
+  --rail: #eceff3;
+  --surface: #ffffff;
+  --surface-2: #f8f9fb;
+  --line: #e0e5ea;
+  --line-strong: #c9d1d9;
+
+  --ink: #121c26;
+  --ink-2: #44515e;
+  --ink-3: #5f6b78;
+  --ink-inverse: #ffffff;
+
+  /* One action colour. */
+  --primary: #0f6e5b;
+  --primary-hover: #0b5a4a;
+  --primary-active: #084a3d;
+  --primary-tint: #e5f2ee;
+  --primary-tint-2: #cfe7df;
+
+  /* States carry meaning only. */
+  --success: #08703f;
+  --success-tint: #e8f6ee;
+  --warning: #8a5400;
+  --warning-tint: #fff4e0;
+  --warning-line: #f3d7a4;
+  --danger: #b4231b;
+  --danger-tint: #fdf0ef;
+  --danger-line: #f5c6c2;
+  --info: #1a56b8;
+  --info-tint: #edf4fe;
+  --info-line: #c8dbf7;
+
+  --radius: 8px;
+  --radius-sm: 6px;
+  --shadow-1: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.08);
+  --shadow-2: 0 4px 8px -2px rgb(16 24 40 / 0.08), 0 2px 4px -2px rgb(16 24 40 / 0.05);
+  --shadow-pop: 0 12px 24px -6px rgb(16 24 40 / 0.16), 0 4px 8px -4px rgb(16 24 40 / 0.08);
+  --focus: 0 0 0 3px rgb(15 110 91 / 0.28);
+
+  --font: "Figtree Variable", "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* 1.2 scale on a 15px base */
+  --t-xs: 0.8125rem; /* 13 */
+  --t-sm: 0.875rem; /* 14 */
+  --t-md: 0.9375rem; /* 15 */
+  --t-lg: 1.125rem; /* 18 */
+  --t-xl: 1.375rem; /* 22 */
+  --t-2xl: 1.75rem; /* 28 */
+  --t-3xl: 2.5rem; /* 40 */
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --topbar-h: 60px;
+  --rail-w: 264px;
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: var(--t-md);
+  line-height: 1.5;
+  font-feature-settings: "tnum" 1;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  caret-color: var(--primary);
+}
+
+::selection {
+  background: var(--primary-tint-2);
+  color: var(--ink);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  margin: 0;
+  line-height: 1.25;
+  font-weight: 650;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
+
+p {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+a {
+  color: var(--primary);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+a:hover {
+  color: var(--primary-hover);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Scrollbars themed from the neutrals */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line-strong);
+  border-radius: 10px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Data tables shared by calculators and results */
+table.data {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-sm);
+}
+table.data th {
+  text-align: left;
+  font-size: var(--t-xs);
+  font-weight: 650;
+  color: var(--ink-3);
+  padding: 0.5rem 0.6rem;
+  border-bottom: 1px solid var(--line-strong);
+  white-space: nowrap;
+}
+table.data td {
+  padding: 0.6rem 0.6rem;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+table.data tbody tr:hover td {
+  background: #fafbfc;
+}
+table.data tfoot th,
+table.data tfoot td {
+  padding: 0.6rem;
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 0;
+  font-size: var(--t-sm);
+  color: var(--ink);
+}
+table.data .r {
+  text-align: right;
+}
