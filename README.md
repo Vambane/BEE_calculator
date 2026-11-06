@@ -22,6 +22,26 @@ streamlit run app.py
 - **Results:** recognition level, total points, distance to next level, and a **Black women / Black female contribution: X of Y pts** line (not a separate element). PDF gap report available after an email unlock for the session.
 - Planning tool only; confirm with your verification agency and sector code.
 
+## Web app (BEE Check)
+`web/` is a static rebuild of the same calculator. The Python engine (`bee/`, `bee_ui/core.py`, `bee_ui/client_file.py`) runs in the browser through Pyodide, so client figures never leave the user's machine and there is no server to run. `bee_web/api.py` is the thin JSON layer the web app calls; no scoring rule lives there. The gap report prints to PDF from the browser. Design rules are in [DESIGN.md](DESIGN.md).
+
+```bash
+cd web
+npm ci
+npm run dev           # http://localhost:5173
+npm run build         # packs the engine, writes web/dist
+npm run test:engine   # loads the packed engine in Node and scores one scorecard
+```
+
+### Free hosting on Cloudflare Pages
+1. In the Cloudflare dashboard, open **Workers & Pages → Create → Pages → Connect to Git** and pick this repository.
+2. Set **Root directory** to `web`, **Build command** to `npm run build`, **Build output directory** to `dist`. Leave the framework preset as None. Python is not needed at build time.
+3. Deploy. Every push to `main` redeploys, and each pull request gets its own preview URL.
+
+`web/public/_headers` sets a strict Content Security Policy (same-origin only; `'wasm-unsafe-eval'` for Pyodide) and cache rules. The free plan serves static requests without a limit and allows 500 builds a month. The first visit downloads about 10 MB (the Python runtime); later visits use the browser cache.
+
+The web app has no email gate. Review [docs/PRIVACY_WEB.md](docs/PRIVACY_WEB.md) before publishing it.
+
 ## Notes
 - Race- and gender-linked aggregates are processed only for the scorecard (see [docs/PRIVACY.md](docs/PRIVACY.md)).
 - Sector codes that are not loaded fall back to the Generic / QSE cards with a warning.
