@@ -73,7 +73,7 @@
             <Notice tone="danger" title="The calculator could not start">
               <p>
                 Your browser could not load the scoring engine ({app.failed}). Reload the page to try
-                again. BEE Check needs a recent version of Chrome, Edge, Firefox or Safari.
+                again. Nyuka needs a recent version of Chrome, Edge, Firefox or Safari.
               </p>
             </Notice>
           </div>

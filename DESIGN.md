@@ -1,5 +1,5 @@
 ---
-name: BEE Check
+name: Nyuka
 description: A calm, exact B-BBEE scorecard estimator for accountants and consultants, in a light shadcn-style glass theme.
 colors:
   primary: "#18181b"
@@ -99,13 +99,13 @@ components:
     rounded: "{rounded.md}"
 ---
 
-# Design System: BEE Check
+# Design System: Nyuka
 
 ## Overview
 
 **Creative North Star: "The Quiet Glass Desk"**
 
-BEE Check is a working tool for accountants and consultants who score clients' B-BBEE certificates. Its look follows a shadcn-style sign-in theme the owner chose: near-white ground, a near-black primary button, a violet accent for links, focus and fills, soft glass-tinted inputs, generous 16 to 24px radii, and a staggered fade-in as each step opens. The numbers stay the point: Geist with tabular figures, right-aligned in fields and tables.
+Nyuka is a working tool for accountants and consultants who score clients' B-BBEE certificates. Its look follows a shadcn-style sign-in theme the owner chose: near-white ground, a near-black primary button, a violet accent for links, focus and fills, soft glass-tinted inputs, generous 16 to 24px radii, and a staggered fade-in as each step opens. The numbers stay the point: Geist with tabular figures, right-aligned in fields and tables.
 
 Light only. The owner rejected a dark, gold-accented look.
 

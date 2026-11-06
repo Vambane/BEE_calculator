@@ -52,7 +52,7 @@
 >
   <Card
     title="Privacy and consent"
-    description="BEE Check runs entirely in your browser. Nothing you enter is sent to a server."
+    description="Nyuka runs entirely in your browser. Nothing you enter is sent to a server."
   >
     <div class="privacy">
       <p>

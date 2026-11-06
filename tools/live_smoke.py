@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Host-up smoke for BEE Check on Streamlit Community Cloud.
+"""Host-up smoke for Nyuka on Streamlit Community Cloud.
 
 Community Cloud redirects anonymous clients through share.streamlit.io auth cookies, then
 serves a JS shell. This script checks HTTP 200 after that dance and looks for a distinctive
@@ -21,7 +21,7 @@ import urllib.request
 DEFAULT_URL = "https://beecalculator.streamlit.app/"
 # Prefer app strings when present; fall back to Cloud shell markers (SPA first paint).
 MARKERS = (
-    "BEE Check",
+    "Nyuka",
     "Privacy",
     "streamlitAppPage",
     "You need to enable JavaScript to run this app",
@@ -41,7 +41,7 @@ def fetch(url: str, timeout: float) -> tuple[int, str]:
 
 
 def main() -> int:
-    p = argparse.ArgumentParser(description="Live host-up smoke for BEE Check")
+    p = argparse.ArgumentParser(description="Live host-up smoke for Nyuka")
     p.add_argument("--url", default=DEFAULT_URL)
     p.add_argument("--timeout", type=float, default=45.0)
     args = p.parse_args()

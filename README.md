@@ -1,6 +1,6 @@
-# Streamlit B-BBEE Calculator
+# Nyuka: B-BBEE scorecard planner
 
-Streamlit app to estimate a South African B-BBEE score and recognition level on the
+Nyuka (isiZulu and isiXhosa for "climb") estimates a South African B-BBEE score and recognition level on the
 Generic (Amended Codes 2019), QSE (Code Series 600), and loaded sector scorecards.
 
 ## Run locally
@@ -22,7 +22,7 @@ streamlit run app.py
 - **Results:** recognition level, total points, distance to next level, and a **Black women / Black female contribution: X of Y pts** line (not a separate element). PDF gap report available after an email unlock for the session.
 - Planning tool only; confirm with your verification agency and sector code.
 
-## Web app (BEE Check)
+## Web app (Nyuka)
 `web/` is a static rebuild of the same calculator. The Python engine (`bee/`, `bee_ui/core.py`, `bee_ui/client_file.py`) runs in the browser through Pyodide, so client figures never leave the user's machine and there is no server to run. `bee_web/api.py` is the thin JSON layer the web app calls; no scoring rule lives there. The gap report prints to PDF from the browser. Design rules are in [DESIGN.md](DESIGN.md).
 
 ```bash

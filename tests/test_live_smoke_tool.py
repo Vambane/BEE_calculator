@@ -24,6 +24,6 @@ def test_live_smoke_help_exits_zero(capsys):
 def test_live_smoke_markers_include_app_and_shell():
     ns = runpy.run_path(str(SCRIPT), run_name="not_main")
     markers = ns["MARKERS"]
-    assert "BEE Check" in markers
+    assert "Nyuka" in markers
     assert "Privacy" in markers
     assert "streamlitAppPage" in markers
