@@ -39,7 +39,7 @@
     <article class="paper" aria-label="Gap report">
       <header class="rh">
         <div class="brand">
-          <svg width="18" height="18" viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="1" width="20" height="20" rx="5" fill="#0f6e5b" /><path d="M6.2 11.4l3.1 3.1 6.5-7" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          <svg width="18" height="18" viewBox="0 0 22 22" aria-hidden="true"><rect x="1" y="1" width="20" height="20" rx="5" fill="#18181b" /><path d="M6.2 11.4l3.1 3.1 6.5-7" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
           BEE Check · B-BBEE gap report
         </div>
         <div class="date">Prepared {rep.prepared_date}</div>
@@ -210,7 +210,7 @@
     padding: 2mm 3mm;
     border-radius: 4px;
     background: var(--warning-tint);
-    color: #6b4100;
+    color: #713f12;
     font-size: 9pt;
   }
   .headline {

@@ -6,32 +6,37 @@
     "colorMeta": {
       "primary": {
         "role": "primary",
-        "displayName": "Ledger Green",
-        "canonical": "#0f6e5b",
+        "displayName": "Ink Button",
+        "canonical": "#18181b"
+      },
+      "accent": {
+        "role": "secondary",
+        "displayName": "Violet",
+        "canonical": "#7c3aed",
         "tonalRamp": [
-          "#062e26",
-          "#084a3d",
-          "#0b5a4a",
-          "#0f6e5b",
-          "#3f8f7d",
-          "#8fc4b6",
-          "#cfe7df",
-          "#e5f2ee"
+          "#2e1065",
+          "#4c1d95",
+          "#6d28d9",
+          "#7c3aed",
+          "#8b5cf6",
+          "#a78bfa",
+          "#ddd6fe",
+          "#f5f3ff"
         ]
       },
       "canvas": {
         "role": "neutral",
-        "displayName": "Cool Canvas",
-        "canonical": "#f3f5f7",
+        "displayName": "Zinc Canvas",
+        "canonical": "#fafafa",
         "tonalRamp": [
-          "#121c26",
-          "#44515e",
-          "#5f6b78",
-          "#c9d1d9",
-          "#e0e5ea",
-          "#eceff3",
-          "#f3f5f7",
-          "#ffffff"
+          "#09090b",
+          "#27272a",
+          "#3f3f46",
+          "#71717a",
+          "#a1a1aa",
+          "#d4d4d8",
+          "#e4e4e7",
+          "#fafafa"
         ]
       }
     },
@@ -75,7 +80,7 @@
       },
       {
         "name": "focus",
-        "value": "0 0 0 3px rgb(15 110 91 / 0.28)",
+        "value": "0 0 0 3px rgb(139 92 246 / 0.28)",
         "purpose": "Focus ring on every control."
       }
     ],
@@ -84,6 +89,11 @@
         "name": "ease",
         "value": "cubic-bezier(0.16, 1, 0.3, 1)",
         "purpose": "State transitions, 150-160ms; disabled under prefers-reduced-motion."
+      },
+      {
+        "name": "fadeSlideIn",
+        "value": "opacity 0, blur 4px, translateY 12px to rest over 0.6s",
+        "purpose": "Staggered entrance of each step's title, intro, cards and footer."
       }
     ],
     "breakpoints": [
@@ -104,7 +114,7 @@
       "refersTo": "button-primary",
       "description": "The one next action on a screen.",
       "html": "<button class=\"ds-btn-primary\">Continue</button>",
-      "css": ".ds-btn-primary{height:40px;padding:0 16px;border:0;border-radius:8px;background:#0f6e5b;color:#fff;font:600 14px/1 Figtree,system-ui,sans-serif;box-shadow:0 1px 2px rgb(16 24 40/.12);cursor:pointer;transition:background-color .16s}.ds-btn-primary:hover{background:#0b5a4a}.ds-btn-primary:active{background:#084a3d}.ds-btn-primary:focus-visible{outline:none;box-shadow:0 0 0 3px rgb(15 110 91/.28)}"
+      "css": ".ds-btn-primary{height:40px;padding:0 16px;border:0;border-radius:16px;background:#18181b;color:#fff;font:600 14px/1 Geist,system-ui,sans-serif;box-shadow:0 1px 2px rgb(16 24 40/.12);cursor:pointer;transition:background-color .16s}.ds-btn-primary:hover{background:#27272a}.ds-btn-primary:active{background:#09090b}.ds-btn-primary:focus-visible{outline:none;box-shadow:0 0 0 3px rgb(139 92 246/.28)}"
     },
     {
       "name": "Secondary Button",
@@ -112,7 +122,7 @@
       "refersTo": "button-secondary",
       "description": "Supporting actions such as Save client file.",
       "html": "<button class=\"ds-btn-secondary\">Save client file</button>",
-      "css": ".ds-btn-secondary{height:40px;padding:0 16px;border:1px solid #c9d1d9;border-radius:8px;background:#fff;color:#121c26;font:600 14px/1 Figtree,system-ui,sans-serif;cursor:pointer}.ds-btn-secondary:hover{background:#f8f9fb;border-color:#b6c0ca}.ds-btn-secondary:focus-visible{outline:none;box-shadow:0 0 0 3px rgb(15 110 91/.28)}"
+      "css": ".ds-btn-secondary{height:40px;padding:0 16px;border:1px solid #c9d1d9;border-radius:16px;background:#fff;color:#121c26;font:600 14px/1 Geist,system-ui,sans-serif;cursor:pointer}.ds-btn-secondary:hover{background:#f8f9fb;border-color:#b6c0ca}.ds-btn-secondary:focus-visible{outline:none;box-shadow:0 0 0 3px rgb(139 92 246/.28)}"
     },
     {
       "name": "Rand Input",
@@ -120,7 +130,7 @@
       "refersTo": "input",
       "description": "Right-aligned figure with a unit prefix.",
       "html": "<label class=\"ds-field\"><span class=\"ds-pre\">R</span><input class=\"ds-input\" value=\"8 000 000\"></label>",
-      "css": ".ds-field{display:flex;align-items:center;height:40px;width:280px;border:1px solid #c9d1d9;border-radius:8px;background:#fff;font:15px Figtree,system-ui,sans-serif;font-variant-numeric:tabular-nums}.ds-field:focus-within{border-color:#0f6e5b;box-shadow:0 0 0 3px rgb(15 110 91/.28)}.ds-pre{padding-left:12px;color:#5f6b78}.ds-input{flex:1;border:0;outline:0;text-align:right;padding:0 12px;font:inherit;color:#121c26;background:none}"
+      "css": ".ds-field{display:flex;align-items:center;height:40px;width:280px;border:1px solid #c9d1d9;border-radius:16px;background:#fff;font:15px Geist,system-ui,sans-serif;font-variant-numeric:tabular-nums}.ds-field:focus-within{border-color:#18181b;box-shadow:0 0 0 3px rgb(139 92 246/.28)}.ds-pre{padding-left:12px;color:#5f6b78}.ds-input{flex:1;border:0;outline:0;text-align:right;padding:0 12px;font:inherit;color:#121c26;background:none}"
     },
     {
       "name": "Card",
@@ -128,7 +138,7 @@
       "refersTo": "card",
       "description": "One job per card.",
       "html": "<section class=\"ds-card\"><h2>Indicators</h2><p>Target 25% \u00b7 4 pts \u00b7 cl. 100 2.1.1</p></section>",
-      "css": ".ds-card{background:#fff;border:1px solid #e0e5ea;border-radius:10px;box-shadow:0 1px 2px rgb(16 24 40/.06),0 1px 3px rgb(16 24 40/.08);padding:18px 20px 20px;font:15px/1.5 Figtree,system-ui,sans-serif;color:#44515e}.ds-card h2{margin:0 0 6px;font-size:18px;color:#121c26}"
+      "css": ".ds-card{background:#fff;border:1px solid #e0e5ea;border-radius:24px;box-shadow:0 1px 2px rgb(16 24 40/.06),0 1px 3px rgb(16 24 40/.08);padding:18px 20px 20px;font:15px/1.5 Geist,system-ui,sans-serif;color:#44515e}.ds-card h2{margin:0 0 6px;font-size:18px;color:#121c26}"
     },
     {
       "name": "Segmented Control",
@@ -136,22 +146,22 @@
       "refersTo": "segmented",
       "description": "Switch between entry modes.",
       "html": "<div class=\"ds-seg\"><button aria-pressed=\"true\">Indicators</button><button>Points</button></div>",
-      "css": ".ds-seg{display:inline-flex;padding:3px;gap:2px;background:#eceff3;border:1px solid #e0e5ea;border-radius:10px}.ds-seg button{height:32px;padding:0 13px;border:0;border-radius:6px;background:none;font:600 14px Figtree,system-ui,sans-serif;color:#44515e;cursor:pointer}.ds-seg button[aria-pressed=true]{background:#fff;color:#121c26;box-shadow:0 1px 2px rgb(16 24 40/.06),0 1px 3px rgb(16 24 40/.08)}"
+      "css": ".ds-seg{display:inline-flex;padding:3px;gap:2px;background:#eceff3;border:1px solid #e0e5ea;border-radius:24px}.ds-seg button{height:32px;padding:0 13px;border:0;border-radius:6px;background:none;font:600 14px Geist,system-ui,sans-serif;color:#44515e;cursor:pointer}.ds-seg button[aria-pressed=true]{background:#fff;color:#121c26;box-shadow:0 1px 2px rgb(16 24 40/.06),0 1px 3px rgb(16 24 40/.08)}"
     }
   ],
   "narrative": {
-    "northStar": "The Working Ledger",
-    "overview": "A calm working tool in the Xero category: white surfaces on a cool grey canvas, one deep green for action, tabular figures everywhere. Colour carries meaning only. Light-only; the owner rejected a dark, gold-accented look.",
+    "northStar": "The Quiet Glass Desk",
+    "overview": "A light shadcn-style theme: zinc neutrals, near-black primary, violet accent for links, focus and fills, glass-tinted inputs, 16 to 24px radii, and a staggered fade-in per step. Geist with tabular figures. Light only.",
     "keyCharacteristics": [
       "Cool neutral canvas, white surfaces, one green action colour",
-      "Figtree with tabular figures",
+      "Geist with tabular figures",
       "8px radius, hairlines, soft one-step shadows",
       "States always carry a word or icon"
     ],
     "rules": [
       {
-        "name": "The One Voice Rule",
-        "body": "Ledger Green is the only colour that means do this next. It never decorates.",
+        "name": "The Two Voices Rule",
+        "body": "Near-black means do this next; violet means you can go here or you are here. Neither decorates.",
         "section": "colors"
       },
       {
@@ -173,7 +183,7 @@
     ],
     "donts": [
       "Don't use a dark theme or gold accents.",
-      "Don't add gradients, gradient text, eyebrows or emoji icons.",
+      "Don't add gradient text, eyebrows, emoji icons or invented testimonials.",
       "Don't use colour as the only signal of a state.",
       "Don't add a coloured left stripe thicker than 1px."
     ]

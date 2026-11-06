@@ -36,8 +36,8 @@
     align-items: center;
     justify-content: center;
     gap: 0.45rem;
-    height: 40px;
-    padding: 0 1rem;
+    height: 44px;
+    padding: 0 1.15rem;
     border-radius: var(--radius);
     border: 1px solid transparent;
     font-weight: 600;
@@ -52,7 +52,7 @@
       color 160ms var(--ease);
   }
   .sm {
-    height: 32px;
+    height: 36px;
     padding: 0 0.7rem;
     font-size: var(--t-xs);
   }
@@ -62,7 +62,7 @@
   .primary {
     background: var(--primary);
     color: var(--ink-inverse);
-    box-shadow: 0 1px 2px rgb(16 24 40 / 0.12);
+    box-shadow: 0 1px 2px rgb(9 9 11 / 0.12);
   }
   .primary:hover:not(:disabled) {
     background: var(--primary-hover);
@@ -74,11 +74,11 @@
     background: var(--surface);
     border-color: var(--line-strong);
     color: var(--ink);
-    box-shadow: 0 1px 2px rgb(16 24 40 / 0.05);
+    box-shadow: 0 1px 2px rgb(9 9 11 / 0.05);
   }
   .secondary:hover:not(:disabled) {
     background: var(--surface-2);
-    border-color: #b6c0ca;
+    border-color: #a1a1aa;
   }
   .secondary:active:not(:disabled) {
     background: var(--rail);
@@ -88,7 +88,7 @@
     color: var(--ink-2);
   }
   .ghost:hover:not(:disabled) {
-    background: rgb(18 28 38 / 0.06);
+    background: rgb(9 9 11 / 0.06);
     color: var(--ink);
   }
   .danger {

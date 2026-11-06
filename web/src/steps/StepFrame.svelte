@@ -57,7 +57,34 @@
   .frame {
     max-width: 880px;
     margin: 0 auto;
-    animation: enter 220ms var(--ease) both;
+  }
+  /* Staggered entrance, as on the sign-in theme: title, intro, each card, then the footer. */
+  .head h1,
+  .intro,
+  .content > :global(*),
+  .foot {
+    animation: fadeSlideIn 0.6s var(--ease) both;
+  }
+  .head h1 {
+    animation-delay: 0.05s;
+  }
+  .intro {
+    animation-delay: 0.12s;
+  }
+  .content > :global(:nth-child(1)) {
+    animation-delay: 0.2s;
+  }
+  .content > :global(:nth-child(2)) {
+    animation-delay: 0.28s;
+  }
+  .content > :global(:nth-child(3)) {
+    animation-delay: 0.36s;
+  }
+  .content > :global(:nth-child(n + 4)) {
+    animation-delay: 0.44s;
+  }
+  .foot {
+    animation-delay: 0.5s;
   }
   .wide {
     max-width: 1040px;
@@ -71,8 +98,8 @@
   }
   h1 {
     font-size: var(--t-2xl);
-    font-weight: 700;
-    letter-spacing: -0.02em;
+    font-weight: 600;
+    letter-spacing: -0.035em;
   }
   .intro {
     margin-top: 0.4rem;
@@ -106,12 +133,6 @@
   .foot :global(.btn.primary .lbl),
   .foot :global(.btn.primary .lbl .to) {
     display: inline;
-  }
-  @keyframes enter {
-    from {
-      opacity: 0;
-      transform: translateY(6px);
-    }
   }
   @media (max-width: 640px) {
     .foot :global(.btn.primary .lbl .to) {

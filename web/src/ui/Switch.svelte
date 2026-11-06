@@ -46,7 +46,7 @@
     height: 20px;
     margin-top: 1px;
     border-radius: 999px;
-    background: #b4bec8;
+    background: #d4d4d8;
     transition: background-color 180ms var(--ease);
   }
   .track:has(input:checked) {
@@ -70,7 +70,7 @@
     height: 16px;
     border-radius: 999px;
     background: #fff;
-    box-shadow: 0 1px 2px rgb(16 24 40 / 0.25);
+    box-shadow: 0 1px 2px rgb(9 9 11 / 0.25);
     transition: transform 200ms var(--ease);
     pointer-events: none;
   }

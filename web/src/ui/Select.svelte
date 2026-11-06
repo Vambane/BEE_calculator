@@ -22,10 +22,10 @@
   select {
     appearance: none;
     width: 100%;
-    height: 40px;
-    padding: 0 2.25rem 0 0.75rem;
-    background: var(--surface);
-    border: 1px solid var(--line-strong);
+    height: 48px;
+    padding: 0 2.5rem 0 1rem;
+    background: var(--glass);
+    border: 1px solid var(--line);
     border-radius: var(--radius);
     font-size: var(--t-md);
     cursor: pointer;
@@ -34,11 +34,12 @@
       box-shadow 150ms var(--ease);
   }
   select:hover:not(:disabled) {
-    border-color: #aeb8c3;
+    border-color: #a1a1aa;
   }
   select:focus-visible {
     outline: none;
-    border-color: var(--primary);
+    border-color: rgb(167 139 250 / 0.7);
+    background: var(--glass-focus);
     box-shadow: var(--focus);
   }
   select:disabled {

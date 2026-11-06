@@ -139,8 +139,8 @@
     background:
       linear-gradient(to right, var(--surface) 30%, rgb(255 255 255 / 0)) left / 2.5rem 100% no-repeat local,
       linear-gradient(to left, var(--surface) 30%, rgb(255 255 255 / 0)) right / 2.5rem 100% no-repeat local,
-      radial-gradient(farthest-side at 0 50%, rgb(16 24 40 / 0.14), transparent) left / 0.75rem 100% no-repeat scroll,
-      radial-gradient(farthest-side at 100% 50%, rgb(16 24 40 / 0.14), transparent) right / 0.75rem 100% no-repeat scroll;
+      radial-gradient(farthest-side at 0 50%, rgb(9 9 11 / 0.14), transparent) left / 0.75rem 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%, rgb(9 9 11 / 0.14), transparent) right / 0.75rem 100% no-repeat scroll;
   }
   table {
     width: 100%;
@@ -168,7 +168,7 @@
     border-bottom: 0;
   }
   tbody tr:hover td {
-    background: #fafbfc;
+    background: #fafafa;
   }
   .right {
     text-align: right;

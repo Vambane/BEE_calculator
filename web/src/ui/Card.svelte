@@ -21,7 +21,7 @@
   .card {
     background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: calc(var(--radius) + 2px);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow-1);
   }
   header {
@@ -61,6 +61,6 @@
     padding: 0.9rem 1.25rem;
     border-top: 1px solid var(--line);
     background: var(--surface-2);
-    border-radius: 0 0 calc(var(--radius) + 2px) calc(var(--radius) + 2px);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
   }
 </style>

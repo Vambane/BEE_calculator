@@ -29,7 +29,7 @@
     padding: 3px;
     gap: 2px;
     background: var(--rail);
-    border-radius: calc(var(--radius) + 2px);
+    border-radius: var(--radius);
     border: 1px solid var(--line);
   }
   label {

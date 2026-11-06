@@ -1,55 +1,62 @@
-@import "@fontsource-variable/figtree/wght.css";
+@import "@fontsource-variable/geist/wght.css";
 
 :root {
-  /* Neutrals: cool, never warm cream. Canvas < rail < surface. */
-  --canvas: #f3f5f7;
-  --rail: #eceff3;
+  /* Neutrals: shadcn zinc. Background < card. */
+  --canvas: #fafafa;
+  --rail: #f4f4f5;
   --surface: #ffffff;
-  --surface-2: #f8f9fb;
-  --line: #e0e5ea;
-  --line-strong: #c9d1d9;
+  --surface-2: #fafafa;
+  --line: #e4e4e7;
+  --line-strong: #d4d4d8;
 
-  --ink: #121c26;
-  --ink-2: #44515e;
-  --ink-3: #5f6b78;
-  --ink-inverse: #ffffff;
+  --ink: #09090b;
+  --ink-2: #3f3f46;
+  --ink-3: #71717a;
+  --ink-inverse: #fafafa;
 
-  /* One action colour. */
-  --primary: #0f6e5b;
-  --primary-hover: #0b5a4a;
-  --primary-active: #084a3d;
-  --primary-tint: #e5f2ee;
-  --primary-tint-2: #cfe7df;
+  /* Primary action: near-black, as shadcn's default primary. */
+  --primary: #18181b;
+  --primary-hover: #27272a;
+  --primary-active: #09090b;
+
+  /* Violet accent: links, focus, selection, fills. */
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-soft: #a78bfa;
+  --primary-tint: #f5f3ff;
+  --primary-tint-2: #ddd6fe;
+  --glass: rgb(9 9 11 / 0.04);
+  --glass-focus: rgb(139 92 246 / 0.08);
 
   /* States carry meaning only. */
-  --success: #08703f;
-  --success-tint: #e8f6ee;
-  --warning: #8a5400;
-  --warning-tint: #fff4e0;
-  --warning-line: #f3d7a4;
-  --danger: #b4231b;
-  --danger-tint: #fdf0ef;
-  --danger-line: #f5c6c2;
-  --info: #1a56b8;
-  --info-tint: #edf4fe;
-  --info-line: #c8dbf7;
+  --success: #15803d;
+  --success-tint: #f0fdf4;
+  --warning: #a16207;
+  --warning-tint: #fefce8;
+  --warning-line: #fde68a;
+  --danger: #b91c1c;
+  --danger-tint: #fef2f2;
+  --danger-line: #fecaca;
+  --info: #1d4ed8;
+  --info-tint: #eff6ff;
+  --info-line: #bfdbfe;
 
-  --radius: 8px;
-  --radius-sm: 6px;
-  --shadow-1: 0 1px 2px rgb(16 24 40 / 0.06), 0 1px 3px rgb(16 24 40 / 0.08);
-  --shadow-2: 0 4px 8px -2px rgb(16 24 40 / 0.08), 0 2px 4px -2px rgb(16 24 40 / 0.05);
-  --shadow-pop: 0 12px 24px -6px rgb(16 24 40 / 0.16), 0 4px 8px -4px rgb(16 24 40 / 0.08);
-  --focus: 0 0 0 3px rgb(15 110 91 / 0.28);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-lg: 24px;
+  --shadow-1: 0 1px 2px rgb(9 9 11 / 0.04), 0 1px 3px rgb(9 9 11 / 0.05);
+  --shadow-2: 0 4px 12px -2px rgb(9 9 11 / 0.06), 0 2px 4px -2px rgb(9 9 11 / 0.04);
+  --shadow-pop: 0 16px 32px -8px rgb(9 9 11 / 0.14), 0 4px 8px -4px rgb(9 9 11 / 0.06);
+  --focus: 0 0 0 3px rgb(139 92 246 / 0.25);
 
-  --font: "Figtree Variable", "Figtree", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  /* 1.2 scale on a 15px base */
+  --font: "Geist Variable", "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --t-xs: 0.8125rem; /* 13 */
   --t-sm: 0.875rem; /* 14 */
   --t-md: 0.9375rem; /* 15 */
   --t-lg: 1.125rem; /* 18 */
   --t-xl: 1.375rem; /* 22 */
-  --t-2xl: 1.75rem; /* 28 */
-  --t-3xl: 2.5rem; /* 40 */
+  --t-2xl: 2rem; /* 32 */
+  --t-3xl: 3rem; /* 48 */
 
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --topbar-h: 60px;
@@ -80,7 +87,7 @@ body {
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  caret-color: var(--primary);
+  caret-color: var(--accent);
 }
 
 ::selection {
@@ -94,8 +101,8 @@ h3,
 h4 {
   margin: 0;
   line-height: 1.25;
-  font-weight: 650;
-  letter-spacing: -0.012em;
+  font-weight: 600;
+  letter-spacing: -0.025em;
   text-wrap: balance;
 }
 
@@ -105,12 +112,12 @@ p {
 }
 
 a {
-  color: var(--primary);
+  color: var(--accent);
   text-decoration-thickness: 1px;
   text-underline-offset: 0.18em;
 }
 a:hover {
-  color: var(--primary-hover);
+  color: var(--accent-hover);
 }
 
 button,
@@ -122,7 +129,7 @@ textarea {
 }
 
 :focus-visible {
-  outline: 2px solid var(--primary);
+  outline: 2px solid var(--accent-soft);
   outline-offset: 2px;
 }
 
@@ -181,7 +188,7 @@ table.data td {
   vertical-align: middle;
 }
 table.data tbody tr:hover td {
-  background: #fafbfc;
+  background: #fafafa;
 }
 table.data tfoot th,
 table.data tfoot td {
@@ -193,4 +200,21 @@ table.data tfoot td {
 }
 table.data .r {
   text-align: right;
+}
+
+/* Entrance: fade, slide up and unblur (from the sign-in theme). */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    filter: blur(4px);
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: translateY(0);
+  }
+}
+.rise {
+  animation: fadeSlideIn 0.6s var(--ease) both;
 }

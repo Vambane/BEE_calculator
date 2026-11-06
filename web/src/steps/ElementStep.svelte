@@ -299,7 +299,7 @@
   .submins {
     padding: 1rem 1.25rem;
     border: 1px solid var(--line);
-    border-radius: calc(var(--radius) + 2px);
+    border-radius: var(--radius-lg);
     background: var(--surface-2);
     font-size: var(--t-sm);
     color: var(--ink-2);

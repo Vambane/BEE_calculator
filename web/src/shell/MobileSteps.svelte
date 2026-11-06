@@ -95,7 +95,7 @@
     cursor: pointer;
   }
   button:disabled {
-    color: #7d8894;
+    color: #8e8e96;
     cursor: default;
   }
   .current {

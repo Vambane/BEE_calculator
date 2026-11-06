@@ -16,7 +16,7 @@ Constraints: engine stays the single source of truth (Pyodide); client file form
 ## Direction contract
 
 THESIS: Category standard played straight at Xero's craft level: a calm, task-led accounting tool. Refuses the themed or decorative scorecard; the clarity of the numbers is the identity.
-OWN-WORLD: White work surfaces on a cool light-grey canvas, one deep green primary for actions and progress, state colours only where they mean something (green met, amber at risk, red blocking). One workhorse sans with tabular figures, generous but dense forms, quiet hairline dividers, 8px radius.
+OWN-WORLD: (Revised at the owner's request to a shadcn-style sign-in theme.) White cards on a zinc-50 canvas, a near-black primary for actions, violet for links, focus, selection and progress fills, state colours only where they mean something (green met, amber at risk, red blocking). Geist with tabular figures, glass-tinted 48px inputs, 16px controls and 24px cards, a staggered fade, slide and unblur entrance per step.
 STORY: The practitioner opens or starts a client, sees which steps are done and what is missing, enters figures with help beside each field, and reaches a result that says the level, the points and exactly where the next points are, then saves the file and prints the report.
 FIRST VIEWPORT: Top bar with BEE Check, the client name and scorecard chip, Open and Save client file on the right. Left rail: numbered steps with done/current/locked states. Main column: the step title, a one-line purpose, then the form card; primary Continue bottom-right of the card, Back beside it.
 FORM: Category standard (standing exit chosen by the owner), benchmark Xero; seed: seed:fc1e51026eda99cb
