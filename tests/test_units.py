@@ -304,3 +304,12 @@ def test_fresh_store_and_widget_key_helpers():
     assert not is_scenario_widget_key("draft")
     assert not is_scenario_widget_key("sector")
     assert not is_scenario_widget_key("max_step")
+
+
+def test_md_escape_neutralises_links_and_images():
+    from bee_ui.core import md_escape
+
+    out = md_escape("ACME](http://x) ![t](http://x/p.png) **bold** <b>")
+    for live in ("](", "![", "**", "<b>"):
+        assert live not in out
+    assert md_escape("Acme Pty Ltd") == "Acme Pty Ltd"

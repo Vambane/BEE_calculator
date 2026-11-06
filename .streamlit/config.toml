@@ -2,6 +2,9 @@
 # Fonts SELF-HOSTED (no Google CDN, POPIA). Heading family name SourceSerif4 required on Streamlit 1.66.
 [server]
 enableStaticServing = true
+# Reject uploads over 2 MB before they are read into memory (client files and supplier
+# lists are capped at 2 MB in code as well).
+maxUploadSize = 2
 
 [client]
 showErrorDetails = false

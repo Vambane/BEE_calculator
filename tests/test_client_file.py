@@ -149,3 +149,89 @@ def test_row_values_must_be_scalars():
 )
 def test_filename_is_safe(company, name):
     assert cf.filename(company, date(2026, 11, 2)) == name
+
+
+# ------------------------------------------------------------------ security audit fixes
+def _doc(store: dict) -> bytes:
+    return json.dumps({"format": cf.FORMAT, "version": cf.VERSION, "store": store}).encode()
+
+
+def test_pdf_gate_and_counters_are_never_saved():
+    s = filled_store()
+    s["pdf_gate"] = {"email": "a@b.co", "marketing": True, "unlocked": True}
+    s["pdf_rate"] = {"unlock_attempts": 1, "pdf_builds": 1}
+    s["calc_rate"] = {"calls": 3}
+    s["pdf_cache"] = {"key": "k", "bytes": b"%PDF"}
+    raw = cf.dump(s, "generic", False, WHEN)
+    for token in (b"a@b.co", b"pdf_gate", b"pdf_rate", b"calc_rate", b"pdf_cache", b"consent"):
+        assert token not in raw
+    store, _, _ = cf.parse(raw)
+    assert store["profile"]["company"] == "Acme (Pty) Ltd"
+    assert store["procurement"]["records"][0]["Supplier"] == "Acme"
+
+
+def test_export_holds_only_calculation_sections():
+    s = filled_store()
+    s["anything_new"] = {"secret": 1}
+    doc = json.loads(cf.dump(s, "generic", False, WHEN))
+    assert set(doc["store"]) <= set(cf._EXPORT_SECTIONS)
+
+
+@pytest.mark.parametrize(
+    "raw",
+    [
+        b'{"format": "bee-check-client", "version": 1, "store": '
+        + b"[" * 100_000
+        + b"]" * 100_000
+        + b"}",
+        b'{"format": "bee-check-client", "version": ' + b"9" * 5000 + b', "store": {}}',
+    ],
+    ids=["deep-nesting", "huge-integer"],
+)
+def test_parser_limits_become_client_file_errors(raw):
+    with pytest.raises(cf.ClientFileError):
+        cf.parse(raw)
+
+
+def test_out_of_range_values_are_reset():
+    store, _, notes = cf.parse(
+        _doc(
+            {
+                "profile": {"yes_tier": "bogus", "yes_prev_level": 9},
+                "modes": {"esd": "nope", "skills": "rand"},
+                "entry": {"esd": "weird", "ownership": "pts"},
+                "options": {"fs_skills_submin": 7, "fs_rescale_109": "yes", "start_up": True},
+            }
+        )
+    )
+    assert store["profile"]["yes_tier"] == "none"
+    assert store["profile"]["yes_prev_level"] is None
+    assert store["modes"] == {"skills": "rand"}
+    assert store["entry"] == {"ownership": "pts"}
+    assert store["options"] == {"start_up": True}
+    assert any("yes_tier" in n for n in notes)
+
+
+def test_valid_previous_level_kept_as_int():
+    store, _, _ = cf.parse(_doc({"profile": {"yes_prev_level": 3.0}}))
+    assert store["profile"]["yes_prev_level"] == 3
+
+
+def test_unknown_and_excess_element_keys_are_dropped():
+    bad = "**EL** [x](https://example.invalid)"
+    store, _, notes = cf.parse(
+        _doc(
+            {
+                "values": {"pct": {bad: {"c": 1.0}, "ownership": {"c": 1.0}}},
+                "net_value": {f"el{i}": {"entity_value": 1.0} for i in range(cf.MAX_ELEMENTS + 10)},
+            }
+        )
+    )
+    assert list(store["values"]["pct"]) == ["ownership"]
+    assert len(store["net_value"]) == cf.MAX_ELEMENTS
+    assert not any(bad in n or "https://" in n for n in notes)
+
+
+def test_company_name_capped_like_the_profile_input():
+    store, _, _ = cf.parse(_doc({"profile": {"company": "A" * 400}}))
+    assert len(store["profile"]["company"]) == 120

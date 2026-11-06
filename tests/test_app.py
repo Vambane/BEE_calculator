@@ -984,7 +984,11 @@ def test_save_open_client_file_end_to_end():
     assert store["values"]["pct"]["ownership"]["100 2.2.1"] == 30.0
     assert store["consent"] is True  # kept from this session, not the file
     assert nxt.session_state["max_step"] > 0  # every step reachable again
-    assert any("Opened Acme (Pty) Ltd" in s.value for s in nxt.sidebar.success)
+    # File text is Markdown-escaped before display; it still renders as "Opened Acme (Pty) Ltd".
+    from bee_ui.core import md_escape
+
+    opened = "Opened " + md_escape("Acme (Pty) Ltd")
+    assert any(opened in s.value for s in nxt.sidebar.success)
 
 
 def test_open_bad_client_file_shows_error_and_keeps_data():
@@ -1001,3 +1005,24 @@ def test_save_disabled_before_consent():
     at = boot()
     btn = next(b for b in at.get("download_button") if b.proto.label == "Save client file")
     assert btn.proto.disabled
+
+
+def test_client_file_markdown_is_shown_as_text():
+    """A shared client file cannot plant links or images in the sidebar banner."""
+    import json
+
+    from bee_ui import client_file
+
+    at = boot()
+    at.session_state["store"]["consent"] = True
+    at.run()
+    evil = "ACME](https://example.invalid/phish) ![t](https://example.invalid/px.png)"
+    raw = json.dumps(
+        {"format": client_file.FORMAT, "version": 1, "store": {"profile": {"company": evil}}}
+    ).encode()
+    at.file_uploader[0].upload("evil.json", raw, "application/json").run()
+    assert not at.exception
+    msgs = [s.value for s in at.sidebar.success] + [c.value for c in at.sidebar.caption]
+    assert any("example" in m for m in msgs)
+    for m in msgs:
+        assert "](" not in m and "![" not in m

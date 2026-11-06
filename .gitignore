@@ -33,3 +33,5 @@ __pycache__/
 .ruff_cache/
 *.egg-info/
 .streamlit/secrets.toml
+*.pem
+*.key

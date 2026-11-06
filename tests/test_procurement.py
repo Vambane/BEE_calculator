@@ -348,3 +348,51 @@ def test_multiplier_column_parses_and_rejects_junk():
     assert errs == [] and ok[0].multiplier
     _, errs = parse_rows([{"supplier": "A", "spend": 1, "level": 1, "multiplier": "maybe"}])
     assert errs[0].column == "1.2x multiplier"
+
+
+# ------------------------------------------------------------------ CSV formula injection
+FORMULA_NAMES = ['=HYPERLINK("http://x","y")', " @SUM(1+1)", "+1+1", "-2+3"]
+
+
+def _exported_supplier_cells(text: str) -> list[str]:
+    import csv
+    import io
+
+    return [row[0] for row in list(csv.reader(io.StringIO(text)))[1:]]
+
+
+def test_csv_export_never_starts_a_cell_with_a_formula():
+    lines = ["Supplier,Spend (R),B-BBEE level"]
+    lines += [f'"{n.replace(chr(34), chr(34) * 2)}",100,1' for n in FORMULA_NAMES]
+    suppliers, errors = parse_csv("\n".join(lines) + "\n")
+    assert not errors
+    for cell in _exported_supplier_cells(to_csv(suppliers)):
+        assert not cell.startswith(("=", "+", "-", "@", "\t", "\r"))
+
+
+def test_client_file_supplier_formula_is_neutralised():
+    from bee_ui import client_file as cf
+
+    raw = (
+        b'{"format": "bee-check-client", "version": 1, "store": {"procurement": {"records": '
+        b'[{"Supplier": "=1+1", "Spend (R)": 10.0, "B-BBEE level": "1"}]}}}'
+    )
+    store, _, _ = cf.parse(raw)
+    suppliers, errors = parse_rows(store["procurement"]["records"])
+    assert not errors
+    assert _exported_supplier_cells(to_csv(suppliers)) == ["'=1+1"]
+
+
+def test_neutralised_export_round_trips_to_original_names():
+    lines = ["Supplier,Spend (R),B-BBEE level", "=1+1,100,1", "Plain Co,50,2"]
+    first, _ = parse_csv("\n".join(lines) + "\n")
+    again, errors = parse_csv(to_csv(first))
+    assert not errors
+    assert [s.name for s in again] == ["=1+1", "Plain Co"]
+
+
+def test_oversized_csv_field_is_a_row_error_not_a_crash():
+    text = "Supplier,Spend (R),B-BBEE level\n" + "A" * 200_000 + ",100,1\n"
+    suppliers, errors = parse_csv(text)
+    assert suppliers == []
+    assert errors and errors[0].column == "File"

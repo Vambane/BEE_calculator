@@ -240,6 +240,20 @@ def procurement_indicators(element: Element) -> list[Indicator]:
 # ------------------------------------------------------------------------------ parsing
 
 
+# Spreadsheets treat a cell starting with one of these as a formula (CSV injection).
+_FORMULA_PREFIX = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _safe_cell(v: str) -> str:
+    """Prefix a quote so spreadsheet apps show a formula-looking value as plain text."""
+    return "'" + v if v.startswith(_FORMULA_PREFIX) else v
+
+
+def _unsafe_cell(v: str) -> str:
+    """Undo ``_safe_cell`` so an exported list re-uploads with the original names."""
+    return v[1:] if v.startswith("'") and v[1:2] in _FORMULA_PREFIX else v
+
+
 def _text(v: object) -> str:
     if v is None:
         return ""
@@ -361,7 +375,7 @@ def parse_rows(rows: Iterable[Mapping[str, object]]) -> tuple[list[Supplier], li
         def bad(col: str, msg: str, _errs: list[RowError] = errs, _n: int = n) -> None:
             _errs.append(RowError(_n, col, msg))
 
-        name = _text(row.get("supplier")) or f"Supplier {n}"
+        name = _unsafe_cell(_text(row.get("supplier"))) or f"Supplier {n}"
         spend = _number(row.get("spend"))
         if spend is None:
             bad("Spend (R)", "enter a rand amount")
@@ -423,12 +437,15 @@ def parse_csv(text: str) -> tuple[list[Supplier], list[RowError]]:
         dialect = csv.Sniffer().sniff(sample, delimiters=",;\t")
     except csv.Error:
         dialect = csv.excel
-    reader = csv.DictReader(io.StringIO(text), dialect=dialect)
-    fields = {HEADER_TO_FIELD.get((h or "").strip().lower()) for h in (reader.fieldnames or [])}
-    missing = [label for key, label in COLUMNS[:3] if key not in fields]
-    if missing:
-        return [], [RowError(0, "Header", f"missing column(s): {', '.join(missing)}")]
-    return parse_rows(reader)
+    try:
+        reader = csv.DictReader(io.StringIO(text), dialect=dialect)
+        fields = {HEADER_TO_FIELD.get((h or "").strip().lower()) for h in (reader.fieldnames or [])}
+        missing = [label for key, label in COLUMNS[:3] if key not in fields]
+        if missing:
+            return [], [RowError(0, "Header", f"missing column(s): {', '.join(missing)}")]
+        return parse_rows(reader)
+    except csv.Error:  # e.g. one field larger than the csv module's limit
+        return [], [RowError(0, "File", "could not read the CSV; check for a very long cell")]
 
 
 def level_label(level: int) -> str:
@@ -455,7 +472,11 @@ def to_record(s: Supplier) -> dict[str, object]:
 
 
 def to_csv(suppliers: Iterable[Supplier]) -> str:
-    """Export a validated list in the template's format (re-uploads cleanly)."""
+    """Export a validated list in the template's format (re-uploads cleanly).
+
+    Supplier names that a spreadsheet would run as a formula are written with a leading
+    quote; ``parse_rows`` strips it again on upload.
+    """
     buf = io.StringIO()
     w = csv.writer(buf, lineterminator="\n")
     w.writerow(label for _, label in COLUMNS)
@@ -463,7 +484,7 @@ def to_csv(suppliers: Iterable[Supplier]) -> str:
         r = to_record(s)
         w.writerow(
             [
-                r["Supplier"],
+                _safe_cell(str(r["Supplier"])),
                 f"{s.spend:.2f}",
                 r["B-BBEE level"],
                 r["Size"],
