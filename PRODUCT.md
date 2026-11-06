@@ -32,7 +32,7 @@ Used at a desk during client engagements, typically on a laptop or desktop, ofte
 - Open decision: the PDF "email unlock" gate. In the Streamlit app the email is only shape-checked and never sent or stored; a static site has nowhere to send it either. The rebuild drops the gate pending the owner's decision.
 
 ## Brand Commitments
-Name: Nyuka (isiZulu and isiXhosa for "climb, rise"; chosen 2026-11-06, replacing "BEE Check"). Voice: plain, calm and precise ("B-BBEE scorecard, calmly estimated"); always frames results as estimates to confirm with a verification agency. No visual identity is binding; the current honey palette is not a commitment. Visual commitment (owner's choice, 2026-11-06): the category standard played straight, at the craft level of Xero (clear, friendly, task-led accounting UI). No themed or decorative world.
+Name: Klim (Afrikaans for "climb"; chosen 2026-11-06, replacing "BEE Check"). Voice: plain, calm and precise ("B-BBEE scorecard, calmly estimated"); always frames results as estimates to confirm with a verification agency. No visual identity is binding; the current honey palette is not a commitment. Visual commitment (owner's choice, 2026-11-06): the category standard played straight, at the craft level of Xero (clear, friendly, task-led accounting UI). No themed or decorative world.
 
 ## Evidence on Hand
 - Scoring tables and sector targets in `bee/sectors/data/sector-element-targets.csv`; regression tests in `tests/`.

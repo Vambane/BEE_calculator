@@ -52,7 +52,7 @@
 >
   <Card
     title="Privacy and consent"
-    description="Nyuka runs entirely in your browser. Nothing you enter is sent to a server."
+    description="Klim runs entirely in your browser. Nothing you enter is sent to a server."
   >
     <div class="privacy">
       <p>

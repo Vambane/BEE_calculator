@@ -1,4 +1,4 @@
-"""Nyuka: thin Streamlit UI over the ``bee`` engine (design spec v1.1).
+"""Klim: thin Streamlit UI over the ``bee`` engine (design spec v1.1).
 
 All scoring is done by ``bee.calculate``; this file only collects inputs, validates them and
 renders results. No inputs are logged. Run: ``streamlit run app.py``.
@@ -167,7 +167,7 @@ def render_howto_page() -> None:
         st.rerun()
 
 
-st.set_page_config(page_title="Nyuka", layout="centered")
+st.set_page_config(page_title="Klim", layout="centered")
 # UX-C1: st.html injects CSS/DOM; st.markdown(..., unsafe_allow_html=True) can print
 # raw <style>/hex markup as visible text on Streamlit Cloud (Design mock UX-C1).
 st.html(
@@ -447,7 +447,7 @@ def footer(problems_fn=None):
 
 # ------------------------------------------------------------------ sidebar
 with st.sidebar:
-    st.markdown("**Nyuka**")
+    st.markdown("**Klim**")
     st.caption(f"{md_escape(store['profile']['company'] or 'Your company')}  \n{label}")
     consented = bool(store.get("consent"))
     max_reached = S.get("max_step", 0)

@@ -111,8 +111,8 @@ def test_bom_and_utf8_company_names():
     ("raw", "msg"),
     [
         (b"not json", "not valid JSON"),
-        (b"[]", "not a Nyuka client file"),
-        (b'{"format": "other"}', "not a Nyuka client file"),
+        (b"[]", "not a Klim client file"),
+        (b'{"format": "other"}', "not a Klim client file"),
         (b'{"format": "bee-check-client"}', "no valid format version"),
         (b'{"format": "bee-check-client", "version": 99, "store": {}}', "newer version"),
         (b'{"format": "bee-check-client", "version": 1}', "no calculation"),
@@ -142,9 +142,9 @@ def test_row_values_must_be_scalars():
 @pytest.mark.parametrize(
     ("company", "name"),
     [
-        ("Acme (Pty) Ltd", "nyuka_acme-pty-ltd_2026-11-02.json"),
-        ("", "nyuka_client_2026-11-02.json"),
-        ("../../etc/passwd", "nyuka_etc-passwd_2026-11-02.json"),
+        ("Acme (Pty) Ltd", "klim_acme-pty-ltd_2026-11-02.json"),
+        ("", "klim_client_2026-11-02.json"),
+        ("../../etc/passwd", "klim_etc-passwd_2026-11-02.json"),
     ],
 )
 def test_filename_is_safe(company, name):

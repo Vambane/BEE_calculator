@@ -1,6 +1,6 @@
 # Production v1 hardening
 
-Ops notes for [Nyuka](https://beecalculator.streamlit.app/) on Streamlit Community Cloud.
+Ops notes for [Klim](https://beecalculator.streamlit.app/) on Streamlit Community Cloud.
 
 ## CI gates on `main`
 
@@ -47,7 +47,7 @@ python tools/live_smoke.py --url https://beecalculator.streamlit.app/
 ```
 
 Exit `0` = HTTP 200 after Cloud’s auth cookie redirect **and** body matches a known marker
-(`Nyuka`, `Privacy`, or Streamlit Cloud shell markers such as `streamlitAppPage`).
+(`Klim`, `Privacy`, or Streamlit Cloud shell markers such as `streamlitAppPage`).
 
 **Limitation:** Community Cloud serves a JS shell; page title / “Privacy notice” text are not in
 the first HTML response. Curl smoke proves the host is up, not full UI. Keep QA browser smoke

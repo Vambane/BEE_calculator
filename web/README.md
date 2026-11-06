@@ -1,3 +1,3 @@
-# Nyuka web app
+# Klim web app
 
-See the "Web app (Nyuka)" section of the [root README](../README.md) for running, building and hosting.
+See the "Web app (Klim)" section of the [root README](../README.md) for running, building and hosting.
