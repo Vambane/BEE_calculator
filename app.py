@@ -54,6 +54,7 @@ from bee_ui.core import (
     gender_open_gaps,
     indicator_render_units,
     is_scenario_widget_key,
+    md_escape,
     next_level_gap,
     rand_capable,
     scorecard_label,
@@ -259,9 +260,10 @@ if S.get("demo_seeded"):
 if not store.get("consent"):
     S.step = 0
 else:
+    q_step = str(Q.get("step", "0"))
     S.setdefault(
         "step",
-        int(Q.get("step", 0)) if str(Q.get("step", "0")).isdigit() else 0,
+        int(q_step) if q_step.isascii() and q_step.isdigit() and len(q_step) <= 3 else 0,
     )
 valid_sectors = dict(sector_choices())
 if S.sector not in valid_sectors:
@@ -446,7 +448,7 @@ def footer(problems_fn=None):
 # ------------------------------------------------------------------ sidebar
 with st.sidebar:
     st.markdown("**BEE Check**")
-    st.caption(f"{store['profile']['company'] or 'Your company'}  \n{label}")
+    st.caption(f"{md_escape(store['profile']['company'] or 'Your company')}  \n{label}")
     consented = bool(store.get("consent"))
     max_reached = S.get("max_step", 0)
     for i, s in enumerate(steps):
@@ -498,13 +500,14 @@ with st.sidebar:
                 S.client_upl_v = upl_v + 1
                 name = new_store["profile"]["company"] or "the client"
                 when = f" (saved {meta['saved_at'][:10]})" if meta.get("saved_at") else ""
-                S.client_msg = (f"Opened {name}{when}.", fixes)
+                # The file may come from someone else: show its text as text, not Markdown.
+                S.client_msg = (f"Opened {md_escape(name)}{md_escape(when)}.", fixes)
                 st.rerun()
         if S.get("client_msg"):
             msg, fixes = S.pop("client_msg")
             st.success(msg)
             for f in fixes[:10]:
-                st.caption(f)
+                st.caption(md_escape(f))
             if not consented:
                 st.caption("Agree to the privacy notice on Profile to continue.")
     st.divider()

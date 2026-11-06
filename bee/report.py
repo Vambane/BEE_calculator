@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import date
 from pathlib import Path
+from urllib.parse import unquote, urlsplit
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
@@ -14,6 +15,34 @@ from bee.sectors.base import SectorConfig
 
 ROOT = Path(__file__).resolve().parent.parent
 TEMPLATE_DIR = ROOT / "report"
+# The only places the PDF may load files from (template CSS and self-hosted fonts).
+ASSET_DIRS = (TEMPLATE_DIR, ROOT / "static" / "fonts")
+
+
+def allowed_asset(url: str) -> bool:
+    """True only for ``file:`` URLs that resolve inside ``ASSET_DIRS``.
+
+    Defence in depth for WeasyPrint: autoescape already keeps user markup out of the
+    HTML, but if a URL ever got in, it could not reach the network or other files.
+    """
+    parts = urlsplit(url)
+    if parts.scheme.lower() != "file" or parts.netloc not in ("", "localhost"):
+        return False
+    path = Path(unquote(parts.path)).resolve()
+    return any(path.is_relative_to(d.resolve()) for d in ASSET_DIRS)
+
+
+def _asset_fetcher():
+    """A WeasyPrint URL fetcher limited to ``allowed_asset`` URLs (imported lazily)."""
+    from weasyprint.urls import URLFetcher
+
+    class AssetFetcher(URLFetcher):
+        def fetch(self, url, headers=None):
+            if not allowed_asset(url):
+                raise ValueError(f"Blocked resource outside the report assets: {url}")
+            return super().fetch(url, headers)
+
+    return AssetFetcher(allowed_protocols=("file",), allow_redirects=False)
 
 
 def _jinja_env() -> Environment:
@@ -255,4 +284,4 @@ def render_pdf(
         indicators=indicators,
         financials=financials,
     )
-    return HTML(string=html, base_url=str(TEMPLATE_DIR)).write_pdf()
+    return HTML(string=html, base_url=str(TEMPLATE_DIR), url_fetcher=_asset_fetcher()).write_pdf()

@@ -10,7 +10,7 @@ Format (``FORMAT`` / ``VERSION``)::
       "version": 1,
       "saved_at": "2026-11-02T12:00:00+00:00",
       "app": {"sector": "generic", "draft": false},
-      "store": { ...the canonical session store, minus consent... }
+      "store": { ...the calculation sections only (see _EXPORT_SECTIONS)... }
     }
 
 Loading is defensive: the file is untrusted input. Only keys the current app knows are
@@ -27,7 +27,7 @@ import re
 from datetime import UTC, date, datetime
 from typing import Any
 
-from bee_ui.core import fresh_store
+from bee_ui.core import COMPANY_MAX_CHARS, fresh_store
 
 FORMAT = "bee-check-client"
 VERSION = 1
@@ -39,6 +39,32 @@ _SCALAR_SECTIONS = ("profile", "fin")  # fixed keys, typed like fresh_store()
 _NUMBER_MAPS = ("points",)  # element -> {group: number}
 _STRING_MAPS = ("modes", "entry")  # element -> str
 _DATE_KEYS = frozenset({"equity_date", "measurement_date"})
+# Only these sections are written to a file. Everything else in the session store (the PDF
+# unlock email and marketing choice, rate counters, PDF cache) stays in the session, as the
+# privacy notice promises. Keep in step with what ``parse`` restores.
+_EXPORT_SECTIONS = (
+    "profile",
+    "fin",
+    "values",
+    "modes",
+    "entry",
+    "points",
+    "options",
+    "procurement",
+    "contributions",
+    "net_value",
+)
+# Element keys are short slugs ("ownership", "esd", ...). Anything else is dropped on load.
+_ELEMENT_KEY = re.compile(r"[a-z][a-z0-9_]{0,31}")
+MAX_ELEMENTS = 50
+_ALLOWED_STRINGS = {"modes": frozenset({"rand", "pct"}), "entry": frozenset({"ind", "pts"})}
+_YES_TIERS = ("none", "target", "1.5x", "2x")
+# Known options and the values the app and engine accept for them.
+_OPTION_ENUMS: dict[str, tuple] = {"fs_skills_submin": (8.0, 6.0)}
+_OPTION_BOOLS = frozenset(
+    {"fs_rescale_109", "start_up", "eme_full_skills_points", "eme_full_sd_points"}
+)
+_OPTION_NUMBERS = frozenset({"eme_skills_pct_of_qse_target"})
 _SLUG = re.compile(r"[^A-Za-z0-9]+")
 
 
@@ -69,8 +95,12 @@ def _clean(obj: Any) -> Any:
 
 
 def dump(store: dict, sector: str, draft: bool, saved_at: datetime | None = None) -> bytes:
-    """Serialise the calculation. Consent is left out on purpose."""
-    body = {k: v for k, v in store.items() if k != "consent"}
+    """Serialise the calculation only.
+
+    An allowlist, not a denylist: consent, the PDF unlock email and marketing choice, rate
+    counters and the PDF cache are never written, whatever else the session store holds.
+    """
+    body = {k: store[k] for k in _EXPORT_SECTIONS if k in store}
     # Save what is on screen: each contributions editor's live rows ("current").
     body["contributions"] = {
         el: {
@@ -140,6 +170,16 @@ def _rows(value: Any, where: str, problems: list[str]) -> list[dict]:
     return out
 
 
+def _element_keys(given: dict, where: str, problems: list[str]) -> list:
+    """Keys of ``given`` that look like element keys, capped at ``MAX_ELEMENTS``."""
+    keys = [k for k in given if isinstance(k, str) and _ELEMENT_KEY.fullmatch(k)]
+    if len(keys) < len(given):
+        problems.append(f"{where}: {len(given) - len(keys)} unknown element(s) were left out.")
+    if len(keys) > MAX_ELEMENTS:
+        problems.append(f"{where}: only the first {MAX_ELEMENTS} elements were kept.")
+    return keys[:MAX_ELEMENTS]
+
+
 def _values(value: Any, problems: list[str]) -> dict:
     """values[mode][element][clause] = number | bool."""
     out: dict = {"rand": {}, "pct": {}}
@@ -149,7 +189,8 @@ def _values(value: Any, problems: list[str]) -> dict:
         elems = value.get(mode) or {}
         if not isinstance(elems, dict):
             continue
-        for el, clauses in elems.items():
+        for el in _element_keys(elems, "Indicator values", problems):
+            clauses = elems[el]
             if not isinstance(clauses, dict):
                 continue
             kept = {
@@ -175,6 +216,44 @@ def _date(v: Any) -> date | None:
     return None
 
 
+def _check_profile(profile: dict, problems: list[str]) -> None:
+    """Reset profile values that the Profile step's widgets could not show."""
+    profile["company"] = profile["company"][:COMPANY_MAX_CHARS]
+    if profile["yes_tier"] not in _YES_TIERS:
+        problems.append("profile.yes_tier has an unexpected value and was reset.")
+        profile["yes_tier"] = "none"
+    prev = profile["yes_prev_level"]
+    if prev is not None:
+        if _is_num(prev) and float(prev).is_integer() and 1 <= prev <= 8:
+            profile["yes_prev_level"] = int(prev)
+        else:
+            problems.append("profile.yes_prev_level has an unexpected value and was reset.")
+            profile["yes_prev_level"] = None
+
+
+def _options(opts: dict, problems: list[str]) -> dict:
+    """Known options with valid values; unknown slug keys keep plain scalar values."""
+    out: dict = {}
+    for k, v in opts.items():
+        if not isinstance(k, str) or not _ELEMENT_KEY.fullmatch(k):
+            continue
+        if k in _OPTION_ENUMS:
+            ok = _is_num(v) and float(v) in _OPTION_ENUMS[k]
+            v = float(v) if ok else None
+        elif k in _OPTION_BOOLS:
+            ok = isinstance(v, bool)
+        elif k in _OPTION_NUMBERS:
+            ok = _is_num(v)
+        else:
+            ok = v is None or isinstance(v, bool) or _is_num(v) or isinstance(v, str)
+            v = v[:100] if isinstance(v, str) else v
+        if ok:
+            out[k] = v
+        else:
+            problems.append(f"options.{k} has an unexpected value and was left out.")
+    return out
+
+
 def parse(raw: bytes) -> tuple[dict, dict, list[str]]:
     """Return ``(store, app, notes)``. ``notes`` are non-fatal fixes made while loading.
 
@@ -184,7 +263,8 @@ def parse(raw: bytes) -> tuple[dict, dict, list[str]]:
         raise ClientFileError([f"The file is larger than {MAX_BYTES // 1_000_000} MB."])
     try:
         doc = json.loads(raw.decode("utf-8-sig"))
-    except (UnicodeDecodeError, json.JSONDecodeError):
+    # RecursionError: very deep nesting. ValueError: integers past Python's digit limit.
+    except (UnicodeDecodeError, json.JSONDecodeError, RecursionError, ValueError):
         raise ClientFileError(
             ["This is not a BEE Check client file (it is not valid JSON)."]
         ) from None
@@ -211,26 +291,26 @@ def parse(raw: bytes) -> tuple[dict, dict, list[str]]:
         for k, default in store[sec].items():
             if k in given:
                 store[sec][k] = _typed(default, given[k], f"{sec}.{k}", notes)
+    _check_profile(store["profile"], notes)
     store["values"] = _values(src.get("values"), notes)
     for sec in _STRING_MAPS:
         given = src.get(sec) or {}
         if isinstance(given, dict):
-            store[sec] = {str(k): v for k, v in given.items() if isinstance(v, str)}
+            allowed = _ALLOWED_STRINGS[sec]
+            store[sec] = {
+                k: given[k] for k in _element_keys(given, sec, notes) if given[k] in allowed
+            }
     for sec in _NUMBER_MAPS:
         given = src.get(sec) or {}
         if isinstance(given, dict):
             store[sec] = {
-                str(el): {str(g): float(v) for g, v in grp.items() if _is_num(v)}
-                for el, grp in given.items()
-                if isinstance(grp, dict)
+                el: {str(g)[:100]: float(v) for g, v in given[el].items() if _is_num(v)}
+                for el in _element_keys(given, sec, notes)
+                if isinstance(given[el], dict)
             }
     opts = src.get("options")
     if isinstance(opts, dict):
-        store["options"] = {
-            str(k): v
-            for k, v in opts.items()
-            if v is None or isinstance(v, bool | str) or _is_num(v)
-        }
+        store["options"] = _options(opts, notes)
     proc = src.get("procurement")
     if isinstance(proc, dict):
         store["procurement"] = {
@@ -239,7 +319,8 @@ def parse(raw: bytes) -> tuple[dict, dict, list[str]]:
         }
     contrib = src.get("contributions")
     if isinstance(contrib, dict):
-        for el, box in contrib.items():
+        for el in _element_keys(contrib, "Contributions", notes):
+            box = contrib[el]
             if not isinstance(box, dict):
                 continue
             live = box.get("current") if box.get("current") is not None else box.get("records", [])
@@ -247,11 +328,13 @@ def parse(raw: bytes) -> tuple[dict, dict, list[str]]:
             store["contributions"][str(el)] = {"records": rows, "version": 0, "current": None}
     nv = src.get("net_value")
     if isinstance(nv, dict):
-        for el, box in nv.items():
+        for el in _element_keys(nv, "Net Value", notes):
+            box = nv[el]
             if not isinstance(box, dict):
                 continue
             kept: dict = {}
-            for k, v in box.items():
+            for k, v in list(box.items())[:100]:
+                k = str(k)[:100]
                 if k in _DATE_KEYS:
                     kept[k] = _date(v)
                 elif _is_num(v):

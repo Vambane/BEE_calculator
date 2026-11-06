@@ -131,3 +131,18 @@ def test_report_html_includes_gender_contribution_line():
     assert "of" in html and "pts" in html
     assert "not a separate element" in html
     assert "Voting rights: black women" in html or "100 2.1.2" in html
+
+
+def test_pdf_fetcher_only_allows_report_assets():
+    from bee.report import ROOT, TEMPLATE_DIR, allowed_asset
+
+    assert allowed_asset((TEMPLATE_DIR / "report.css").as_uri())
+    assert allowed_asset((ROOT / "static" / "fonts" / "IBMPlexMono-Medium.ttf").as_uri())
+    for url in (
+        "file:///etc/passwd",
+        (TEMPLATE_DIR / ".." / "app.py").resolve().as_uri(),
+        "http://127.0.0.1:1/x.css",
+        "https://example.invalid/x.png",
+        "data:text/css,body{}",
+    ):
+        assert not allowed_asset(url), url

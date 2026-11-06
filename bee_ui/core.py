@@ -31,6 +31,16 @@ STATUS_BADGE = {
 }
 
 
+# Characters Streamlit's Markdown treats as syntax (links, images, emphasis, HTML, headings).
+_MD_SPECIAL = frozenset("\\`*_{}[]()<>#+-.!|~$")
+COMPANY_MAX_CHARS = 120  # same cap as the Profile text input
+
+
+def md_escape(text: str) -> str:
+    """Backslash-escape Markdown syntax so user text renders as plain text in st.caption etc."""
+    return "".join("\\" + c if c in _MD_SPECIAL else c for c in str(text))
+
+
 def sector_choices() -> list[tuple[str, str]]:
     """(key, display name), Generic first."""
     keys = sectors()
