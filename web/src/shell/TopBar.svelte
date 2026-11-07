@@ -4,6 +4,8 @@
   import { app, consented, saveClientFile, openClientFile } from "../lib/state.svelte.js";
   import { pickFile, readTextFile } from "../lib/files.js";
 
+  let { inert = false } = $props();
+
   const company = $derived(app.session?.store?.profile?.company || "");
   const label = $derived(app.ctx?.label?.split(" · ").slice(0, 2).join(" · ") ?? "");
 
@@ -19,7 +21,7 @@
   }
 </script>
 
-<header class="top">
+<header class="top" {inert}>
   <a class="brand" href="#/" aria-label="Klim, back to the calculator">
     <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden="true">
       <rect x="1" y="1" width="20" height="20" rx="5" fill="var(--primary)" />

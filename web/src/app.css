@@ -19,14 +19,14 @@
   --primary-hover: #27272a;
   --primary-active: #09090b;
 
-  /* Violet accent: links, focus, selection, fills. */
-  --accent: #7c3aed;
-  --accent-hover: #6d28d9;
-  --accent-soft: #a78bfa;
-  --primary-tint: #f5f3ff;
-  --primary-tint-2: #ddd6fe;
+  /* Deep green accent: links, focus, selection, fills. #166534 is 7.130:1 on #fff. */
+  --accent: #166534;
+  --accent-hover: #14532d;
+  --accent-soft: #166534;
+  --primary-tint: #f3faf6;
+  --primary-tint-2: #d7eee3;
   --glass: rgb(9 9 11 / 0.04);
-  --glass-focus: rgb(139 92 246 / 0.08);
+  --glass-focus: rgb(22 101 52 / 0.08);
 
   /* States carry meaning only. */
   --success: #15803d;
@@ -47,7 +47,8 @@
   --shadow-1: 0 1px 2px rgb(9 9 11 / 0.04), 0 1px 3px rgb(9 9 11 / 0.05);
   --shadow-2: 0 4px 12px -2px rgb(9 9 11 / 0.06), 0 2px 4px -2px rgb(9 9 11 / 0.04);
   --shadow-pop: 0 16px 32px -8px rgb(9 9 11 / 0.14), 0 4px 8px -4px rgb(9 9 11 / 0.06);
-  --focus: 0 0 0 3px rgb(139 92 246 / 0.25);
+  /* Solid green ring, 7.130:1 on white, separated by a white gap. */
+  --focus: 0 0 0 2px #ffffff, 0 0 0 4px #166534;
 
   --font: "Geist Variable", "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --t-xs: 0.8125rem; /* 13 */
@@ -163,6 +164,7 @@ textarea {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     transition-duration: 0.01ms !important;
   }
 }

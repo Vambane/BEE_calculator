@@ -1,5 +1,5 @@
 <script>
-  import { FileText, Download, CircleCheck, TriangleAlert, ArrowUpRight } from "@lucide/svelte";
+  import { FileText, Download, CircleCheck, TriangleAlert, ArrowUpRight, Minus } from "@lucide/svelte";
   import StepFrame from "./StepFrame.svelte";
   import Card from "../ui/Card.svelte";
   import Button from "../ui/Button.svelte";
@@ -37,6 +37,13 @@
     { id: "notes", label: "Interpretation notes", count: r?.notes?.length || undefined },
   ]);
   const scale = $derived(r?.ok ? Math.max(...r.elements.map((e) => e.max), 1) : 1);
+
+  function subminState(e) {
+    const checks = (r?.submins ?? []).filter((c) => c.element === e.name);
+    if (!checks.length) return "none";
+    if (e.submin_failed || checks.some((c) => !c.passed)) return "missed";
+    return "met";
+  }
 </script>
 
 <StepFrame title="Results" intro="A planning estimate from the figures entered. Confirm with your verification agency and sector code." wide>
@@ -122,32 +129,37 @@
         <Tabs {tabs} bind:active={tab} label="Results sections">
           {#snippet panel(active)}
             {#if active === "scorecard"}
-              <table class="data els">
-                <thead>
-                  <tr><th>Element</th><th class="bar-col"><span class="visually-hidden">Chart</span></th><th class="r">Points</th><th class="r">Max</th><th class="r">Gap</th></tr>
-                </thead>
-                <tbody>
-                  {#each r.elements as e (e.key)}
-                    <tr>
-                      <td>
+              <ul class="bento" aria-label="Points by element">
+                {#each r.elements as e (e.key)}
+                  {@const sub = subminState(e)}
+                  <li>
+                    <article class="tile">
+                      <p class="ename">
                         <button class="el-link" onclick={() => goTo(app.ctx.steps.findIndex((s) => s.key === e.key))}>{e.name}</button>
-                        {#if e.submin_failed}<span class="flag" title="Sub-minimum missed"><TriangleAlert size={14} /> sub-minimum</span>{/if}
-                      </td>
-                      <td class="bar-col">
-                        <div class="bar" style:width="{(e.max / scale) * 100}%" aria-hidden="true">
-                          <span style:width="{e.max ? (e.points / e.max) * 100 : 0}%" class:low={e.submin_failed}></span>
-                        </div>
-                      </td>
-                      <td class="r strong">{g(Math.round(e.points * 10) / 10)}</td>
-                      <td class="r">{g(e.max)}</td>
-                      <td class="r muted">{e.gap > 0 ? g(Math.round(e.gap * 10) / 10) : "–"}</td>
-                    </tr>
-                  {/each}
-                </tbody>
-                <tfoot>
-                  <tr><th>Total</th><td></td><td class="r strong">{g(Math.round(r.total * 10) / 10)}</td><td class="r">{r.out_of ? g(r.out_of) : ""}</td><td></td></tr>
-                </tfoot>
-              </table>
+                      </p>
+                      <p class="pts">
+                        <span class="num">{g(Math.round(e.points * 10) / 10)}</span>
+                        <span class="of">of {g(e.max)}</span>
+                      </p>
+                      <p class="meta">{e.gap > 0 ? `${g(Math.round(e.gap * 10) / 10)} pts open` : "At maximum"}</p>
+                      <p class="flag {sub}">
+                        {#if sub === "missed"}
+                          <TriangleAlert size={15} aria-hidden="true" /> Sub-minimum missed
+                        {:else if sub === "met"}
+                          <CircleCheck size={15} aria-hidden="true" /> Sub-minimum met
+                        {:else}
+                          <Minus size={15} aria-hidden="true" /> No sub-minimum
+                        {/if}
+                      </p>
+                      <div class="meter" aria-hidden="true">
+                        <span class="track" style:width="{(e.max / scale) * 100}%">
+                          <span class="fill" class:low={sub === "missed"} style:width="{e.max ? (e.points / e.max) * 100 : 0}%"></span>
+                        </span>
+                      </div>
+                    </article>
+                  </li>
+                {/each}
+              </ul>
               {#if r.groups.length}
                 <Disclosure title="Points by group" summary="How each element's points split across its groups">
                   <table class="data">
@@ -218,6 +230,7 @@
 <style>
   .actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
   }
   .sk {
@@ -280,23 +293,98 @@
     font-size: var(--t-xs);
     color: var(--ink-3);
   }
-  .els .bar-col {
-    width: 34%;
+  .bento {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 16.5rem), 1fr));
+    gap: 0.75rem;
   }
-  .bar {
-    height: 10px;
+  .tile {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+    min-width: 0;
+    height: 100%;
+    padding: 0.95rem 1rem 1rem;
+    background: var(--canvas);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+  }
+  .ename {
+    margin: 0;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .pts {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem 0.45rem;
+    margin: 0.15rem 0 0;
+    max-width: 100%;
+  }
+  .num {
+    font-size: var(--t-2xl);
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+  }
+  .of {
+    font-size: var(--t-sm);
+    font-weight: 600;
+    color: var(--ink-3);
+  }
+  .meta {
+    margin: 0;
+    font-size: var(--t-sm);
+    color: var(--ink-2);
+  }
+  .flag {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.35rem;
+    margin: 0.15rem 0 0;
+    max-width: 100%;
+    font-size: var(--t-xs);
+    font-weight: 700;
+    line-height: 1.35;
+  }
+  .flag :global(svg) {
+    flex: none;
+    margin-top: 0.05rem;
+  }
+  .flag.met {
+    color: var(--success);
+  }
+  .flag.missed {
+    color: var(--warning);
+  }
+  .flag.none {
+    color: var(--ink-2);
+  }
+  .meter {
+    width: 100%;
+    margin-top: auto;
+    padding-top: 0.35rem;
+  }
+  .track {
+    display: block;
+    height: 8px;
     border-radius: 5px;
     background: var(--rail);
     overflow: hidden;
   }
-  .bar span {
+  .fill {
     display: block;
     height: 100%;
-    background: var(--primary);
+    background: var(--accent);
     border-radius: 5px;
-    transition: width 400ms var(--ease);
   }
-  .bar span.low {
+  .fill.low {
     background: var(--warning);
   }
   .el-link {
@@ -328,15 +416,6 @@
     gap: 0.3rem;
     font-size: var(--t-md);
   }
-  .flag {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.2rem;
-    margin-left: 0.5rem;
-    font-size: var(--t-xs);
-    font-weight: 650;
-    color: var(--warning);
-  }
   .strong {
     font-weight: 700;
   }
@@ -358,14 +437,14 @@
   }
   .gain-head {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: baseline;
-    gap: 1rem;
+    gap: 0.35rem 1rem;
   }
   .plus {
     font-weight: 700;
-    color: var(--primary);
-    white-space: nowrap;
+    color: var(--accent);
   }
   .tips {
     margin: 0.35rem 0 0;
@@ -386,7 +465,8 @@
   }
   .submins li {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
+    flex-wrap: wrap;
     gap: 0.6rem;
     padding: 0.65rem 0.8rem;
     border-radius: var(--radius);
@@ -400,6 +480,11 @@
   }
   .submins li > :global(svg) {
     flex: none;
+    margin-top: 0.1rem;
+  }
+  .submins li > span:not(.status) {
+    flex: 1;
+    min-width: 0;
   }
   .status {
     margin-left: auto;
@@ -428,8 +513,20 @@
     .summary > div:nth-child(n + 3) {
       border-top: 1px solid var(--line);
     }
-    .els .bar-col {
-      display: none;
+  }
+  @media (max-width: 430px) {
+    .summary {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .summary > div {
+      border-left: 0;
+    }
+    .summary > div + div {
+      border-top: 1px solid var(--line);
+    }
+    .v,
+    .v2 {
+      overflow-wrap: anywhere;
     }
   }
   @media (max-width: 640px) {
