@@ -1016,7 +1016,7 @@ def test_client_file_markdown_is_shown_as_text():
     at = boot()
     at.session_state["store"]["consent"] = True
     at.run()
-    evil = "ACME](https://example.invalid/phish) ![t](https://example.invalid/px.png)"
+    evil = "[Verify](https://example.invalid/phish) ![t](https://example.invalid/px.png)"
     raw = json.dumps(
         {"format": client_file.FORMAT, "version": 1, "store": {"profile": {"company": evil}}}
     ).encode()
@@ -1024,5 +1024,7 @@ def test_client_file_markdown_is_shown_as_text():
     assert not at.exception
     msgs = [s.value for s in at.sidebar.success] + [c.value for c in at.sidebar.caption]
     assert any("example" in m for m in msgs)
-    for m in msgs:
-        assert "](" not in m and "![" not in m
+    import re
+
+    for m in msgs:  # no unescaped link or image syntax reaches Markdown
+        assert not re.search(r"(?<!\\)\]\(|(?<!\\)!(?<!\\)\[", m)

@@ -396,3 +396,53 @@ def test_oversized_csv_field_is_a_row_error_not_a_crash():
     suppliers, errors = parse_csv(text)
     assert suppliers == []
     assert errors and errors[0].column == "File"
+
+
+# ------------------------------------------------------------------ re-audit (run 2) fixes
+def test_round_trip_keeps_every_supplier_when_several_names_are_neutralised():
+    """Two quote-prefixed names used to make csv.Sniffer pick ' as quotechar and merge rows."""
+    lines = ["Supplier,Spend (R),B-BBEE level", "=1+1,1000,1", "+2,1500,2", "Plain Co,1000,3"]
+    first, errors = parse_csv("\n".join(lines) + "\n")
+    assert not errors and len(first) == 3
+    again, errors = parse_csv(to_csv(first))
+    assert not errors
+    assert [s.name for s in again] == ["=1+1", "+2", "Plain Co"]
+    assert sum(s.spend for s in again) == sum(s.spend for s in first) == 3500
+
+
+@pytest.mark.parametrize(
+    "name", ["Acme;=HYPERLINK(B1);x", "Acme\t=1+1", "Acme, +1", "=1+1", "Acme; @SUM(1)"]
+)
+def test_no_split_piece_of_an_export_starts_with_a_formula(name):
+    import re
+
+    suppliers, errors = parse_rows([{"Supplier": name, "Spend (R)": 10, "B-BBEE level": "1"}])
+    assert not errors
+    data_line = to_csv(suppliers).splitlines()[1]
+    for piece in re.split(r"[,;\t]", data_line.replace('"', "")):
+        assert not piece.lstrip(" ").startswith(("=", "+", "-", "@")), (name, piece)
+    again, errors = parse_csv(to_csv(suppliers))
+    assert not errors and again[0].name == name
+
+
+def test_export_quotes_every_field():
+    suppliers, _ = parse_rows([{"Supplier": "Acme;x", "Spend (R)": 10, "B-BBEE level": "1"}])
+    data_line = to_csv(suppliers).splitlines()[1]
+    assert data_line.startswith('"Acme;x",') and data_line.endswith('""')
+
+
+def test_typed_names_keep_their_quote():
+    suppliers, _ = parse_rows([{"Supplier": "'=4", "Spend (R)": 10, "B-BBEE level": "1"}])
+    assert suppliers[0].name == "'=4"
+
+
+def test_unicode_digit_level_is_a_row_error_not_a_crash():
+    suppliers, errors = parse_rows([{"Supplier": "A", "Spend (R)": 10, "B-BBEE level": "²"}])
+    assert suppliers == [] and errors[0].column == "B-BBEE level"
+
+
+@pytest.mark.parametrize("spend", [1e308, float("inf"), "1e309"])
+def test_absurd_spend_is_a_row_error(spend):
+    rows = [{"Supplier": f"S{i}", "Spend (R)": spend, "B-BBEE level": "1"} for i in range(2)]
+    suppliers, errors = parse_rows(rows)
+    assert suppliers == [] and all(e.column == "Spend (R)" for e in errors)

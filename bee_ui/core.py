@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from bee import CompanyProfile, Financials, Rand, ScoreInput, YesInput, YesTier
@@ -31,14 +32,23 @@ STATUS_BADGE = {
 }
 
 
-# Characters Streamlit's Markdown treats as syntax (links, images, emphasis, HTML, headings).
-_MD_SPECIAL = frozenset("\\`*_{}[]()<>#+-.!|~$")
+# Markdown syntax that could turn user text into a link, image, HTML, emphasis, code, LaTeX,
+# a heading or a table. Tested against Streamlit 1.66 in a real browser: escaping these stops
+# [text](url) links, ![](url) images (which the browser would fetch), raw HTML and formatting.
+# Streamlit still auto-links bare URLs (http://..., www....), which show their real address.
+_MD_INLINE = re.compile(r"([\\`*_\[\]<>!#$~|])")
+_MD_LEADING = re.compile(r"^(\s*)([-+=]|\d+[.)])")  # list / setext markers at the start
 COMPANY_MAX_CHARS = 120  # same cap as the Profile text input
 
 
+def _escape_leading(m: re.Match) -> str:
+    indent, marker = m[1], m[2]
+    return f"{indent}\\{marker}" if marker in "-+=" else f"{indent}{marker[:-1]}\\{marker[-1]}"
+
+
 def md_escape(text: str) -> str:
-    """Backslash-escape Markdown syntax so user text renders as plain text in st.caption etc."""
-    return "".join("\\" + c if c in _MD_SPECIAL else c for c in str(text))
+    """Backslash-escape Markdown syntax so user text shows as plain text in st.caption etc."""
+    return _MD_LEADING.sub(_escape_leading, _MD_INLINE.sub(r"\\\1", str(text)))
 
 
 def sector_choices() -> list[tuple[str, str]]:

@@ -11,6 +11,15 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
+## Develop and test
+```bash
+pip install --require-hashes -r requirements-dev.lock   # runtime + pytest, ruff, pip-audit, all hash-checked
+pip install --no-deps --no-build-isolation -e .
+ruff check bee bee_ui tests app.py && pytest
+```
+After changing `requirements.txt` or `requirements-dev.in`, regenerate the locks with `uv pip compile`
+(the exact commands are at the top of each lock file / `requirements-dev.in`).
+
 ## What it does
 - **Profile:** company name, sector code, revenue (for EME/QSE/Generic sizing), Black ownership %, financial bases (NPAT, leviable payroll, TMPS, headcount), optional YES Initiative, and an opt-in to score on the full scorecard when a deemed (affidavit) level would otherwise apply.
 - **Element steps (Indicators by default on Ownership and Management Control):** enter each scorecard indicator — including Black women / Black female lines — or switch to pre-calculated points from a verification agency. Net Value can be calculated on the Ownership step from share values, acquisition debt and the graduation factor (Annexe 100(E)), or entered from a verification agency.

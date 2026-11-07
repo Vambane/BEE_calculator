@@ -306,10 +306,17 @@ def test_fresh_store_and_widget_key_helpers():
     assert not is_scenario_widget_key("max_step")
 
 
-def test_md_escape_neutralises_links_and_images():
+def test_md_escape_neutralises_links_images_and_formatting():
+    import re
+
     from bee_ui.core import md_escape
 
-    out = md_escape("ACME](http://x) ![t](http://x/p.png) **bold** <b>")
-    for live in ("](", "![", "**", "<b>"):
-        assert live not in out
-    assert md_escape("Acme Pty Ltd") == "Acme Pty Ltd"
+    out = md_escape("[Verify](http://x) ![t](http://x/p.png) **bold** <b> $x$ # h")
+    # every [ ] ! * < > $ # is backslash-escaped, so Markdown shows them as text
+    assert not re.search(r"(?<!\\)[\[\]!*<>$#]", out)
+    # ordinary company names are left exactly as typed
+    for name in ("Acme (Pty) Ltd.", "Smith & Sons - Cape Town", "Opened 12 items."):
+        assert md_escape(name) == name
+    # list markers only matter at the start
+    assert md_escape("- Acme") == "\\- Acme"
+    assert md_escape("1. Acme") == "1\\. Acme"

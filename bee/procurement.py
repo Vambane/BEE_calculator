@@ -242,16 +242,33 @@ def procurement_indicators(element: Element) -> list[Indicator]:
 
 # Spreadsheets treat a cell starting with one of these as a formula (CSV injection).
 _FORMULA_PREFIX = ("=", "+", "-", "@", "\t", "\r")
+# A spreadsheet may split one exported field on any of these (its list separator), so every
+# piece between them is checked, not only the start of the field.
+_CELL_SPLIT = re.compile(r"([,;\t])")
+MAX_SPEND = 1e15  # rand; anything larger is a typo and would overflow the totals
 
 
 def _safe_cell(v: str) -> str:
-    """Prefix a quote so spreadsheet apps show a formula-looking value as plain text."""
-    return "'" + v if v.startswith(_FORMULA_PREFIX) else v
+    """Prefix a quote to every piece a spreadsheet could read as a formula.
+
+    ``to_csv`` also quotes every field, so a ``;``-separator spreadsheet keeps the field whole.
+    This is the second layer: even if it splits the field, no piece starts with a formula.
+    """
+    parts = _CELL_SPLIT.split(v)
+    for i in range(0, len(parts), 2):  # even indexes are text, odd are separators
+        if parts[i].lstrip(" ").startswith(_FORMULA_PREFIX):
+            parts[i] = "'" + parts[i]
+    return "".join(parts)
 
 
 def _unsafe_cell(v: str) -> str:
     """Undo ``_safe_cell`` so an exported list re-uploads with the original names."""
-    return v[1:] if v.startswith("'") and v[1:2] in _FORMULA_PREFIX else v
+    parts = _CELL_SPLIT.split(v)
+    for i in range(0, len(parts), 2):
+        p = parts[i]
+        if p.startswith("'") and p[1:].lstrip(" ").startswith(_FORMULA_PREFIX):
+            parts[i] = p[1:]
+    return "".join(parts)
 
 
 def _text(v: object) -> str:
@@ -302,7 +319,7 @@ def _level(raw: object) -> int | None:
     if s in ("", "nc", "non-compliant", "noncompliant", "none", "n/a", "na", "-"):
         return NON_COMPLIANT
     s = s.removeprefix("l")
-    if s.isdigit() and 1 <= int(s) <= 9:
+    if s.isascii() and s.isdigit() and 1 <= int(s) <= 9:  # "²" is a digit but not int()-able
         return int(s)
     try:
         f = float(s)
@@ -354,12 +371,15 @@ def _is_blank(row: Mapping[str, object]) -> bool:
     return all(_text(v) == "" for v in row.values())
 
 
-def parse_rows(rows: Iterable[Mapping[str, object]]) -> tuple[list[Supplier], list[RowError]]:
+def parse_rows(
+    rows: Iterable[Mapping[str, object]], *, from_export: bool = False
+) -> tuple[list[Supplier], list[RowError]]:
     """Validate raw rows (CSV dicts or table records) into suppliers.
 
     Headers may be the field keys or the column labels (case-insensitive). Blank rows are
     skipped. Every problem is returned, not just the first, so a user can fix the sheet in
-    one pass.
+    one pass. ``from_export`` (CSV uploads) strips the quote ``to_csv`` adds in front of
+    formula-looking names; names typed into the table are kept exactly as typed.
     """
     suppliers: list[Supplier] = []
     errors: list[RowError] = []
@@ -375,12 +395,15 @@ def parse_rows(rows: Iterable[Mapping[str, object]]) -> tuple[list[Supplier], li
         def bad(col: str, msg: str, _errs: list[RowError] = errs, _n: int = n) -> None:
             _errs.append(RowError(_n, col, msg))
 
-        name = _unsafe_cell(_text(row.get("supplier"))) or f"Supplier {n}"
+        name = _text(row.get("supplier"))
+        name = (_unsafe_cell(name) if from_export else name) or f"Supplier {n}"
         spend = _number(row.get("spend"))
         if spend is None:
             bad("Spend (R)", "enter a rand amount")
         elif spend < 0:
             bad("Spend (R)", "cannot be negative; net credit notes into the supplier's spend")
+        elif not spend <= MAX_SPEND:  # also catches inf / nan
+            bad("Spend (R)", "is too large; check the amount")
         level = _level(row.get("level"))
         if level is None:
             bad("B-BBEE level", "use 1 to 8, or leave blank / NC for no certificate")
@@ -434,16 +457,23 @@ def parse_csv(text: str) -> tuple[list[Supplier], list[RowError]]:
     text = text.lstrip("﻿")  # Excel's UTF-8 BOM
     sample = text[:2048]
     try:
-        dialect = csv.Sniffer().sniff(sample, delimiters=",;\t")
+        delimiter = csv.Sniffer().sniff(sample, delimiters=",;\t").delimiter
     except csv.Error:
-        dialect = csv.excel
+        delimiter = ","
+    # Keep only the sniffed delimiter. Letting the sniffer also guess the quote character can
+    # pick "'" when names start with the export's protective quote, which silently merges rows.
+
+    class _Dialect(csv.excel):
+        pass
+
+    _Dialect.delimiter = delimiter
     try:
-        reader = csv.DictReader(io.StringIO(text), dialect=dialect)
+        reader = csv.DictReader(io.StringIO(text), dialect=_Dialect)
         fields = {HEADER_TO_FIELD.get((h or "").strip().lower()) for h in (reader.fieldnames or [])}
         missing = [label for key, label in COLUMNS[:3] if key not in fields]
         if missing:
             return [], [RowError(0, "Header", f"missing column(s): {', '.join(missing)}")]
-        return parse_rows(reader)
+        return parse_rows(reader, from_export=True)
     except csv.Error:  # e.g. one field larger than the csv module's limit
         return [], [RowError(0, "File", "could not read the CSV; check for a very long cell")]
 
@@ -474,11 +504,12 @@ def to_record(s: Supplier) -> dict[str, object]:
 def to_csv(suppliers: Iterable[Supplier]) -> str:
     """Export a validated list in the template's format (re-uploads cleanly).
 
-    Supplier names that a spreadsheet would run as a formula are written with a leading
-    quote; ``parse_rows`` strips it again on upload.
+    Every field is quoted, and any piece of a supplier name that a spreadsheet would run as a
+    formula gets a leading quote; ``parse_csv`` strips it again on upload.
     """
     buf = io.StringIO()
-    w = csv.writer(buf, lineterminator="\n")
+    # Quote every field so a spreadsheet with a ";" list separator still keeps names whole.
+    w = csv.writer(buf, lineterminator="\n", quoting=csv.QUOTE_ALL)
     w.writerow(label for _, label in COLUMNS)
     for s in suppliers:
         r = to_record(s)

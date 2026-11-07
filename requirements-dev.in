@@ -1,0 +1,10 @@
+# Dev and CI tools, compiled with the runtime pins into requirements-dev.lock.
+# Regenerate after changing this file, requirements.txt or requirements.lock:
+#   uv pip compile requirements-dev.in --python-version 3.11 --generate-hashes \
+#     --constraint requirements.lock -o requirements-dev.lock
+-r requirements.txt
+pytest==9.1.1
+ruff==0.17.2
+pip-audit==2.10.1
+# Build backend for `pip install --no-build-isolation -e .` (pyproject: setuptools>=68)
+setuptools>=68

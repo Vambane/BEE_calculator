@@ -16,24 +16,45 @@ Jobs that must stay green:
 
 | Check name (GitHub Actions) | Job | What it does |
 | --- | --- | --- |
-| **test** | `test` | ruff lint/format, pytest, sector CSV totals, pinned `pip-audit` |
+| **test** | `test` | installs `requirements-dev.lock` with `--require-hashes`, ruff lint/format, pytest, sector CSV totals, `pip-audit` |
 | **gitleaks** | `gitleaks` | secret scan (do not disable) |
 
-### Branch protection — what Dumisani must click
+### Branch protection checklist
 
-CTO cannot set this via API without admin rights. In GitHub:
+**State on 2026-11-06:** `main` is **not protected**. A ruleset named `protect_main` exists, but its
+enforcement is **Disabled**, it targets **no branches**, and it only blocks deletion and force pushes.
+So merges and direct pushes can land on `main` (and deploy to Streamlit Cloud) without green checks.
 
-1. Open **Settings → Branches → Branch protection rules** (or **Rules → Rulesets**).
-2. Rule for branch name pattern: `main`.
-3. Enable **Require a pull request before merging** (recommended for v1).
-4. Enable **Require status checks to pass before merging**.
-5. Under required checks, add exactly:
-   - `test`
-   - `gitleaks`
-6. Prefer **Do not allow bypassing the above settings** for admins once the team is used to the flow.
-7. Optional: require branches to be up to date before merging.
+Edit the existing ruleset rather than creating a second one: **Settings → Rules → Rulesets →
+`protect_main`**.
 
-Until those clicks are done, CI still runs but merges can land without green checks.
+- [ ] **Enforcement status:** set to **Active** (not Disabled or Evaluate).
+- [ ] **Target branches:** **Add target → Include default branch** (that is `main`).
+- [ ] **Restrict deletions:** keep ticked.
+- [ ] **Block force pushes:** keep ticked.
+- [ ] **Require a pull request before merging:** tick it. Set **Required approvals = 0**, because
+      GitHub does not let you approve your own PR. The rule still stops direct pushes to `main`.
+- [ ] **Require status checks to pass:** tick it, then **Add checks** and pick both, with source
+      **GitHub Actions**:
+  - [ ] `test`
+  - [ ] `gitleaks`
+- [ ] **Require branches to be up to date before merging:** tick it (optional, but it means checks
+      ran against the code that actually merges).
+- [ ] **Bypass list:** leave empty. If you ever need an emergency push, add yourself with
+      **For pull requests only**, so the bypass is visible in the PR.
+- [ ] **Save changes.**
+
+Verify afterwards (needs the GitHub CLI, signed in as the repo owner):
+
+```bash
+gh api repos/Vambane/BEE_calculator/rulesets --jq '.[] | {name, enforcement}'
+# expect: {"name":"protect_main","enforcement":"active"}
+gh api repos/Vambane/BEE_calculator/rules/branches/main --jq '.[].type'
+# expect: deletion, non_fast_forward, pull_request, required_status_checks
+```
+
+Then open a throwaway PR and confirm the **Merge** button stays disabled until `test` and `gitleaks`
+pass.
 
 ## Live smoke (host-up)
 
