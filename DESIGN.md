@@ -182,7 +182,7 @@ A sober scorecard list under a "Scorecard" label. Each row has a number, a check
 On the Scorecard tab, one tile per element. Each tile shows the element name (the existing link back to that step), points and maximum, points still open or "At maximum", and a sub-minimum line read from the checks already returned: "Sub-minimum met", "Sub-minimum missed", or "No sub-minimum", each with an icon. A thin meter repeats the points and is hidden from assistive tech. Tiles stay equal width; from 360 to 430px they stack in one column and the figures wrap instead of clipping.
 
 ### Level ladder (signature)
-Bands from Non-compliant to Level 1 sized by their thresholds; a green wash fills to the score and a near-black marker carries the points. The scale is inset so the points label stays inside the card.
+Bands from Non-compliant to Level 1 sized by their thresholds; a green wash fills to the score and a near-black marker carries the points. The marked band is the points band. The recognition level in the summary stays separate, including when a sub-minimum discount lowers it by one level. On a ladder narrower than 480px the in-track letters and the axis numbers are replaced by a wrapping key, one chip per band, so L6/L5 and L3/L2/L1 do not stack and 75, 90 and 95 stay visible. The points figure sits above the track. Wider ladders keep the labels on the scale.
 
 ### Motion
 `fadeSlideIn`: opacity 0, blur 4px, translateY 12px to rest, 0.6s cubic-bezier(0.16, 1, 0.3, 1). Delays: title 0.05s, intro 0.12s, cards 0.2s / 0.28s / 0.36s / 0.44s, footer 0.5s. Off under prefers-reduced-motion.

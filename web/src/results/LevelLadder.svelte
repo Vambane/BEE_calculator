@@ -12,11 +12,17 @@
     asc.forEach((l, i) => out.push({ from: l.min, to: asc[i + 1]?.min ?? top, level: l.level, label: `L${l.level}` }));
     return out;
   });
+  const here = $derived(bands.find((b) => b.level === level && !discounted));
+
+  /** Threshold text. The chart ceiling is not a code threshold, so Level 1 shows its minimum only. */
+  function range(b) {
+    return b.level === 9 ? `under ${b.to}` : String(b.from);
+  }
 </script>
 
 <figure class="ladder">
   <figcaption class="visually-hidden">
-    Points for the level table: {g(points)}. Level thresholds: {levels.map((l) => `Level ${l.level} from ${l.min}`).join(", ")}.
+    Points on the level table: {g(points)}. Points band: {here ? `${here.label}, ${range(here)}` : "none"}. This band is where the points sit. The recognition level in the summary is separate, and a sub-minimum can discount it by one level. Thresholds: {levels.map((l) => `Level ${l.level} from ${l.min}`).join(", ")}.
   </figcaption>
   <div class="track" aria-hidden="true">
     {#each bands as b (b.label)}
@@ -40,6 +46,15 @@
       <span class:minor={![40, 55, 70, 80, 100].includes(l.min)} style:left={pos(l.min)}>{l.min}</span>
     {/each}
   </div>
+  <ol class="key">
+    {#each bands as b (b.label)}
+      <li class:here={b.level === level && !discounted}>
+        <span class="name">{b.label}</span>
+        <span class="n">{range(b)}</span>
+        {#if b.level === level && !discounted}<span class="tag">Points band</span>{/if}
+      </li>
+    {/each}
+  </ol>
 </figure>
 
 <style>
@@ -117,9 +132,54 @@
     font-size: 0.7rem;
     color: var(--ink-3);
   }
+  .key {
+    display: none;
+    list-style: none;
+    margin: 0.65rem 0 0;
+    padding: 0;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+  .key li {
+    display: inline-flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.35rem;
+    max-width: 100%;
+    margin: 0;
+    padding: 0.15rem 0.45rem;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--ink-2);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+  .key li.here {
+    border-color: var(--ink);
+    color: var(--ink);
+  }
+  .n {
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-3);
+  }
+  .key li.here .n,
+  .tag {
+    color: var(--ink-2);
+  }
+  .tag {
+    font-weight: 650;
+  }
+  /* Five-point bands (L6/L5, L3/L2/L1) are narrower than their labels, and 75/90/95
+     collide with their neighbours. The wrapping key shows every threshold instead. */
   @container ladder (max-width: 480px) {
-    .ticks span.minor {
+    .band span,
+    .ticks {
       display: none;
+    }
+    .key {
+      display: flex;
     }
   }
 </style>
