@@ -42,25 +42,26 @@
   }
   .list {
     display: flex;
-    gap: 0.25rem;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.15rem;
     border-bottom: 1px solid var(--line);
-    overflow-x: auto;
+    min-width: 0;
   }
   button {
     position: relative;
     display: inline-flex;
     align-items: center;
     gap: 0.4rem;
-    height: 42px;
-    padding: 0 0.85rem;
+    min-height: 42px;
+    padding: 0.35rem 0.75rem;
     border: 0;
     background: none;
     font-size: var(--t-sm);
     font-weight: 600;
     color: var(--ink-3);
     cursor: pointer;
-    white-space: nowrap;
     border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+    text-align: left;
   }
   button:hover {
     color: var(--ink);

@@ -46,7 +46,7 @@
   .ladder {
     container: ladder / inline-size;
     margin: 0;
-    padding: 2.1rem 0 0.25rem;
+    padding: 2.1rem 1.35rem 0.25rem;
   }
   .track {
     position: relative;

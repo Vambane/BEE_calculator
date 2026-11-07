@@ -1,15 +1,15 @@
 ---
 name: Klim
-description: A calm, exact B-BBEE scorecard estimator for accountants and consultants, in a light shadcn-style glass theme.
+description: A calm, exact B-BBEE scorecard estimator for accountants and consultants, in a light zinc shell with a deep green accent.
 colors:
   primary: "#18181b"
   primary-hover: "#27272a"
   primary-active: "#09090b"
-  accent: "#7c3aed"
-  accent-hover: "#6d28d9"
-  accent-soft: "#a78bfa"
-  accent-tint: "#f5f3ff"
-  accent-tint-2: "#ddd6fe"
+  accent: "#166534"
+  accent-hover: "#14532d"
+  accent-soft: "#166534"
+  accent-tint: "#f3faf6"
+  accent-tint-2: "#d7eee3"
   canvas: "#fafafa"
   rail: "#f4f4f5"
   surface: "#ffffff"
@@ -105,16 +105,17 @@ components:
 
 **Creative North Star: "The Quiet Glass Desk"**
 
-Klim is a working tool for accountants and consultants who score clients' B-BBEE certificates. Its look follows a shadcn-style sign-in theme the owner chose: near-white ground, a near-black primary button, a violet accent for links, focus and fills, soft glass-tinted inputs, generous 16 to 24px radii, and a staggered fade-in as each step opens. The numbers stay the point: Geist with tabular figures, right-aligned in fields and tables.
+Klim is a working tool for accountants and consultants who score clients' B-BBEE certificates. The shell is a light dashboard: zinc-50 canvas, zinc-100 step rail, white cards, a near-black primary button, and a deep green accent for links, focus, selection and progress fills. Inputs keep a soft glass tint. Radii stay 16 to 24px, and each step still fades in. The numbers stay the point: Geist with tabular figures, right-aligned in fields and tables.
 
-Light only. The owner rejected a dark, gold-accented look.
+Light only. The owner rejected a dark, gold-accented look. The light shell is the alabaster role of that dashboard (paper and a quiet step list), drawn with the zinc neutrals above, not a second warm palette and not the charcoal theme.
 
 **Key Characteristics:**
-- Zinc neutrals, white cards, near-black primary, violet accent.
+- Zinc neutrals, white cards, near-black primary, deep green accent.
 - Geist throughout with tabular figures; tight negative tracking on headings.
-- Glass inputs: a 4% ink tint that turns violet on focus.
+- Glass inputs: a 4% ink tint that turns green on focus.
 - 16px controls, 24px cards, hairline borders.
 - Each step's title, intro, cards and footer rise in sequence (fade, 12px slide, blur to sharp).
+- Scorecard steps sit in a sober rail. Under 900px that rail collapses into a dialog.
 
 ## Colors
 
@@ -122,9 +123,9 @@ Light only. The owner rejected a dark, gold-accented look.
 - **Ink Button** (#18181b): primary buttons, the current-step disc, checkmarks, the ladder marker, tab underline. Hover #27272a, pressed #09090b.
 
 ### Accent
-- **Violet** (#7c3aed, hover #6d28d9): links.
-- **Soft Violet** (#a78bfa): focus borders (at 70%) and the focus outline; the focus ring is rgb(139 92 246 / 0.25).
-- **Violet Wash** (#f5f3ff, #ddd6fe): selection, the achieved band on the level ladder, selected rows.
+- **Deep green** (#166534, hover #14532d): links, the focus outline, progress fills. #166534 is 7.130:1 on #ffffff, 6.831:1 on canvas #fafafa, and 6.487:1 on the rail #f4f4f5 (WCAG 2.1 relative luminance). Hover #14532d is 9.111:1 on #ffffff.
+- **Focus ring:** `0 0 0 2px #ffffff, 0 0 0 4px #166534`. The green stroke is the same 7.130:1 against white, above the 3:1 non-text bar.
+- **Green wash** (#f3faf6, #d7eee3): selection, the achieved band on the level ladder, selected rows. #166534 on those washes is 6.728:1 and 5.850:1.
 
 ### Neutral
 - **Canvas** (#fafafa), **Rail** (#f4f4f5), **Card** (#ffffff), **Hairline** (#e4e4e7 / #d4d4d8).
@@ -134,7 +135,7 @@ Light only. The owner rejected a dark, gold-accented look.
 - Success #15803d, Warning #a16207, Danger #b91c1c, Info #1d4ed8, each on its pale tint with an icon and a written title.
 
 ### Named Rules
-**The Two Voices Rule.** Near-black says "do this next"; violet says "you can go here" or "you are here". Neither decorates.
+**The Two Voices Rule.** Near-black says "do this next"; deep green says "you can go here" or "you are here". Neither decorates.
 
 **The Meaning-Only Rule.** Amber, red and blue appear only for a state the user must understand.
 
@@ -153,7 +154,7 @@ Light only. The owner rejected a dark, gold-accented look.
 
 ## Layout
 
-A 60px top bar (brand, client, scorecard chip, unsaved state, Open/Save), a 264px sticky step rail, and a centred main column up to 880px. Under 900px the rail becomes a step dropdown with a progress bar; under 640px Continue shortens to "Continue". Grid children use `minmax(0, 1fr)` so wide tables scroll inside their card, with a swipe hint on phones.
+A 60px top bar (brand, client, scorecard chip, unsaved state, Open/Save), a 264px sticky step rail, and a centred main column up to 880px (results up to 1040px). Under 900px the rail is hidden until a full-width "Step n of m" button opens it as a dialog; Escape, Close steps, or the dimmed page closes it and returns focus to that button. Under 640px Continue shortens to "Continue". From 360 to 430px the results summary stacks in one column and each element tile is full width. Grid children use `minmax(0, 1fr)` so wide tables scroll inside their card.
 
 ## Elevation & Depth
 
@@ -166,19 +167,22 @@ Controls 16px, cards 24px, chips and segments 10px, switches and badges fully ro
 ## Components
 
 ### Buttons
-44px tall (36px small), 16px radius. Primary: near-black with white text. Secondary: white with a hairline. Ghost: no fill, faint ink wash on hover. Focus shows the violet ring.
+44px tall (36px small), 16px radius. Primary: near-black with white text. Secondary: white with a hairline. Ghost: no fill, faint ink wash on hover. Focus shows the green ring.
 
 ### Inputs
-48px, glass fill rgb(9 9 11 / 0.04), hairline border, 16px radius, 16px side padding. Focus: border violet at 70%, fill rgb(139 92 246 / 0.08), violet ring. Numbers right-aligned with R, %, or "people" affixes. Disabled: rail grey, muted text, not-allowed cursor.
+48px, glass fill rgb(9 9 11 / 0.04), hairline border, 16px radius, 16px side padding. Focus: border #166534, fill rgb(22 101 52 / 0.08), green ring. Numbers right-aligned with R, %, or "people" affixes. Disabled: rail grey, muted text, not-allowed cursor.
 
 ### Cards
 White, 24px radius, hairline, rest shadow.
 
 ### Step rail
-Done steps show a check, the current step a near-black disc on a white chip, locked steps a lock in muted text.
+A sober scorecard list under a "Scorecard" label. Each row has a number, a check, or a lock, plus the words Current, Done, or Needs attention, so state is not colour alone. The current row is a white chip with a hairline and a near-black disc. A done row keeps the check and a green disc. Locked rows are muted and show a lock. Under 900px the same list is a dialog titled by the Steps label, with a 44px Close steps control.
+
+### Results bento
+On the Scorecard tab, one tile per element. Each tile shows the element name (the existing link back to that step), points and maximum, points still open or "At maximum", and a sub-minimum line read from the checks already returned: "Sub-minimum met", "Sub-minimum missed", or "No sub-minimum", each with an icon. A thin meter repeats the points and is hidden from assistive tech. Tiles stay equal width; from 360 to 430px they stack in one column and the figures wrap instead of clipping.
 
 ### Level ladder (signature)
-Bands from Non-compliant to Level 1 sized by their thresholds; a violet wash fills to the score and a near-black marker carries the points.
+Bands from Non-compliant to Level 1 sized by their thresholds; a green wash fills to the score and a near-black marker carries the points. The scale is inset so the points label stays inside the card.
 
 ### Motion
 `fadeSlideIn`: opacity 0, blur 4px, translateY 12px to rest, 0.6s cubic-bezier(0.16, 1, 0.3, 1). Delays: title 0.05s, intro 0.12s, cards 0.2s / 0.28s / 0.36s / 0.44s, footer 0.5s. Off under prefers-reduced-motion.
@@ -187,7 +191,7 @@ Bands from Non-compliant to Level 1 sized by their thresholds; a violet wash fil
 
 ### Do:
 - **Do** keep one near-black primary action per screen.
-- **Do** use violet only for links, focus, selection and progress fills.
+- **Do** use deep green only for links, focus, selection and progress fills.
 - **Do** give every state notice an icon and a title.
 - **Do** show the clause beside each target.
 

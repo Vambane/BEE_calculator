@@ -23,7 +23,7 @@ streamlit run app.py
 - Planning tool only; confirm with your verification agency and sector code.
 
 ## Web app (Klim)
-`web/` is a static rebuild of the same calculator. The Python engine (`bee/`, `bee_ui/core.py`, `bee_ui/client_file.py`) runs in the browser through Pyodide, so client figures never leave the user's machine and there is no server to run. `bee_web/api.py` is the thin JSON layer the web app calls; no scoring rule lives there. The gap report prints to PDF from the browser. Design rules are in [DESIGN.md](DESIGN.md).
+`web/` is a static rebuild of the same calculator. The Python engine (`bee/`, `bee_ui/core.py`, `bee_ui/client_file.py`) runs in the browser through Pyodide, so client figures never leave the user's machine and there is no server to run. `bee_web/api.py` is the thin JSON layer the web app calls; no scoring rule lives there. The gap report prints to PDF from the browser. Design rules are in [DESIGN.md](DESIGN.md) and [tokens.json](tokens.json): Geist, zinc neutrals, near-black primary, deep green `#166534` (7.130:1 on white) for links, focus and selection. The Streamlit app and the PDF report keep their own honey theme.
 
 ```bash
 cd web

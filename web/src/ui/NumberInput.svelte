@@ -87,7 +87,7 @@
     border-color: #a1a1aa;
   }
   .num:focus-within {
-    border-color: rgb(167 139 250 / 0.7);
+    border-color: var(--accent);
     background: var(--glass-focus);
     box-shadow: var(--focus);
   }

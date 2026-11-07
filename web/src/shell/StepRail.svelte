@@ -3,6 +3,8 @@
   import { app, steps, goTo, consented, startOver } from "../lib/state.svelte.js";
   import Switch from "../ui/Switch.svelte";
 
+  let { onpicked } = $props();
+
   const list = $derived(app.ready ? steps() : []);
 
   function reachable(i) {
@@ -11,6 +13,7 @@
   function select(i) {
     if (app.view !== "app") location.hash = "#/";
     goTo(i);
+    onpicked?.();
   }
   async function reset() {
     if (app.dirty && !confirm("Start over? This clears every figure for this client. Save the client file first if you need it.")) return;
@@ -21,7 +24,8 @@
 <div class="rail-inner">
   {#if app.ready}
     <nav aria-label="Calculator steps">
-      <ol>
+      <p class="kicker" id="scorecard-steps">Scorecard</p>
+      <ol aria-labelledby="scorecard-steps">
         {#each list as s, i (s.key)}
           {@const current = app.view === "app" && i === app.step}
           {@const done = consented() && i < app.maxStep && !current}
@@ -38,8 +42,12 @@
               <span class="dot" class:err aria-hidden="true">
                 {#if done}<Check size={13} strokeWidth={3} />{:else if !reachable(i) && !current}<Lock size={11} strokeWidth={2.5} />{:else}{i + 1}{/if}
               </span>
-              <span class="name">{s.name}</span>
-              {#if err}<span class="visually-hidden">(needs attention)</span>{/if}
+              <span class="name">
+                {s.name}
+                {#if current}<span class="state">Current</span>{/if}
+                {#if done}<span class="state">Done</span>{/if}
+                {#if err}<span class="attn">Needs attention</span>{/if}
+              </span>
             </button>
           </li>
         {/each}
@@ -74,6 +82,14 @@
     min-height: 100%;
     padding: 1.25rem 0.9rem 1.25rem;
   }
+  .kicker {
+    margin: 0 0.55rem 0.4rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
   ol {
     list-style: none;
     margin: 0;
@@ -84,11 +100,11 @@
   .step {
     width: 100%;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 0.7rem;
-    padding: 0.5rem 0.6rem;
-    border: 0;
-    border-radius: var(--radius);
+    padding: 0.45rem 0.55rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
     background: transparent;
     text-align: left;
     cursor: pointer;
@@ -109,13 +125,12 @@
   }
   .step:disabled {
     cursor: default;
-    color: #8e8e96;
   }
   .current {
     background: var(--surface);
     color: var(--ink);
     font-weight: 650;
-    box-shadow: var(--shadow-1);
+    border-color: var(--line);
   }
   .dot {
     flex: none;
@@ -123,6 +138,7 @@
     place-items: center;
     width: 24px;
     height: 24px;
+    margin-top: 0.05rem;
     border-radius: 999px;
     font-size: 0.75rem;
     font-weight: 700;
@@ -137,21 +153,42 @@
   }
   .done .dot {
     background: var(--primary-tint);
-    border-color: var(--primary-tint-2);
-    color: var(--primary);
+    border-color: var(--accent);
+    color: var(--accent);
   }
   .dot.err {
     border-color: var(--danger);
     color: var(--danger);
     background: var(--danger-tint);
   }
+  .step:disabled {
+    color: var(--ink-3);
+  }
   .step:disabled .dot {
     background: transparent;
-    color: #8e8e96;
+    color: var(--ink-3);
   }
   .name {
     min-width: 0;
     line-height: 1.3;
+  }
+  .state,
+  .attn {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: 0.6875rem;
+    font-weight: 650;
+    letter-spacing: 0.01em;
+    line-height: 1.3;
+  }
+  .state {
+    color: var(--ink-3);
+  }
+  .current .state {
+    color: var(--ink-2);
+  }
+  .attn {
+    color: var(--danger);
   }
   .tools {
     margin-top: auto;

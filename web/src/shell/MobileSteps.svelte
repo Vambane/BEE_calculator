@@ -1,37 +1,24 @@
 <script>
-  import { ChevronDown, Check } from "@lucide/svelte";
-  import { app, steps, goTo, consented } from "../lib/state.svelte.js";
+  import { ChevronDown } from "@lucide/svelte";
+  import { app, steps } from "../lib/state.svelte.js";
 
-  let open = $state(false);
+  let { open = $bindable(false) } = $props();
   const list = $derived(steps());
-  const pct = $derived(((app.step + 1) / list.length) * 100);
+  const pct = $derived(list.length ? ((app.step + 1) / list.length) * 100 : 0);
 </script>
 
 <div class="mobile">
-  <details bind:open>
-    <summary>
-      <span class="count">Step {app.step + 1} of {list.length}</span>
-      <span class="name">{list[app.step]?.name}</span>
-      <ChevronDown size={18} aria-hidden="true" />
-    </summary>
-    <ol>
-      {#each list as s, i (s.key)}
-        <li>
-          <button
-            disabled={!(consented() && i <= app.maxStep)}
-            class:current={i === app.step}
-            onclick={() => {
-              goTo(i);
-              open = false;
-            }}
-          >
-            <span class="n">{#if i < app.maxStep && i !== app.step && consented()}<Check size={13} strokeWidth={3} />{:else}{i + 1}{/if}</span>
-            {s.name}
-          </button>
-        </li>
-      {/each}
-    </ol>
-  </details>
+  <button
+    id="steps-toggle"
+    type="button"
+    aria-expanded={open}
+    aria-controls="step-rail"
+    onclick={() => (open = !open)}
+  >
+    <span class="count">Step {app.step + 1} of {list.length}</span>
+    <span class="name">{list[app.step]?.name}</span>
+    <span class="chev" class:flip={open}><ChevronDown size={18} aria-hidden="true" /></span>
+  </button>
   <div class="bar" aria-hidden="true"><span style="width:{pct}%"></span></div>
 </div>
 
@@ -45,72 +32,45 @@
       display: block;
     }
   }
-  details {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-  }
-  summary {
+  button {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    padding: 0.7rem 0.85rem;
-    list-style: none;
+    width: 100%;
+    min-height: 44px;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    text-align: left;
     cursor: pointer;
+    box-shadow: var(--shadow-1);
   }
-  summary::-webkit-details-marker {
-    display: none;
+  button:focus-visible {
+    outline: none;
+    box-shadow: var(--focus);
   }
   .count {
+    flex: none;
     font-size: var(--t-xs);
-    font-weight: 650;
-    color: var(--primary);
+    font-weight: 700;
+    color: var(--accent);
     white-space: nowrap;
   }
   .name {
     flex: 1;
-    font-weight: 650;
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  ol {
-    list-style: none;
-    margin: 0;
-    padding: 0.35rem;
-    border-top: 1px solid var(--line);
-  }
-  button {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    padding: 0.55rem 0.5rem;
-    border: 0;
-    background: none;
-    border-radius: var(--radius-sm);
-    font-size: var(--t-sm);
-    text-align: left;
-    cursor: pointer;
-  }
-  button:disabled {
-    color: #8e8e96;
-    cursor: default;
-  }
-  .current {
-    background: var(--primary-tint);
     font-weight: 650;
+    line-height: 1.3;
   }
-  .n {
+  .chev {
     display: grid;
-    place-items: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 999px;
-    border: 1.5px solid var(--line-strong);
-    font-size: 0.72rem;
-    font-weight: 700;
+    flex: none;
+    color: var(--ink-2);
+    transition: transform 150ms var(--ease);
+  }
+  .chev.flip {
+    transform: rotate(180deg);
   }
   .bar {
     height: 3px;
@@ -122,7 +82,6 @@
   .bar span {
     display: block;
     height: 100%;
-    background: var(--primary);
-    transition: width 250ms var(--ease);
+    background: var(--accent);
   }
 </style>
